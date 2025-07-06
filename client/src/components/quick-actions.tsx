@@ -1,50 +1,62 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wand2, Bug, Github, Rocket } from "lucide-react";
-
-const actions = [
-  {
-    title: "Generate Code",
-    description: "AI-powered code generation",
-    icon: Wand2,
-    color: "primary",
-    onClick: () => {
-      // TODO: Navigate to code generation section
-      document.getElementById('code-generation')?.scrollIntoView({ behavior: 'smooth' });
-    },
-  },
-  {
-    title: "Debug Code",
-    description: "Intelligent error detection",
-    icon: Bug,
-    color: "accent",
-    onClick: () => {
-      // TODO: Navigate to debug section
-      console.log("Debug code clicked");
-    },
-  },
-  {
-    title: "GitHub Sync",
-    description: "Repository management",
-    icon: Github,
-    color: "orange-500",
-    onClick: () => {
-      // TODO: Navigate to GitHub section
-      document.getElementById('github-integration')?.scrollIntoView({ behavior: 'smooth' });
-    },
-  },
-  {
-    title: "Deploy",
-    description: "Instant deployment",
-    icon: Rocket,
-    color: "purple-500",
-    onClick: () => {
-      // TODO: Navigate to deployment section
-      console.log("Deploy clicked");
-    },
-  },
-];
+import { Wand2, Bug, Github, Rocket, Users } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function QuickActions() {
+  const [, setLocation] = useLocation();
+
+  const actions = [
+    {
+      title: "Multi-Agent Collaboration",
+      description: "AI teams working together",
+      icon: Users,
+      color: "blue-500",
+      onClick: () => {
+        setLocation('/collaboration');
+      },
+    },
+    {
+      title: "Generate Code",
+      description: "AI-powered code generation",
+      icon: Wand2,
+      color: "primary",
+      onClick: () => {
+        // TODO: Navigate to code generation section
+        document.getElementById('code-generation')?.scrollIntoView({ behavior: 'smooth' });
+      },
+    },
+    {
+      title: "Debug Code",
+      description: "Intelligent error detection",
+      icon: Bug,
+      color: "accent",
+      onClick: () => {
+        // TODO: Navigate to debug section
+        console.log("Debug code clicked");
+      },
+    },
+    {
+      title: "GitHub Sync",
+      description: "Repository management",
+      icon: Github,
+      color: "orange-500",
+      onClick: () => {
+        // TODO: Navigate to GitHub section
+        document.getElementById('github-integration')?.scrollIntoView({ behavior: 'smooth' });
+      },
+    },
+    {
+      title: "Deploy",
+      description: "Instant deployment",
+      icon: Rocket,
+      color: "purple-500",
+      onClick: () => {
+        // TODO: Navigate to deployment section
+        console.log("Deploy clicked");
+      },
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {actions.map((action) => {

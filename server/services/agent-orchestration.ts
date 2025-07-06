@@ -1,0 +1,526 @@
+import OpenAI from "openai";
+import { storage } from "../storage";
+import type { Agent, Message, Conversation, AgentResponse } from "@shared/schema";
+
+// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+const openai = new OpenAI({ 
+  apiKey: process.env.OPENAI_API_KEY || "default_key" 
+});
+
+export interface AgentContext {
+  conversation: Conversation;
+  recentMessages: Message[];
+  projectContext?: any;
+  userPreferences?: any;
+}
+
+export interface CollaborationSession {
+  id: number;
+  projectId: number;
+  participants: Agent[];
+  objective: string;
+  currentPhase: string;
+  decisions: Array<{
+    decision: string;
+    madeBy: number;
+    reasoning: string;
+    timestamp: Date;
+  }>;
+  outcomes: string[];
+}
+
+export class AgentOrchestrationService {
+  private activeCollaborations: Map<number, CollaborationSession> = new Map();
+  private agentBusyStatus: Map<number, boolean> = new Map();
+
+  // Core agent response generation
+  async generateAgentResponse(
+    agentId: number, 
+    userMessage: string, 
+    context: AgentContext
+  ): Promise<AgentResponse> {
+    const agent = await storage.getAgent(agentId);
+    if (!agent) {
+      throw new Error("Agent not found");
+    }
+
+    // Mark agent as busy
+    this.agentBusyStatus.set(agentId, true);
+    await storage.updateAgentStatus(agentId, "busy");
+
+    try {
+      // Get agent's knowledge and context
+      const agentKnowledge = await storage.getAgentKnowledgeByAgent(agentId);
+      const relevantKnowledge = agentKnowledge
+        .filter(k => this.isRelevantToContext(k.content, userMessage))
+        .slice(0, 5);
+
+      // Build context-aware prompt
+      const contextPrompt = this.buildContextPrompt(agent, context, relevantKnowledge);
+      
+      const response = await openai.chat.completions.create({
+        model: agent.aiModel || "gpt-4o",
+        messages: [
+          { role: "system", content: agent.systemPrompt },
+          { role: "system", content: contextPrompt },
+          { role: "user", content: userMessage }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      
+      // Store agent's learning from this interaction
+      await this.updateAgentKnowledge(agentId, userMessage, result.content, context);
+
+      return {
+        agentId,
+        content: result.content || "",
+        messageType: result.messageType || "text",
+        metadata: result.metadata || {},
+        confidence: result.confidence || 0.8,
+        reasoning: result.reasoning || ""
+      };
+
+    } finally {
+      // Mark agent as available
+      this.agentBusyStatus.set(agentId, false);
+      await storage.updateAgentStatus(agentId, "active");
+    }
+  }
+
+  // Multi-agent collaboration orchestration
+  async startCollaborationSession(
+    projectId: number,
+    objective: string,
+    requiredCapabilities: string[]
+  ): Promise<CollaborationSession> {
+    // Select appropriate agents based on capabilities
+    const selectedAgents = await this.selectAgentsForObjective(requiredCapabilities);
+    
+    const session: CollaborationSession = {
+      id: Date.now(),
+      projectId,
+      participants: selectedAgents,
+      objective,
+      currentPhase: "planning",
+      decisions: [],
+      outcomes: []
+    };
+
+    this.activeCollaborations.set(session.id, session);
+
+    // Create conversation for the collaboration
+    const conversation = await storage.createConversation({
+      projectId,
+      title: `Collaboration: ${objective}`,
+      type: "project_discussion",
+      participants: selectedAgents.map(a => a.id),
+      createdBy: 1 // System user
+    });
+
+    // Start the collaboration with initial planning
+    await this.orchestrateCollaborationPhase(session.id, conversation.id);
+
+    return session;
+  }
+
+  // Intelligent agent selection based on project needs
+  private async selectAgentsForObjective(requiredCapabilities: string[]): Promise<Agent[]> {
+    const allAgents = await storage.getAllAgents();
+    const selectedAgents: Agent[] = [];
+
+    // Score agents based on capability match
+    const agentScores = allAgents.map(agent => {
+      const capabilityMatch = requiredCapabilities.filter(req => 
+        agent.capabilities?.some(cap => cap.includes(req)) || false
+      ).length;
+      
+      return {
+        agent,
+        score: capabilityMatch / requiredCapabilities.length,
+        capabilities: agent.capabilities || []
+      };
+    });
+
+    // Sort by score and select top agents
+    agentScores.sort((a, b) => b.score - a.score);
+
+    // Ensure we have diverse skill coverage
+    const addedCapabilities = new Set<string>();
+    
+    for (const { agent, capabilities } of agentScores) {
+      const newCapabilities = capabilities.filter(cap => !addedCapabilities.has(cap));
+      
+      if (newCapabilities.length > 0 || selectedAgents.length < 2) {
+        selectedAgents.push(agent);
+        newCapabilities.forEach(cap => addedCapabilities.add(cap));
+        
+        if (selectedAgents.length >= 6) break; // Max 6 agents per session
+      }
+    }
+
+    return selectedAgents;
+  }
+
+  // Orchestrate multi-agent collaboration phases
+  private async orchestrateCollaborationPhase(sessionId: number, conversationId: number): Promise<void> {
+    const session = this.activeCollaborations.get(sessionId);
+    if (!session) return;
+
+    switch (session.currentPhase) {
+      case "planning":
+        await this.runPlanningPhase(session, conversationId);
+        break;
+      case "design":
+        await this.runDesignPhase(session, conversationId);
+        break;
+      case "implementation":
+        await this.runImplementationPhase(session, conversationId);
+        break;
+      case "review":
+        await this.runReviewPhase(session, conversationId);
+        break;
+    }
+  }
+
+  private async runPlanningPhase(session: CollaborationSession, conversationId: number): Promise<void> {
+    // Product Manager leads planning
+    const productManager = session.participants.find(a => a.type === "product_manager");
+    if (productManager) {
+      const planningPrompt = `Lead a planning session for: ${session.objective}. 
+      Create user stories, define acceptance criteria, and estimate effort. 
+      Coordinate with the team to gather requirements and prioritize features.`;
+
+      await this.facilitateAgentDiscussion(session, conversationId, productManager.id, planningPrompt);
+    }
+
+    // Move to design phase
+    session.currentPhase = "design";
+    await this.orchestrateCollaborationPhase(session.id, conversationId);
+  }
+
+  private async runDesignPhase(session: CollaborationSession, conversationId: number): Promise<void> {
+    // Designer and Senior Developer collaborate
+    const designer = session.participants.find(a => a.type === "designer");
+    const seniorDev = session.participants.find(a => a.type === "senior_developer");
+
+    if (designer && seniorDev) {
+      // Designer proposes UI/UX approach
+      const designPrompt = `Create a comprehensive design approach for: ${session.objective}. 
+      Focus on user experience, accessibility, and visual design. 
+      Collaborate with the senior developer on technical feasibility.`;
+
+      await this.facilitateAgentDiscussion(session, conversationId, designer.id, designPrompt);
+
+      // Senior Developer provides technical input
+      const techPrompt = `Review the design proposal and provide technical architecture recommendations for: ${session.objective}. 
+      Consider scalability, performance, and implementation complexity.`;
+
+      await this.facilitateAgentDiscussion(session, conversationId, seniorDev.id, techPrompt);
+    }
+
+    session.currentPhase = "implementation";
+    await this.orchestrateCollaborationPhase(session.id, conversationId);
+  }
+
+  private async runImplementationPhase(session: CollaborationSession, conversationId: number): Promise<void> {
+    // Junior developers implement with senior oversight
+    const juniorDev = session.participants.find(a => a.type === "junior_developer");
+    const seniorDev = session.participants.find(a => a.type === "senior_developer");
+
+    if (juniorDev && seniorDev) {
+      // Break down implementation tasks
+      await this.createImplementationTasks(session);
+      
+      // Junior developer starts implementation
+      const implPrompt = `Begin implementing the planned features for: ${session.objective}. 
+      Follow the design specifications and architectural guidelines. 
+      Write comprehensive tests and documentation.`;
+
+      await this.facilitateAgentDiscussion(session, conversationId, juniorDev.id, implPrompt);
+    }
+
+    session.currentPhase = "review";
+    await this.orchestrateCollaborationPhase(session.id, conversationId);
+  }
+
+  private async runReviewPhase(session: CollaborationSession, conversationId: number): Promise<void> {
+    // Code Reviewer and DevOps provide final review
+    const codeReviewer = session.participants.find(a => a.type === "code_reviewer");
+    const devOps = session.participants.find(a => a.type === "devops");
+
+    if (codeReviewer) {
+      const reviewPrompt = `Conduct a comprehensive code review for: ${session.objective}. 
+      Focus on security, performance, maintainability, and best practices. 
+      Provide specific recommendations for improvements.`;
+
+      await this.facilitateAgentDiscussion(session, conversationId, codeReviewer.id, reviewPrompt);
+    }
+
+    if (devOps) {
+      const deployPrompt = `Plan the deployment strategy for: ${session.objective}. 
+      Set up CI/CD pipelines, configure infrastructure, and ensure monitoring is in place.`;
+
+      await this.facilitateAgentDiscussion(session, conversationId, devOps.id, deployPrompt);
+    }
+
+    // Finalize collaboration
+    await this.finalizeCollaboration(session);
+  }
+
+  private async facilitateAgentDiscussion(
+    session: CollaborationSession,
+    conversationId: number,
+    leadAgentId: number,
+    prompt: string
+  ): Promise<void> {
+    // Get conversation context
+    const conversation = await storage.getConversation(conversationId);
+    const recentMessages = await storage.getMessagesByConversation(conversationId);
+
+    if (!conversation) return;
+
+    const context: AgentContext = {
+      conversation,
+      recentMessages: recentMessages.slice(-10) // Last 10 messages for context
+    };
+
+    // Generate lead agent's response
+    const response = await this.generateAgentResponse(leadAgentId, prompt, context);
+
+    // Store the message
+    await storage.createMessage({
+      conversationId,
+      senderId: leadAgentId,
+      senderType: "agent",
+      content: response.content,
+      messageType: response.messageType,
+      metadata: response.metadata
+    });
+
+    // Allow other agents to respond
+    for (const agent of session.participants) {
+      if (agent.id !== leadAgentId && Math.random() > 0.3) { // 70% chance to respond
+        const followUpResponse = await this.generateAgentResponse(
+          agent.id,
+          `Respond to the discussion about: ${session.objective}`,
+          context
+        );
+
+        await storage.createMessage({
+          conversationId,
+          senderId: agent.id,
+          senderType: "agent",
+          content: followUpResponse.content,
+          messageType: followUpResponse.messageType,
+          metadata: followUpResponse.metadata
+        });
+      }
+    }
+  }
+
+  private async createImplementationTasks(session: CollaborationSession): Promise<void> {
+    // Create workflow tasks based on collaboration decisions
+    const tasks = [
+      {
+        title: "Set up project structure",
+        taskType: "code_implementation",
+        priority: "high"
+      },
+      {
+        title: "Implement core features",
+        taskType: "code_implementation", 
+        priority: "medium"
+      },
+      {
+        title: "Write unit tests",
+        taskType: "testing",
+        priority: "medium"
+      },
+      {
+        title: "Create documentation",
+        taskType: "documentation",
+        priority: "low"
+      }
+    ];
+
+    for (const task of tasks) {
+      await storage.createWorkflowTask({
+        projectId: session.projectId,
+        title: task.title,
+        taskType: task.taskType as any,
+        priority: task.priority as any,
+        description: `Task created during collaboration for: ${session.objective}`
+      });
+    }
+  }
+
+  private async finalizeCollaboration(session: CollaborationSession): Promise<void> {
+    // Generate summary of decisions and outcomes
+    const outcomes = [
+      "Requirements gathered and prioritized",
+      "Technical architecture designed", 
+      "Implementation plan created",
+      "Code reviewed and optimized",
+      "Deployment strategy defined"
+    ];
+
+    session.outcomes = outcomes;
+    
+    // Store final session results
+    await storage.endAgentSession(session.id, outcomes);
+    
+    // Remove from active collaborations
+    this.activeCollaborations.delete(session.id);
+  }
+
+  // Smart agent decision making
+  async makeCollaborativeDecision(
+    sessionId: number,
+    options: string[],
+    criteria: string[]
+  ): Promise<string> {
+    const session = this.activeCollaborations.get(sessionId);
+    if (!session) throw new Error("Session not found");
+
+    // Get input from each agent
+    const agentInputs = await Promise.all(
+      session.participants.map(async agent => {
+        const prompt = `Evaluate these options for "${session.objective}":
+        ${options.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}
+        
+        Consider these criteria: ${criteria.join(', ')}
+        
+        Provide your recommendation with reasoning.`;
+
+        const response = await this.generateAgentResponse(agent.id, prompt, {
+          conversation: {} as Conversation,
+          recentMessages: []
+        });
+
+        return {
+          agentId: agent.id,
+          agentType: agent.type,
+          recommendation: response.content,
+          confidence: response.confidence
+        };
+      })
+    );
+
+    // Synthesize decision based on agent inputs
+    const decision = await this.synthesizeDecision(agentInputs, options);
+    
+    // Record the decision
+    session.decisions.push({
+      decision,
+      madeBy: 0, // Collaborative decision
+      reasoning: "Synthesized from multi-agent input",
+      timestamp: new Date()
+    });
+
+    return decision;
+  }
+
+  private async synthesizeDecision(
+    agentInputs: Array<{
+      agentId: number;
+      agentType: string;
+      recommendation: string;
+      confidence: number;
+    }>,
+    options: string[]
+  ): Promise<string> {
+    // Use AI to synthesize the best decision from agent inputs
+    const synthesisPrompt = `Based on the following expert recommendations, choose the best option:
+
+    ${agentInputs.map(input => 
+      `${input.agentType}: ${input.recommendation} (Confidence: ${input.confidence})`
+    ).join('\n\n')}
+
+    Options:
+    ${options.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}
+
+    Provide the best option with reasoning in JSON format:
+    {"decision": "chosen option", "reasoning": "explanation"}`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: "You are an expert decision synthesizer." },
+        { role: "user", content: synthesisPrompt }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || '{}');
+    return result.decision || options[0];
+  }
+
+  // Helper methods
+  private buildContextPrompt(agent: Agent, context: AgentContext, knowledge: any[]): string {
+    return `
+    Current conversation: ${context.conversation.title}
+    Recent discussion points: ${context.recentMessages.slice(-3).map(m => m.content).join('; ')}
+    Relevant knowledge: ${knowledge.map(k => k.content).join('; ')}
+    
+    Respond as ${agent.name} with your expertise in ${agent.capabilities?.join(', ')}.
+    Provide your response in JSON format: 
+    {
+      "content": "your response",
+      "messageType": "text|code|image",
+      "metadata": {},
+      "confidence": 0.8,
+      "reasoning": "why you provided this response"
+    }`;
+  }
+
+  private isRelevantToContext(knowledge: string, message: string): boolean {
+    const knowledgeWords = knowledge.toLowerCase().split(' ');
+    const messageWords = message.toLowerCase().split(' ');
+    
+    const overlap = knowledgeWords.filter(word => 
+      messageWords.some(msgWord => msgWord.includes(word) || word.includes(msgWord))
+    );
+    
+    return overlap.length > 2;
+  }
+
+  private async updateAgentKnowledge(
+    agentId: number, 
+    userMessage: string, 
+    agentResponse: string, 
+    context: AgentContext
+  ): Promise<void> {
+    // Extract key insights from the interaction
+    const insight = `User asked: "${userMessage}" - I responded with insights about: ${agentResponse.substring(0, 200)}`;
+    
+    await storage.createAgentKnowledge({
+      agentId,
+      projectId: context.conversation.projectId,
+      knowledgeType: "interaction_learning",
+      content: insight,
+      tags: ["user_interaction", "learning"],
+      relevanceScore: 1
+    });
+  }
+
+  // Get collaboration session status
+  getActiveCollaborations(): CollaborationSession[] {
+    return Array.from(this.activeCollaborations.values());
+  }
+
+  async getAgentAvailability(): Promise<Map<number, boolean>> {
+    const allAgents = await storage.getAllAgents();
+    const availability = new Map<number, boolean>();
+    
+    for (const agent of allAgents) {
+      availability.set(agent.id, !this.agentBusyStatus.get(agent.id));
+    }
+    
+    return availability;
+  }
+}
+
+export const agentOrchestrationService = new AgentOrchestrationService();

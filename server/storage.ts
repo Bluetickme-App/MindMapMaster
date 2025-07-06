@@ -1,8 +1,14 @@
 import { 
   users, projects, codeGenerations, apiTests, githubRepositories,
+  agents, conversations, messages, agentSessions, agentKnowledge,
+  collaborativeDocuments, designAssets, workflowTasks,
   type User, type InsertUser, type Project, type InsertProject,
   type CodeGeneration, type InsertCodeGeneration, type ApiTest, type InsertApiTest,
-  type GithubRepository, type InsertGithubRepository
+  type GithubRepository, type InsertGithubRepository,
+  type Agent, type InsertAgent, type Conversation, type InsertConversation,
+  type Message, type InsertMessage, type AgentSession, type InsertAgentSession,
+  type AgentKnowledge, type InsertAgentKnowledge, type CollaborativeDocument, type InsertCollaborativeDocument,
+  type DesignAsset, type InsertDesignAsset, type WorkflowTask, type InsertWorkflowTask
 } from "@shared/schema";
 
 export interface IStorage {
@@ -37,6 +43,73 @@ export interface IStorage {
   createGithubRepository(repo: InsertGithubRepository): Promise<GithubRepository>;
   updateGithubRepository(id: number, repo: Partial<InsertGithubRepository>): Promise<GithubRepository>;
   deleteGithubRepository(id: number): Promise<void>;
+
+  // Multi-Agent System operations
+  // Agent operations
+  getAgent(id: number): Promise<Agent | undefined>;
+  getAllAgents(): Promise<Agent[]>;
+  getAgentsByType(type: string): Promise<Agent[]>;
+  createAgent(agent: InsertAgent): Promise<Agent>;
+  updateAgent(id: number, agent: Partial<InsertAgent>): Promise<Agent>;
+  updateAgentStatus(id: number, status: string): Promise<Agent>;
+
+  // Conversation operations
+  getConversation(id: number): Promise<Conversation | undefined>;
+  getConversationsByProject(projectId: number): Promise<Conversation[]>;
+  getConversationsByParticipant(participantId: number): Promise<Conversation[]>;
+  createConversation(conversation: InsertConversation): Promise<Conversation>;
+  updateConversation(id: number, conversation: Partial<InsertConversation>): Promise<Conversation>;
+  addParticipantToConversation(conversationId: number, participantId: number): Promise<void>;
+
+  // Message operations
+  getMessage(id: number): Promise<Message | undefined>;
+  getMessagesByConversation(conversationId: number): Promise<Message[]>;
+  getMessageThread(parentMessageId: number): Promise<Message[]>;
+  createMessage(message: InsertMessage): Promise<Message>;
+  updateMessage(id: number, message: Partial<InsertMessage>): Promise<Message>;
+  addReactionToMessage(messageId: number, reaction: string, userId: number): Promise<void>;
+
+  // Agent Session operations
+  getAgentSession(id: number): Promise<AgentSession | undefined>;
+  getAgentSessionsByProject(projectId: number): Promise<AgentSession[]>;
+  getActiveAgentSessions(): Promise<AgentSession[]>;
+  createAgentSession(session: InsertAgentSession): Promise<AgentSession>;
+  updateAgentSession(id: number, session: Partial<InsertAgentSession>): Promise<AgentSession>;
+  endAgentSession(id: number, outcomes: string[]): Promise<AgentSession>;
+
+  // Agent Knowledge operations
+  getAgentKnowledge(id: number): Promise<AgentKnowledge | undefined>;
+  getAgentKnowledgeByAgent(agentId: number): Promise<AgentKnowledge[]>;
+  getAgentKnowledgeByProject(projectId: number): Promise<AgentKnowledge[]>;
+  searchAgentKnowledge(query: string, agentId?: number): Promise<AgentKnowledge[]>;
+  createAgentKnowledge(knowledge: InsertAgentKnowledge): Promise<AgentKnowledge>;
+  updateAgentKnowledge(id: number, knowledge: Partial<InsertAgentKnowledge>): Promise<AgentKnowledge>;
+
+  // Collaborative Document operations
+  getCollaborativeDocument(id: number): Promise<CollaborativeDocument | undefined>;
+  getCollaborativeDocumentsByProject(projectId: number): Promise<CollaborativeDocument[]>;
+  createCollaborativeDocument(document: InsertCollaborativeDocument): Promise<CollaborativeDocument>;
+  updateCollaborativeDocument(id: number, document: Partial<InsertCollaborativeDocument>): Promise<CollaborativeDocument>;
+  lockDocument(id: number, userId: number): Promise<CollaborativeDocument>;
+  unlockDocument(id: number): Promise<CollaborativeDocument>;
+
+  // Design Asset operations
+  getDesignAsset(id: number): Promise<DesignAsset | undefined>;
+  getDesignAssetsByProject(projectId: number): Promise<DesignAsset[]>;
+  getDesignAssetsByType(assetType: string): Promise<DesignAsset[]>;
+  createDesignAsset(asset: InsertDesignAsset): Promise<DesignAsset>;
+  updateDesignAsset(id: number, asset: Partial<InsertDesignAsset>): Promise<DesignAsset>;
+  approveDesignAsset(id: number, approvedBy: number): Promise<DesignAsset>;
+
+  // Workflow Task operations
+  getWorkflowTask(id: number): Promise<WorkflowTask | undefined>;
+  getWorkflowTasksByProject(projectId: number): Promise<WorkflowTask[]>;
+  getWorkflowTasksByAgent(agentId: number): Promise<WorkflowTask[]>;
+  getWorkflowTasksByStatus(status: string): Promise<WorkflowTask[]>;
+  createWorkflowTask(task: InsertWorkflowTask): Promise<WorkflowTask>;
+  updateWorkflowTask(id: number, task: Partial<InsertWorkflowTask>): Promise<WorkflowTask>;
+  assignTask(taskId: number, agentId: number): Promise<WorkflowTask>;
+  completeTask(taskId: number, actualHours?: number): Promise<WorkflowTask>;
 }
 
 export class MemStorage implements IStorage {
@@ -46,11 +119,29 @@ export class MemStorage implements IStorage {
   private apiTests: Map<number, ApiTest> = new Map();
   private githubRepositories: Map<number, GithubRepository> = new Map();
   
+  // Multi-Agent System Storage
+  private agents: Map<number, Agent> = new Map();
+  private conversations: Map<number, Conversation> = new Map();
+  private messages: Map<number, Message> = new Map();
+  private agentSessions: Map<number, AgentSession> = new Map();
+  private agentKnowledge: Map<number, AgentKnowledge> = new Map();
+  private collaborativeDocuments: Map<number, CollaborativeDocument> = new Map();
+  private designAssets: Map<number, DesignAsset> = new Map();
+  private workflowTasks: Map<number, WorkflowTask> = new Map();
+  
   private currentUserId = 1;
   private currentProjectId = 1;
   private currentCodeGenerationId = 1;
   private currentApiTestId = 1;
   private currentGithubRepositoryId = 1;
+  private currentAgentId = 1;
+  private currentConversationId = 1;
+  private currentMessageId = 1;
+  private currentAgentSessionId = 1;
+  private currentAgentKnowledgeId = 1;
+  private currentCollaborativeDocumentId = 1;
+  private currentDesignAssetId = 1;
+  private currentWorkflowTaskId = 1;
 
   constructor() {
     // Create a default user for development
@@ -61,6 +152,137 @@ export class MemStorage implements IStorage {
       avatar: null,
       githubToken: null,
       openaiApiKey: null,
+    });
+
+    // Initialize default AI agents
+    this.initializeDefaultAgents();
+  }
+
+  private initializeDefaultAgents() {
+    // Senior Developer Agent
+    this.createAgent({
+      type: "senior_developer",
+      name: "Alex Chen",
+      avatar: "👨‍💻",
+      description: "Senior full-stack developer with expertise in system architecture and code optimization",
+      capabilities: ["system_architecture", "code_review", "performance_optimization", "security_audit", "mentoring"],
+      personality: "Analytical and thorough, focuses on best practices and scalable solutions",
+      status: "active",
+      aiModel: "gpt-4o",
+      systemPrompt: `You are Alex Chen, a senior developer with 10+ years of experience. You excel at:
+- System architecture and design patterns
+- Code review with constructive feedback  
+- Performance optimization and scaling
+- Security best practices
+- Mentoring junior developers
+- Making technical decisions with business impact in mind
+
+Your communication style is professional, thorough, and educational. You always explain the 'why' behind your recommendations.`
+    });
+
+    // UI/UX Designer Agent
+    this.createAgent({
+      type: "designer",
+      name: "Maya Rodriguez",
+      avatar: "🎨",
+      description: "Senior UI/UX designer specializing in user-centered design and design systems",
+      capabilities: ["ui_design", "ux_research", "design_systems", "accessibility", "prototyping", "user_testing"],
+      personality: "Creative and user-focused, emphasizes accessibility and inclusive design",
+      status: "active",
+      aiModel: "gpt-4o",
+      systemPrompt: `You are Maya Rodriguez, a senior UI/UX designer with expertise in creating beautiful, accessible, and user-friendly interfaces. You excel at:
+- User interface design and visual hierarchy
+- User experience research and testing
+- Design systems and component libraries
+- Accessibility and inclusive design
+- Prototyping and interaction design
+- Collaborating with developers on implementation
+
+Your communication style is visual, empathetic, and user-focused. You always consider the end user's needs and experiences.`
+    });
+
+    // Junior Developer Agent
+    this.createAgent({
+      type: "junior_developer",
+      name: "Sam Park",
+      avatar: "👩‍💻",
+      description: "Enthusiastic junior developer focused on learning and implementing features",
+      capabilities: ["feature_implementation", "unit_testing", "documentation", "bug_fixing", "learning"],
+      personality: "Eager to learn, detail-oriented, asks great questions",
+      status: "active",
+      aiModel: "gpt-4o",
+      systemPrompt: `You are Sam Park, an enthusiastic junior developer who is eager to learn and grow. You excel at:
+- Implementing features according to specifications
+- Writing comprehensive unit tests
+- Creating clear documentation
+- Debugging and fixing issues
+- Asking thoughtful questions when unclear
+- Following coding standards and best practices
+
+Your communication style is curious, collaborative, and growth-oriented. You're not afraid to ask questions and learn from others.`
+    });
+
+    // DevOps Engineer Agent
+    this.createAgent({
+      type: "devops",
+      name: "Jordan Kim",
+      avatar: "⚙️",
+      description: "DevOps engineer focused on deployment, infrastructure, and automation",
+      capabilities: ["deployment", "infrastructure", "ci_cd", "monitoring", "security", "automation"],
+      personality: "Systematic and reliable, focuses on automation and scalability",
+      status: "active",
+      aiModel: "gpt-4o",
+      systemPrompt: `You are Jordan Kim, a DevOps engineer with expertise in modern deployment and infrastructure. You excel at:
+- Setting up CI/CD pipelines
+- Infrastructure as Code (Terraform, CloudFormation)
+- Container orchestration (Docker, Kubernetes)
+- Monitoring and alerting systems
+- Security scanning and compliance
+- Automation and scripting
+
+Your communication style is systematic, security-conscious, and focused on reliability and scalability.`
+    });
+
+    // Product Manager Agent
+    this.createAgent({
+      type: "product_manager",
+      name: "Emma Thompson",
+      avatar: "📊",
+      description: "Product manager focused on requirements, prioritization, and stakeholder alignment",
+      capabilities: ["requirements_gathering", "prioritization", "stakeholder_management", "project_planning", "user_stories"],
+      personality: "Strategic and communicative, balances user needs with business goals",
+      status: "active",
+      aiModel: "gpt-4o",
+      systemPrompt: `You are Emma Thompson, a product manager with expertise in translating business needs into technical requirements. You excel at:
+- Gathering and documenting requirements
+- Creating user stories and acceptance criteria
+- Prioritizing features based on business value
+- Facilitating communication between stakeholders
+- Project planning and timeline management
+- Analyzing user feedback and metrics
+
+Your communication style is clear, strategic, and focused on aligning technical work with business objectives.`
+    });
+
+    // Code Reviewer Agent
+    this.createAgent({
+      type: "code_reviewer",
+      name: "Dr. Lisa Wang",
+      avatar: "🔍",
+      description: "Code quality specialist focused on security, performance, and maintainability",
+      capabilities: ["code_review", "security_analysis", "performance_review", "code_quality", "best_practices"],
+      personality: "Meticulous and constructive, emphasizes code quality and security",
+      status: "active",
+      aiModel: "gpt-4o",
+      systemPrompt: `You are Dr. Lisa Wang, a code quality specialist with deep expertise in secure coding practices. You excel at:
+- Comprehensive code reviews focusing on security, performance, and maintainability
+- Identifying potential vulnerabilities and security issues
+- Suggesting performance optimizations
+- Ensuring adherence to coding standards
+- Providing constructive feedback with specific recommendations
+- Knowledge of OWASP guidelines and security best practices
+
+Your communication style is detailed, constructive, and educational, always explaining the rationale behind your recommendations.`
     });
   }
 
@@ -241,6 +463,432 @@ export class MemStorage implements IStorage {
 
   async deleteGithubRepository(id: number): Promise<void> {
     this.githubRepositories.delete(id);
+  }
+
+  // Multi-Agent System Implementation
+  // Agent operations
+  async getAgent(id: number): Promise<Agent | undefined> {
+    return this.agents.get(id);
+  }
+
+  async getAllAgents(): Promise<Agent[]> {
+    return Array.from(this.agents.values());
+  }
+
+  async getAgentsByType(type: string): Promise<Agent[]> {
+    return Array.from(this.agents.values()).filter(agent => agent.type === type);
+  }
+
+  async createAgent(insertAgent: InsertAgent): Promise<Agent> {
+    const id = this.currentAgentId++;
+    const agent: Agent = {
+      id,
+      type: insertAgent.type,
+      name: insertAgent.name,
+      avatar: insertAgent.avatar ?? null,
+      description: insertAgent.description ?? null,
+      capabilities: insertAgent.capabilities ?? null,
+      personality: insertAgent.personality ?? null,
+      status: insertAgent.status ?? "active",
+      aiModel: insertAgent.aiModel ?? "gpt-4o",
+      systemPrompt: insertAgent.systemPrompt,
+      createdAt: new Date(),
+    };
+    this.agents.set(id, agent);
+    return agent;
+  }
+
+  async updateAgent(id: number, updateData: Partial<InsertAgent>): Promise<Agent> {
+    const agent = this.agents.get(id);
+    if (!agent) throw new Error("Agent not found");
+    
+    const updatedAgent = { ...agent, ...updateData };
+    this.agents.set(id, updatedAgent);
+    return updatedAgent;
+  }
+
+  async updateAgentStatus(id: number, status: string): Promise<Agent> {
+    return this.updateAgent(id, { status });
+  }
+
+  // Conversation operations
+  async getConversation(id: number): Promise<Conversation | undefined> {
+    return this.conversations.get(id);
+  }
+
+  async getConversationsByProject(projectId: number): Promise<Conversation[]> {
+    return Array.from(this.conversations.values()).filter(conv => conv.projectId === projectId);
+  }
+
+  async getConversationsByParticipant(participantId: number): Promise<Conversation[]> {
+    return Array.from(this.conversations.values()).filter(conv => 
+      conv.participants && conv.participants.includes(participantId)
+    );
+  }
+
+  async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
+    const id = this.currentConversationId++;
+    const conversation: Conversation = {
+      id,
+      projectId: insertConversation.projectId ?? null,
+      title: insertConversation.title,
+      type: insertConversation.type,
+      status: insertConversation.status ?? "active",
+      participants: insertConversation.participants ?? null,
+      createdBy: insertConversation.createdBy ?? null,
+      lastActivity: new Date(),
+      createdAt: new Date(),
+    };
+    this.conversations.set(id, conversation);
+    return conversation;
+  }
+
+  async updateConversation(id: number, updateData: Partial<InsertConversation>): Promise<Conversation> {
+    const conversation = this.conversations.get(id);
+    if (!conversation) throw new Error("Conversation not found");
+    
+    const updatedConversation = { ...conversation, ...updateData };
+    updatedConversation.lastActivity = new Date();
+    this.conversations.set(id, updatedConversation);
+    return updatedConversation;
+  }
+
+  async addParticipantToConversation(conversationId: number, participantId: number): Promise<void> {
+    const conversation = this.conversations.get(conversationId);
+    if (!conversation) throw new Error("Conversation not found");
+    
+    const participants = conversation.participants || [];
+    if (!participants.includes(participantId)) {
+      participants.push(participantId);
+      await this.updateConversation(conversationId, { participants });
+    }
+  }
+
+  // Message operations
+  async getMessage(id: number): Promise<Message | undefined> {
+    return this.messages.get(id);
+  }
+
+  async getMessagesByConversation(conversationId: number): Promise<Message[]> {
+    return Array.from(this.messages.values())
+      .filter(msg => msg.conversationId === conversationId)
+      .sort((a, b) => new Date(a.timestamp!).getTime() - new Date(b.timestamp!).getTime());
+  }
+
+  async getMessageThread(parentMessageId: number): Promise<Message[]> {
+    return Array.from(this.messages.values())
+      .filter(msg => msg.parentMessageId === parentMessageId)
+      .sort((a, b) => new Date(a.timestamp!).getTime() - new Date(b.timestamp!).getTime());
+  }
+
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const id = this.currentMessageId++;
+    const message: Message = {
+      id,
+      conversationId: insertMessage.conversationId,
+      senderId: insertMessage.senderId,
+      senderType: insertMessage.senderType,
+      content: insertMessage.content,
+      messageType: insertMessage.messageType ?? "text",
+      metadata: insertMessage.metadata ?? null,
+      parentMessageId: insertMessage.parentMessageId ?? null,
+      reactions: insertMessage.reactions ?? null,
+      timestamp: new Date(),
+    };
+    this.messages.set(id, message);
+    
+    // Update conversation last activity
+    const conversation = this.conversations.get(insertMessage.conversationId);
+    if (conversation) {
+      await this.updateConversation(insertMessage.conversationId, { lastActivity: new Date() });
+    }
+    
+    return message;
+  }
+
+  async updateMessage(id: number, updateData: Partial<InsertMessage>): Promise<Message> {
+    const message = this.messages.get(id);
+    if (!message) throw new Error("Message not found");
+    
+    const updatedMessage = { ...message, ...updateData };
+    this.messages.set(id, updatedMessage);
+    return updatedMessage;
+  }
+
+  async addReactionToMessage(messageId: number, reaction: string, userId: number): Promise<void> {
+    const message = this.messages.get(messageId);
+    if (!message) throw new Error("Message not found");
+    
+    const reactions = message.reactions as any || {};
+    reactions[reaction] = reactions[reaction] || [];
+    if (!reactions[reaction].includes(userId)) {
+      reactions[reaction].push(userId);
+    }
+    
+    await this.updateMessage(messageId, { reactions });
+  }
+
+  // Agent Session operations
+  async getAgentSession(id: number): Promise<AgentSession | undefined> {
+    return this.agentSessions.get(id);
+  }
+
+  async getAgentSessionsByProject(projectId: number): Promise<AgentSession[]> {
+    return Array.from(this.agentSessions.values()).filter(session => session.projectId === projectId);
+  }
+
+  async getActiveAgentSessions(): Promise<AgentSession[]> {
+    return Array.from(this.agentSessions.values()).filter(session => session.status === "active");
+  }
+
+  async createAgentSession(insertSession: InsertAgentSession): Promise<AgentSession> {
+    const id = this.currentAgentSessionId++;
+    const session: AgentSession = {
+      id,
+      projectId: insertSession.projectId,
+      conversationId: insertSession.conversationId ?? null,
+      participants: insertSession.participants ?? null,
+      sessionType: insertSession.sessionType,
+      status: insertSession.status ?? "active",
+      agenda: insertSession.agenda ?? null,
+      outcomes: insertSession.outcomes ?? null,
+      startTime: new Date(),
+      endTime: insertSession.endTime ?? null,
+    };
+    this.agentSessions.set(id, session);
+    return session;
+  }
+
+  async updateAgentSession(id: number, updateData: Partial<InsertAgentSession>): Promise<AgentSession> {
+    const session = this.agentSessions.get(id);
+    if (!session) throw new Error("Agent session not found");
+    
+    const updatedSession = { ...session, ...updateData };
+    this.agentSessions.set(id, updatedSession);
+    return updatedSession;
+  }
+
+  async endAgentSession(id: number, outcomes: string[]): Promise<AgentSession> {
+    return this.updateAgentSession(id, { 
+      status: "completed", 
+      endTime: new Date(), 
+      outcomes 
+    });
+  }
+
+  // Agent Knowledge operations
+  async getAgentKnowledge(id: number): Promise<AgentKnowledge | undefined> {
+    return this.agentKnowledge.get(id);
+  }
+
+  async getAgentKnowledgeByAgent(agentId: number): Promise<AgentKnowledge[]> {
+    return Array.from(this.agentKnowledge.values()).filter(knowledge => knowledge.agentId === agentId);
+  }
+
+  async getAgentKnowledgeByProject(projectId: number): Promise<AgentKnowledge[]> {
+    return Array.from(this.agentKnowledge.values()).filter(knowledge => knowledge.projectId === projectId);
+  }
+
+  async searchAgentKnowledge(query: string, agentId?: number): Promise<AgentKnowledge[]> {
+    const knowledge = Array.from(this.agentKnowledge.values());
+    const filtered = agentId ? knowledge.filter(k => k.agentId === agentId) : knowledge;
+    
+    return filtered.filter(k => 
+      k.content.toLowerCase().includes(query.toLowerCase()) ||
+      (k.tags && k.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase())))
+    );
+  }
+
+  async createAgentKnowledge(insertKnowledge: InsertAgentKnowledge): Promise<AgentKnowledge> {
+    const id = this.currentAgentKnowledgeId++;
+    const knowledge: AgentKnowledge = {
+      id,
+      agentId: insertKnowledge.agentId,
+      projectId: insertKnowledge.projectId ?? null,
+      knowledgeType: insertKnowledge.knowledgeType,
+      content: insertKnowledge.content,
+      tags: insertKnowledge.tags ?? null,
+      embedding: insertKnowledge.embedding ?? null,
+      relevanceScore: insertKnowledge.relevanceScore ?? 0,
+      createdAt: new Date(),
+    };
+    this.agentKnowledge.set(id, knowledge);
+    return knowledge;
+  }
+
+  async updateAgentKnowledge(id: number, updateData: Partial<InsertAgentKnowledge>): Promise<AgentKnowledge> {
+    const knowledge = this.agentKnowledge.get(id);
+    if (!knowledge) throw new Error("Agent knowledge not found");
+    
+    const updatedKnowledge = { ...knowledge, ...updateData };
+    this.agentKnowledge.set(id, updatedKnowledge);
+    return updatedKnowledge;
+  }
+
+  // Collaborative Document operations
+  async getCollaborativeDocument(id: number): Promise<CollaborativeDocument | undefined> {
+    return this.collaborativeDocuments.get(id);
+  }
+
+  async getCollaborativeDocumentsByProject(projectId: number): Promise<CollaborativeDocument[]> {
+    return Array.from(this.collaborativeDocuments.values()).filter(doc => doc.projectId === projectId);
+  }
+
+  async createCollaborativeDocument(insertDocument: InsertCollaborativeDocument): Promise<CollaborativeDocument> {
+    const id = this.currentCollaborativeDocumentId++;
+    const document: CollaborativeDocument = {
+      id,
+      projectId: insertDocument.projectId,
+      title: insertDocument.title,
+      content: insertDocument.content ?? null,
+      documentType: insertDocument.documentType,
+      lastEditedBy: insertDocument.lastEditedBy ?? null,
+      collaborators: insertDocument.collaborators ?? null,
+      version: insertDocument.version ?? 1,
+      isLocked: insertDocument.isLocked ?? false,
+      lastModified: new Date(),
+      createdAt: new Date(),
+    };
+    this.collaborativeDocuments.set(id, document);
+    return document;
+  }
+
+  async updateCollaborativeDocument(id: number, updateData: Partial<InsertCollaborativeDocument>): Promise<CollaborativeDocument> {
+    const document = this.collaborativeDocuments.get(id);
+    if (!document) throw new Error("Collaborative document not found");
+    
+    const updatedDocument = { 
+      ...document, 
+      ...updateData, 
+      lastModified: new Date(),
+      version: document.version! + 1
+    };
+    this.collaborativeDocuments.set(id, updatedDocument);
+    return updatedDocument;
+  }
+
+  async lockDocument(id: number, userId: number): Promise<CollaborativeDocument> {
+    return this.updateCollaborativeDocument(id, { 
+      isLocked: true, 
+      lastEditedBy: userId 
+    });
+  }
+
+  async unlockDocument(id: number): Promise<CollaborativeDocument> {
+    return this.updateCollaborativeDocument(id, { isLocked: false });
+  }
+
+  // Design Asset operations
+  async getDesignAsset(id: number): Promise<DesignAsset | undefined> {
+    return this.designAssets.get(id);
+  }
+
+  async getDesignAssetsByProject(projectId: number): Promise<DesignAsset[]> {
+    return Array.from(this.designAssets.values()).filter(asset => asset.projectId === projectId);
+  }
+
+  async getDesignAssetsByType(assetType: string): Promise<DesignAsset[]> {
+    return Array.from(this.designAssets.values()).filter(asset => asset.assetType === assetType);
+  }
+
+  async createDesignAsset(insertAsset: InsertDesignAsset): Promise<DesignAsset> {
+    const id = this.currentDesignAssetId++;
+    const asset: DesignAsset = {
+      id,
+      projectId: insertAsset.projectId,
+      name: insertAsset.name,
+      assetType: insertAsset.assetType,
+      fileUrl: insertAsset.fileUrl ?? null,
+      metadata: insertAsset.metadata ?? null,
+      designSystem: insertAsset.designSystem ?? null,
+      createdBy: insertAsset.createdBy ?? null,
+      tags: insertAsset.tags ?? null,
+      isApproved: insertAsset.isApproved ?? false,
+      approvedBy: insertAsset.approvedBy ?? null,
+      createdAt: new Date(),
+    };
+    this.designAssets.set(id, asset);
+    return asset;
+  }
+
+  async updateDesignAsset(id: number, updateData: Partial<InsertDesignAsset>): Promise<DesignAsset> {
+    const asset = this.designAssets.get(id);
+    if (!asset) throw new Error("Design asset not found");
+    
+    const updatedAsset = { ...asset, ...updateData };
+    this.designAssets.set(id, updatedAsset);
+    return updatedAsset;
+  }
+
+  async approveDesignAsset(id: number, approvedBy: number): Promise<DesignAsset> {
+    return this.updateDesignAsset(id, { 
+      isApproved: true, 
+      approvedBy 
+    });
+  }
+
+  // Workflow Task operations
+  async getWorkflowTask(id: number): Promise<WorkflowTask | undefined> {
+    return this.workflowTasks.get(id);
+  }
+
+  async getWorkflowTasksByProject(projectId: number): Promise<WorkflowTask[]> {
+    return Array.from(this.workflowTasks.values()).filter(task => task.projectId === projectId);
+  }
+
+  async getWorkflowTasksByAgent(agentId: number): Promise<WorkflowTask[]> {
+    return Array.from(this.workflowTasks.values()).filter(task => task.assignedTo === agentId);
+  }
+
+  async getWorkflowTasksByStatus(status: string): Promise<WorkflowTask[]> {
+    return Array.from(this.workflowTasks.values()).filter(task => task.status === status);
+  }
+
+  async createWorkflowTask(insertTask: InsertWorkflowTask): Promise<WorkflowTask> {
+    const id = this.currentWorkflowTaskId++;
+    const task: WorkflowTask = {
+      id,
+      projectId: insertTask.projectId,
+      conversationId: insertTask.conversationId ?? null,
+      title: insertTask.title,
+      description: insertTask.description ?? null,
+      taskType: insertTask.taskType,
+      assignedTo: insertTask.assignedTo ?? null,
+      dependencies: insertTask.dependencies ?? null,
+      priority: insertTask.priority ?? "medium",
+      status: insertTask.status ?? "todo",
+      estimatedHours: insertTask.estimatedHours ?? null,
+      actualHours: insertTask.actualHours ?? null,
+      dueDate: insertTask.dueDate ?? null,
+      completedAt: insertTask.completedAt ?? null,
+      createdAt: new Date(),
+    };
+    this.workflowTasks.set(id, task);
+    return task;
+  }
+
+  async updateWorkflowTask(id: number, updateData: Partial<InsertWorkflowTask>): Promise<WorkflowTask> {
+    const task = this.workflowTasks.get(id);
+    if (!task) throw new Error("Workflow task not found");
+    
+    const updatedTask = { ...task, ...updateData };
+    this.workflowTasks.set(id, updatedTask);
+    return updatedTask;
+  }
+
+  async assignTask(taskId: number, agentId: number): Promise<WorkflowTask> {
+    return this.updateWorkflowTask(taskId, { 
+      assignedTo: agentId, 
+      status: "in_progress" 
+    });
+  }
+
+  async completeTask(taskId: number, actualHours?: number): Promise<WorkflowTask> {
+    return this.updateWorkflowTask(taskId, { 
+      status: "completed", 
+      completedAt: new Date(),
+      actualHours 
+    });
   }
 }
 

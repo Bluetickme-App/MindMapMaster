@@ -65,6 +65,118 @@ export const githubRepositories = pgTable("github_repositories", {
   lastSync: timestamp("last_sync").defaultNow(),
 });
 
+// Multi-Agent System Tables
+export const agents = pgTable("agents", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // senior_developer, junior_developer, designer, devops, product_manager, code_reviewer
+  name: text("name").notNull(),
+  avatar: text("avatar"),
+  description: text("description"),
+  capabilities: text("capabilities").array(),
+  personality: text("personality"), // communication style and traits
+  status: text("status").notNull().default("active"), // active, busy, offline
+  aiModel: text("ai_model").default("gpt-4o"),
+  systemPrompt: text("system_prompt").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id"),
+  title: text("title").notNull(),
+  type: text("type").notNull(), // project_discussion, code_review, design_review, general
+  status: text("status").notNull().default("active"), // active, archived, closed
+  participants: integer("participants").array(), // agent IDs
+  createdBy: integer("created_by"), // user or agent ID
+  lastActivity: timestamp("last_activity").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull(),
+  senderId: integer("sender_id").notNull(), // user or agent ID
+  senderType: text("sender_type").notNull(), // user, agent
+  content: text("content").notNull(),
+  messageType: text("message_type").notNull().default("text"), // text, code, image, file, system
+  metadata: jsonb("metadata"), // code language, file info, etc
+  parentMessageId: integer("parent_message_id"), // for threading
+  reactions: jsonb("reactions"), // emoji reactions
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export const agentSessions = pgTable("agent_sessions", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  conversationId: integer("conversation_id"),
+  participants: integer("participants").array(), // agent IDs
+  sessionType: text("session_type").notNull(), // collaboration, code_review, design_session, planning
+  status: text("status").notNull().default("active"), // active, completed, paused
+  agenda: text("agenda"),
+  outcomes: text("outcomes").array(),
+  startTime: timestamp("start_time").defaultNow(),
+  endTime: timestamp("end_time"),
+});
+
+export const agentKnowledge = pgTable("agent_knowledge", {
+  id: serial("id").primaryKey(),
+  agentId: integer("agent_id").notNull(),
+  projectId: integer("project_id"),
+  knowledgeType: text("knowledge_type").notNull(), // code_pattern, design_principle, best_practice, project_context
+  content: text("content").notNull(),
+  tags: text("tags").array(),
+  embedding: text("embedding"), // for vector search
+  relevanceScore: integer("relevance_score").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const collaborativeDocuments = pgTable("collaborative_documents", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  title: text("title").notNull(),
+  content: jsonb("content"), // rich document content
+  documentType: text("document_type").notNull(), // code, design, requirements, architecture
+  lastEditedBy: integer("last_edited_by"), // user or agent ID
+  collaborators: integer("collaborators").array(),
+  version: integer("version").default(1),
+  isLocked: boolean("is_locked").default(false),
+  lastModified: timestamp("last_modified").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const designAssets = pgTable("design_assets", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  name: text("name").notNull(),
+  assetType: text("asset_type").notNull(), // wireframe, mockup, component, icon, color_palette
+  fileUrl: text("file_url"),
+  metadata: jsonb("metadata"), // dimensions, colors, fonts, etc
+  designSystem: jsonb("design_system"), // tokens, variables
+  createdBy: integer("created_by"), // user or agent ID
+  tags: text("tags").array(),
+  isApproved: boolean("is_approved").default(false),
+  approvedBy: integer("approved_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const workflowTasks = pgTable("workflow_tasks", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  conversationId: integer("conversation_id"),
+  title: text("title").notNull(),
+  description: text("description"),
+  taskType: text("task_type").notNull(), // code_implementation, code_review, design_task, testing, deployment
+  assignedTo: integer("assigned_to"), // agent ID
+  dependencies: integer("dependencies").array(), // other task IDs
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  status: text("status").notNull().default("todo"), // todo, in_progress, review, completed, blocked
+  estimatedHours: integer("estimated_hours"),
+  actualHours: integer("actual_hours"),
+  dueDate: timestamp("due_date"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -92,6 +204,50 @@ export const insertGithubRepositorySchema = createInsertSchema(githubRepositorie
   lastSync: true,
 });
 
+// Multi-Agent Insert Schemas
+export const insertAgentSchema = createInsertSchema(agents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  lastActivity: z.date().optional()
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertAgentSessionSchema = createInsertSchema(agentSessions).omit({
+  id: true,
+  startTime: true,
+});
+
+export const insertAgentKnowledgeSchema = createInsertSchema(agentKnowledge).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCollaborativeDocumentSchema = createInsertSchema(collaborativeDocuments).omit({
+  id: true,
+  createdAt: true,
+  lastModified: true,
+});
+
+export const insertDesignAssetSchema = createInsertSchema(designAssets).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWorkflowTaskSchema = createInsertSchema(workflowTasks).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -107,3 +263,48 @@ export type InsertApiTest = z.infer<typeof insertApiTestSchema>;
 
 export type GithubRepository = typeof githubRepositories.$inferSelect;
 export type InsertGithubRepository = z.infer<typeof insertGithubRepositorySchema>;
+
+// Multi-Agent Types
+export type Agent = typeof agents.$inferSelect;
+export type InsertAgent = z.infer<typeof insertAgentSchema>;
+
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+export type AgentSession = typeof agentSessions.$inferSelect;
+export type InsertAgentSession = z.infer<typeof insertAgentSessionSchema>;
+
+export type AgentKnowledge = typeof agentKnowledge.$inferSelect;
+export type InsertAgentKnowledge = z.infer<typeof insertAgentKnowledgeSchema>;
+
+export type CollaborativeDocument = typeof collaborativeDocuments.$inferSelect;
+export type InsertCollaborativeDocument = z.infer<typeof insertCollaborativeDocumentSchema>;
+
+export type DesignAsset = typeof designAssets.$inferSelect;
+export type InsertDesignAsset = z.infer<typeof insertDesignAssetSchema>;
+
+export type WorkflowTask = typeof workflowTasks.$inferSelect;
+export type InsertWorkflowTask = z.infer<typeof insertWorkflowTaskSchema>;
+
+// Message Types for Real-time Communication
+export interface WebSocketMessage {
+  type: 'agent_message' | 'user_message' | 'system_notification' | 'typing_indicator' | 'agent_status_update' | 'join_conversation' | 'leave_conversation';
+  conversationId: number;
+  senderId: number;
+  senderType: 'user' | 'agent';
+  content?: string;
+  metadata?: Record<string, any>;
+  timestamp: Date;
+}
+
+export interface AgentResponse {
+  agentId: number;
+  content: string;
+  messageType: 'text' | 'code' | 'image' | 'file' | 'system';
+  metadata?: Record<string, any>;
+  confidence: number;
+  reasoning?: string;
+}

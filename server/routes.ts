@@ -1,9 +1,17 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer } from 'ws';
 import { storage } from "./storage";
 import { generateCode, debugCode } from "./services/openai";
 import { GitHubService } from "./services/github";
-import { insertCodeGenerationSchema, insertProjectSchema, insertApiTestSchema } from "@shared/schema";
+import { agentOrchestrationService } from "./services/agent-orchestration";
+import { multiAIService } from "./services/multi-ai-provider";
+import { WebSocketManager, webSocketManager } from "./services/websocket-manager";
+import { 
+  insertCodeGenerationSchema, insertProjectSchema, insertApiTestSchema,
+  insertAgentSchema, insertConversationSchema, insertMessageSchema,
+  insertWorkflowTaskSchema, insertDesignAssetSchema, insertCollaborativeDocumentSchema
+} from "@shared/schema";
 import axios from "axios";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -256,6 +264,515 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Multi-Agent System Routes
+  
+  // Agent management routes
+  app.get("/api/agents", async (req, res) => {
+    try {
+      const agents = await storage.getAllAgents();
+      res.json(agents);
+    } catch (error) {
+      console.error("Get agents error:", error);
+      res.status(500).json({ message: "Failed to fetch agents" });
+    }
+  });
+
+  app.get("/api/agents/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const agent = await storage.getAgent(id);
+      if (!agent) {
+        return res.status(404).json({ message: "Agent not found" });
+      }
+      res.json(agent);
+    } catch (error) {
+      console.error("Get agent error:", error);
+      res.status(500).json({ message: "Failed to fetch agent" });
+    }
+  });
+
+  app.post("/api/agents", async (req, res) => {
+    try {
+      const validatedData = insertAgentSchema.parse(req.body);
+      const agent = await storage.createAgent(validatedData);
+      res.json(agent);
+    } catch (error) {
+      console.error("Create agent error:", error);
+      res.status(500).json({ message: "Failed to create agent" });
+    }
+  });
+
+  app.put("/api/agents/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const agent = await storage.updateAgent(id, req.body);
+      res.json(agent);
+    } catch (error) {
+      console.error("Update agent error:", error);
+      res.status(500).json({ message: "Failed to update agent" });
+    }
+  });
+
+  app.put("/api/agents/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      const agent = await storage.updateAgentStatus(id, status);
+      res.json(agent);
+    } catch (error) {
+      console.error("Update agent status error:", error);
+      res.status(500).json({ message: "Failed to update agent status" });
+    }
+  });
+
+  // Conversation management routes
+  app.get("/api/conversations", async (req, res) => {
+    try {
+      const { projectId } = req.query;
+      let conversations;
+      
+      if (projectId) {
+        conversations = await storage.getConversationsByProject(parseInt(projectId as string));
+      } else {
+        conversations = await storage.getConversationsByParticipant(currentUserId);
+      }
+      
+      res.json(conversations);
+    } catch (error) {
+      console.error("Get conversations error:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  app.post("/api/conversations", async (req, res) => {
+    try {
+      const validatedData = insertConversationSchema.parse({
+        ...req.body,
+        createdBy: currentUserId,
+      });
+      const conversation = await storage.createConversation(validatedData);
+      res.json(conversation);
+    } catch (error) {
+      console.error("Create conversation error:", error);
+      res.status(500).json({ message: "Failed to create conversation" });
+    }
+  });
+
+  app.get("/api/conversations/:id/messages", async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const messages = await storage.getMessagesByConversation(conversationId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Get messages error:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/conversations/:id/messages", async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const validatedData = insertMessageSchema.parse({
+        ...req.body,
+        conversationId,
+        senderId: currentUserId,
+        senderType: "user",
+      });
+      const message = await storage.createMessage(validatedData);
+      res.json(message);
+    } catch (error) {
+      console.error("Create message error:", error);
+      res.status(500).json({ message: "Failed to create message" });
+    }
+  });
+
+  // Agent collaboration routes
+  app.post("/api/collaborations/start", async (req, res) => {
+    try {
+      const { projectId, objective, requiredCapabilities } = req.body;
+      
+      const collaboration = await agentOrchestrationService.startCollaborationSession(
+        projectId,
+        objective,
+        requiredCapabilities || []
+      );
+      
+      res.json(collaboration);
+    } catch (error) {
+      console.error("Start collaboration error:", error);
+      res.status(500).json({ message: "Failed to start collaboration" });
+    }
+  });
+
+  app.get("/api/collaborations/active", async (req, res) => {
+    try {
+      const collaborations = agentOrchestrationService.getActiveCollaborations();
+      res.json(collaborations);
+    } catch (error) {
+      console.error("Get active collaborations error:", error);
+      res.status(500).json({ message: "Failed to fetch active collaborations" });
+    }
+  });
+
+  app.post("/api/collaborations/:id/decision", async (req, res) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+      const { options, criteria } = req.body;
+      
+      const decision = await agentOrchestrationService.makeCollaborativeDecision(
+        sessionId,
+        options,
+        criteria
+      );
+      
+      res.json({ decision });
+    } catch (error) {
+      console.error("Make decision error:", error);
+      res.status(500).json({ message: "Failed to make decision" });
+    }
+  });
+
+  // Multi-AI provider routes
+  app.get("/api/ai-providers", async (req, res) => {
+    try {
+      const providers = multiAIService.getAvailableProviders();
+      res.json(providers);
+    } catch (error) {
+      console.error("Get AI providers error:", error);
+      res.status(500).json({ message: "Failed to fetch AI providers" });
+    }
+  });
+
+  app.post("/api/ai-providers/health-check", async (req, res) => {
+    try {
+      const health = await multiAIService.healthCheck();
+      res.json(health);
+    } catch (error) {
+      console.error("AI provider health check error:", error);
+      res.status(500).json({ message: "Failed to check AI provider health" });
+    }
+  });
+
+  app.post("/api/ai-providers/generate", async (req, res) => {
+    try {
+      const { provider, prompt, systemPrompt, model } = req.body;
+      
+      const response = await multiAIService.generateResponse(
+        provider,
+        prompt,
+        systemPrompt,
+        model
+      );
+      
+      res.json(response);
+    } catch (error) {
+      console.error("AI generation error:", error);
+      res.status(500).json({ message: "Failed to generate AI response" });
+    }
+  });
+
+  app.post("/api/ai-providers/consensus", async (req, res) => {
+    try {
+      const { prompt, systemPrompt, providers } = req.body;
+      
+      const consensus = await multiAIService.generateConsensusResponse(
+        prompt,
+        systemPrompt,
+        providers
+      );
+      
+      res.json(consensus);
+    } catch (error) {
+      console.error("AI consensus error:", error);
+      res.status(500).json({ message: "Failed to generate consensus" });
+    }
+  });
+
+  // Workflow and task management routes
+  app.get("/api/tasks", async (req, res) => {
+    try {
+      const { projectId, agentId, status } = req.query;
+      let tasks;
+      
+      if (projectId) {
+        tasks = await storage.getWorkflowTasksByProject(parseInt(projectId as string));
+      } else if (agentId) {
+        tasks = await storage.getWorkflowTasksByAgent(parseInt(agentId as string));
+      } else if (status) {
+        tasks = await storage.getWorkflowTasksByStatus(status as string);
+      } else {
+        tasks = await storage.getWorkflowTasksByProject(0); // Return empty for now
+      }
+      
+      res.json(tasks);
+    } catch (error) {
+      console.error("Get tasks error:", error);
+      res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  app.post("/api/tasks", async (req, res) => {
+    try {
+      const validatedData = insertWorkflowTaskSchema.parse(req.body);
+      const task = await storage.createWorkflowTask(validatedData);
+      res.json(task);
+    } catch (error) {
+      console.error("Create task error:", error);
+      res.status(500).json({ message: "Failed to create task" });
+    }
+  });
+
+  app.put("/api/tasks/:id/assign", async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const { agentId } = req.body;
+      const task = await storage.assignTask(taskId, agentId);
+      res.json(task);
+    } catch (error) {
+      console.error("Assign task error:", error);
+      res.status(500).json({ message: "Failed to assign task" });
+    }
+  });
+
+  app.put("/api/tasks/:id/complete", async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const { actualHours } = req.body;
+      const task = await storage.completeTask(taskId, actualHours);
+      res.json(task);
+    } catch (error) {
+      console.error("Complete task error:", error);
+      res.status(500).json({ message: "Failed to complete task" });
+    }
+  });
+
+  // Design asset management routes
+  app.get("/api/design-assets", async (req, res) => {
+    try {
+      const { projectId, assetType } = req.query;
+      let assets: any[] = [];
+      
+      if (projectId) {
+        assets = await storage.getDesignAssetsByProject(parseInt(projectId as string));
+      } else if (assetType) {
+        assets = await storage.getDesignAssetsByType(assetType as string);
+      }
+      
+      res.json(assets);
+    } catch (error) {
+      console.error("Get design assets error:", error);
+      res.status(500).json({ message: "Failed to fetch design assets" });
+    }
+  });
+
+  app.post("/api/design-assets", async (req, res) => {
+    try {
+      const validatedData = insertDesignAssetSchema.parse({
+        ...req.body,
+        createdBy: currentUserId,
+      });
+      const asset = await storage.createDesignAsset(validatedData);
+      res.json(asset);
+    } catch (error) {
+      console.error("Create design asset error:", error);
+      res.status(500).json({ message: "Failed to create design asset" });
+    }
+  });
+
+  app.put("/api/design-assets/:id/approve", async (req, res) => {
+    try {
+      const assetId = parseInt(req.params.id);
+      const asset = await storage.approveDesignAsset(assetId, currentUserId);
+      res.json(asset);
+    } catch (error) {
+      console.error("Approve design asset error:", error);
+      res.status(500).json({ message: "Failed to approve design asset" });
+    }
+  });
+
+  // Collaborative document routes
+  app.get("/api/documents", async (req, res) => {
+    try {
+      const { projectId } = req.query;
+      let documents: any[] = [];
+      
+      if (projectId) {
+        documents = await storage.getCollaborativeDocumentsByProject(parseInt(projectId as string));
+      }
+      
+      res.json(documents);
+    } catch (error) {
+      console.error("Get documents error:", error);
+      res.status(500).json({ message: "Failed to fetch documents" });
+    }
+  });
+
+  app.post("/api/documents", async (req, res) => {
+    try {
+      const validatedData = insertCollaborativeDocumentSchema.parse({
+        ...req.body,
+        lastEditedBy: currentUserId,
+      });
+      const document = await storage.createCollaborativeDocument(validatedData);
+      res.json(document);
+    } catch (error) {
+      console.error("Create document error:", error);
+      res.status(500).json({ message: "Failed to create document" });
+    }
+  });
+
+  app.put("/api/documents/:id", async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const updateData = { ...req.body, lastEditedBy: currentUserId };
+      const document = await storage.updateCollaborativeDocument(documentId, updateData);
+      res.json(document);
+    } catch (error) {
+      console.error("Update document error:", error);
+      res.status(500).json({ message: "Failed to update document" });
+    }
+  });
+
+  app.put("/api/documents/:id/lock", async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const document = await storage.lockDocument(documentId, currentUserId);
+      res.json(document);
+    } catch (error) {
+      console.error("Lock document error:", error);
+      res.status(500).json({ message: "Failed to lock document" });
+    }
+  });
+
+  app.put("/api/documents/:id/unlock", async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const document = await storage.unlockDocument(documentId);
+      res.json(document);
+    } catch (error) {
+      console.error("Unlock document error:", error);
+      res.status(500).json({ message: "Failed to unlock document" });
+    }
+  });
+
+  // WebSocket connection stats
+  app.get("/api/websocket/stats", async (req, res) => {
+    try {
+      if (webSocketManager) {
+        const stats = webSocketManager.getConnectionStats();
+        res.json(stats);
+      } else {
+        res.json({ totalConnections: 0, activeConversations: 0, typingUsers: 0 });
+      }
+    } catch (error) {
+      console.error("Get WebSocket stats error:", error);
+      res.status(500).json({ message: "Failed to fetch WebSocket stats" });
+    }
+  });
+
+  // Agent knowledge management
+  app.get("/api/knowledge", async (req, res) => {
+    try {
+      const { agentId, projectId, query } = req.query;
+      let knowledge: any[] = [];
+      
+      if (query) {
+        knowledge = await storage.searchAgentKnowledge(
+          query as string, 
+          agentId ? parseInt(agentId as string) : undefined
+        );
+      } else if (agentId) {
+        knowledge = await storage.getAgentKnowledgeByAgent(parseInt(agentId as string));
+      } else if (projectId) {
+        knowledge = await storage.getAgentKnowledgeByProject(parseInt(projectId as string));
+      }
+      
+      res.json(knowledge);
+    } catch (error) {
+      console.error("Get knowledge error:", error);
+      res.status(500).json({ message: "Failed to fetch knowledge" });
+    }
+  });
+
+  // Enhanced code generation with multi-AI providers
+  app.post("/api/generate-code-advanced", async (req, res) => {
+    try {
+      const { prompt, language, framework, provider, useConsensus } = req.body;
+      
+      if (!prompt || !language) {
+        return res.status(400).json({ message: "Prompt and language are required" });
+      }
+
+      let result;
+      
+      if (useConsensus) {
+        // Use multiple AI providers for consensus
+        const consensus = await multiAIService.generateConsensusResponse(
+          `Generate ${language} code for: ${prompt}${framework ? ` using ${framework}` : ''}`,
+          `You are an expert ${language} developer. Generate clean, well-documented, production-ready code.`
+        );
+        result = {
+          code: consensus.consensus,
+          explanation: "Generated using multi-AI consensus",
+          suggestions: ["Review the consensus from multiple AI providers", "Test thoroughly before production use"],
+          providers: consensus.responses.map(r => r.provider),
+          confidence: consensus.confidence
+        };
+      } else {
+        // Use specific provider
+        const response = await multiAIService.generateResponseWithFallback(
+          `Generate ${language} code for: ${prompt}${framework ? ` using ${framework}` : ''}`,
+          `You are an expert ${language} developer. Generate clean, well-documented, production-ready code. 
+          Respond with JSON in this format:
+          {
+            "code": "the generated code",
+            "explanation": "brief explanation of what the code does",
+            "suggestions": ["array of helpful suggestions for improvement or usage"]
+          }`,
+          provider || "openai"
+        );
+        
+        try {
+          result = JSON.parse(response.content);
+          result.provider = response.provider;
+          result.confidence = response.confidence;
+        } catch {
+          result = {
+            code: response.content,
+            explanation: "Code generated successfully",
+            suggestions: ["Review and test the generated code"],
+            provider: response.provider,
+            confidence: response.confidence
+          };
+        }
+      }
+      
+      // Store the generation in storage
+      await storage.createCodeGeneration({
+        userId: currentUserId,
+        projectId: null,
+        prompt,
+        language,
+        framework,
+        generatedCode: result.code,
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error("Advanced code generation error:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Failed to generate code" });
+    }
+  });
+
   const httpServer = createServer(app);
+  
+  // Initialize WebSocket manager for real-time collaboration
+  const wsManager = new WebSocketManager(httpServer);
+  (global as any).webSocketManager = wsManager;
+  
+  console.log('🚀 Multi-Agent Collaboration System is ready!');
+  console.log('📡 WebSocket server initialized for real-time communication');
+  console.log('🤖 Access collaboration dashboard at /collaboration');
+  
   return httpServer;
 }
