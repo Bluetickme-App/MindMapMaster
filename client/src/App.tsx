@@ -11,6 +11,8 @@ import GitHubPage from "@/pages/github";
 import DocsPage from "@/pages/docs";
 import DeployPage from "@/pages/deploy";
 import TestingPage from "@/pages/testing";
+import SettingsPage from "@/pages/settings";
+import WorkspacePage from "@/pages/workspace";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +26,8 @@ function Router() {
       <Route path="/docs" component={DocsPage} />
       <Route path="/deploy" component={DeployPage} />
       <Route path="/testing" component={TestingPage} />
+      <Route path="/settings" component={SettingsPage} />
+      <Route path="/workspace" component={WorkspacePage} />
       <Route component={NotFound} />
     </Switch>
   );

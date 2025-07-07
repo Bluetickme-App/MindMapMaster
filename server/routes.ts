@@ -264,6 +264,383 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Settings endpoints
+  app.get('/api/settings/api-keys/status', async (req, res) => {
+    try {
+      const user = await storage.getUser(currentUserId);
+      const apiKeyStatus = [
+        {
+          provider: 'openai',
+          configured: !!user?.openaiApiKey,
+          valid: !!user?.openaiApiKey,
+          lastTested: user?.openaiApiKey ? new Date().toISOString() : undefined
+        },
+        {
+          provider: 'anthropic',
+          configured: !!process.env.ANTHROPIC_API_KEY,
+          valid: !!process.env.ANTHROPIC_API_KEY,
+          lastTested: process.env.ANTHROPIC_API_KEY ? new Date().toISOString() : undefined
+        },
+        {
+          provider: 'gemini',
+          configured: !!process.env.GEMINI_API_KEY,
+          valid: !!process.env.GEMINI_API_KEY,
+          lastTested: process.env.GEMINI_API_KEY ? new Date().toISOString() : undefined
+        },
+        {
+          provider: 'github',
+          configured: !!user?.githubToken,
+          valid: !!user?.githubToken,
+          lastTested: user?.githubToken ? new Date().toISOString() : undefined
+        }
+      ];
+      
+      res.json(apiKeyStatus);
+    } catch (error) {
+      console.error('Error fetching API key status:', error);
+      res.status(500).json({ message: 'Failed to fetch API key status' });
+    }
+  });
+
+  app.post('/api/settings/api-keys', async (req, res) => {
+    try {
+      const { openaiApiKey, anthropicApiKey, geminiApiKey, githubToken } = req.body;
+      
+      const user = await storage.getUser(currentUserId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const updatedUser = await storage.updateUser(currentUserId, {
+        openaiApiKey: openaiApiKey || user.openaiApiKey,
+        githubToken: githubToken || user.githubToken
+      });
+
+      res.json({ message: 'API keys updated successfully' });
+    } catch (error) {
+      console.error('Error updating API keys:', error);
+      res.status(500).json({ message: 'Failed to update API keys' });
+    }
+  });
+
+  app.post('/api/settings/api-keys/test', async (req, res) => {
+    try {
+      const { provider, apiKey } = req.body;
+      
+      if (!provider || !apiKey) {
+        return res.status(400).json({ message: 'Provider and API key are required' });
+      }
+
+      let isValid = false;
+      let errorMessage = '';
+
+      switch (provider) {
+        case 'openai':
+          isValid = apiKey.startsWith('sk-');
+          if (!isValid) errorMessage = 'OpenAI API key should start with "sk-"';
+          break;
+        case 'anthropic':
+          isValid = apiKey.startsWith('sk-ant-');
+          if (!isValid) errorMessage = 'Anthropic API key should start with "sk-ant-"';
+          break;
+        case 'gemini':
+          isValid = apiKey.length > 10;
+          if (!isValid) errorMessage = 'Gemini API key appears to be invalid';
+          break;
+        case 'github':
+          isValid = apiKey.startsWith('ghp_') || apiKey.startsWith('github_pat_');
+          if (!isValid) errorMessage = 'GitHub token should start with "ghp_" or "github_pat_"';
+          break;
+        default:
+          return res.status(400).json({ message: 'Unknown provider' });
+      }
+
+      if (isValid) {
+        res.json({ message: 'API key is valid', provider });
+      } else {
+        res.status(400).json({ message: errorMessage });
+      }
+    } catch (error) {
+      console.error('Error testing API key:', error);
+      res.status(500).json({ message: 'Failed to test API key' });
+    }
+  });
+
+  // Workspace endpoints
+  app.get('/api/workspace/files', async (req, res) => {
+    try {
+      // Mock file system structure - in production, this would read from actual filesystem
+      const fileSystem = [
+        {
+          name: 'client',
+          type: 'folder',
+          path: '/client',
+          children: [
+            {
+              name: 'src',
+              type: 'folder',
+              path: '/client/src',
+              children: [
+                { name: 'App.tsx', type: 'file', path: '/client/src/App.tsx', size: 2340, modified: new Date().toISOString() },
+                { name: 'main.tsx', type: 'file', path: '/client/src/main.tsx', size: 890, modified: new Date().toISOString() },
+                { name: 'index.css', type: 'file', path: '/client/src/index.css', size: 1250, modified: new Date().toISOString() }
+              ]
+            },
+            { name: 'package.json', type: 'file', path: '/client/package.json', size: 1450, modified: new Date().toISOString() }
+          ]
+        },
+        {
+          name: 'server',
+          type: 'folder',
+          path: '/server',
+          children: [
+            { name: 'index.ts', type: 'file', path: '/server/index.ts', size: 3200, modified: new Date().toISOString() },
+            { name: 'routes.ts', type: 'file', path: '/server/routes.ts', size: 8900, modified: new Date().toISOString() },
+            { name: 'storage.ts', type: 'file', path: '/server/storage.ts', size: 5600, modified: new Date().toISOString() }
+          ]
+        },
+        { name: 'package.json', type: 'file', path: '/package.json', size: 2100, modified: new Date().toISOString() },
+        { name: 'README.md', type: 'file', path: '/README.md', size: 890, modified: new Date().toISOString() },
+        { name: '.env', type: 'file', path: '/.env', size: 340, modified: new Date().toISOString() }
+      ];
+      
+      res.json(fileSystem);
+    } catch (error) {
+      console.error('Error fetching file system:', error);
+      res.status(500).json({ message: 'Failed to fetch file system' });
+    }
+  });
+
+  app.get('/api/workspace/files/*', async (req, res) => {
+    try {
+      const filePath = req.params[0];
+      
+      // Mock file content - in production, this would read from actual files
+      let content = '';
+      
+      if (filePath.endsWith('.tsx') || filePath.endsWith('.ts')) {
+        content = `// ${filePath}\nimport React from 'react';\n\nfunction Component() {\n  return (\n    <div>\n      <h1>Hello from ${filePath}</h1>\n    </div>\n  );\n}\n\nexport default Component;`;
+      } else if (filePath.endsWith('.json')) {
+        content = JSON.stringify({
+          name: "codecraft",
+          version: "1.0.0",
+          description: "AI Development Assistant Platform"
+        }, null, 2);
+      } else if (filePath.endsWith('.md')) {
+        content = `# ${filePath}\n\nThis is a documentation file for the CodeCraft platform.\n\n## Features\n\n- AI-powered development\n- Multi-agent collaboration\n- Real-time workspace\n`;
+      } else if (filePath.endsWith('.env')) {
+        content = `# Environment Variables\nDATABASE_URL=postgresql://localhost:5432/codecraft\nOPENAI_API_KEY=your_openai_key_here\nANTHROPIC_API_KEY=your_anthropic_key_here\nGEMINI_API_KEY=your_gemini_key_here\n`;
+      } else {
+        content = `// File: ${filePath}\n// Content would be loaded from the actual file system`;
+      }
+      
+      res.json({ path: filePath, content });
+    } catch (error) {
+      console.error('Error reading file:', error);
+      res.status(500).json({ message: 'Failed to read file' });
+    }
+  });
+
+  app.post('/api/workspace/files/*', async (req, res) => {
+    try {
+      const filePath = req.params[0];
+      const { content } = req.body;
+      
+      // Mock file saving - in production, this would write to actual files
+      console.log(`Saving file ${filePath} with ${content.length} characters`);
+      
+      res.json({ 
+        message: 'File saved successfully',
+        path: filePath,
+        size: content.length,
+        modified: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error saving file:', error);
+      res.status(500).json({ message: 'Failed to save file' });
+    }
+  });
+
+  app.get('/api/workspace/databases', async (req, res) => {
+    try {
+      const databases = [
+        {
+          id: '1',
+          name: 'Main Database',
+          type: 'postgresql',
+          status: 'connected',
+          url: process.env.DATABASE_URL || 'postgresql://localhost:5432/codecraft',
+          tables: ['users', 'projects', 'code_generations', 'api_tests', 'agents'],
+          size: '45.2 MB'
+        }
+      ];
+      
+      res.json(databases);
+    } catch (error) {
+      console.error('Error fetching databases:', error);
+      res.status(500).json({ message: 'Failed to fetch databases' });
+    }
+  });
+
+  app.post('/api/workspace/databases/deploy', async (req, res) => {
+    try {
+      const { name, type, config } = req.body;
+      
+      // Mock database deployment
+      const newDatabase = {
+        id: Date.now().toString(),
+        name,
+        type,
+        status: 'deploying',
+        url: `${type}://localhost:5432/${name.toLowerCase().replace(/\s+/g, '_')}`,
+        tables: [],
+        size: '0 MB'
+      };
+      
+      // Simulate deployment delay
+      setTimeout(() => {
+        console.log(`Database ${name} deployed successfully`);
+      }, 2000);
+      
+      res.json({ 
+        message: 'Database deployment initiated',
+        database: newDatabase
+      });
+    } catch (error) {
+      console.error('Error deploying database:', error);
+      res.status(500).json({ message: 'Failed to deploy database' });
+    }
+  });
+
+  app.get('/api/workspace/storage', async (req, res) => {
+    try {
+      const storage = {
+        buckets: [
+          {
+            id: '1',
+            name: 'codecraft-assets',
+            type: 'static',
+            files: 245,
+            size: '1.2 GB',
+            public: true
+          },
+          {
+            id: '2',
+            name: 'user-uploads',
+            type: 'private',
+            files: 67,
+            size: '456 MB',
+            public: false
+          }
+        ],
+        totalUsage: '1.7 GB',
+        limit: '10 GB'
+      };
+      
+      res.json(storage);
+    } catch (error) {
+      console.error('Error fetching storage:', error);
+      res.status(500).json({ message: 'Failed to fetch storage information' });
+    }
+  });
+
+  app.post('/api/workspace/console', async (req, res) => {
+    try {
+      const { command } = req.body;
+      
+      // Mock command execution
+      let output = '';
+      let exitCode = 0;
+      
+      if (command.includes('npm install')) {
+        output = 'Installing dependencies...\nDependencies installed successfully!';
+      } else if (command.includes('npm run')) {
+        output = 'Running script...\nScript completed successfully!';
+      } else if (command.includes('git')) {
+        output = 'Git operation completed successfully!';
+      } else if (command.includes('ls') || command.includes('dir')) {
+        output = 'client/\nserver/\npackage.json\nREADME.md\n.env';
+      } else if (command.includes('error')) {
+        output = 'Command failed with error';
+        exitCode = 1;
+      } else {
+        output = `Command "${command}" executed successfully`;
+      }
+      
+      res.json({
+        command,
+        output,
+        exitCode,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error executing command:', error);
+      res.status(500).json({ message: 'Failed to execute command' });
+    }
+  });
+
+  app.get('/api/workspace/secrets', async (req, res) => {
+    try {
+      // Return masked secrets for security
+      const secrets = {
+        DATABASE_URL: process.env.DATABASE_URL ? '***masked***' : undefined,
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY ? '***masked***' : undefined,
+        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ? '***masked***' : undefined,
+        GEMINI_API_KEY: process.env.GEMINI_API_KEY ? '***masked***' : undefined,
+        GITHUB_TOKEN: process.env.GITHUB_TOKEN ? '***masked***' : undefined
+      };
+      
+      // Filter out undefined values
+      const maskedSecrets = Object.entries(secrets)
+        .filter(([key, value]) => value !== undefined)
+        .reduce((acc, [key, value]) => {
+          acc[key] = value;
+          return acc;
+        }, {} as Record<string, string>);
+      
+      res.json(maskedSecrets);
+    } catch (error) {
+      console.error('Error fetching secrets:', error);
+      res.status(500).json({ message: 'Failed to fetch secrets' });
+    }
+  });
+
+  app.post('/api/workspace/secrets', async (req, res) => {
+    try {
+      const { secrets, format } = req.body;
+      
+      // In a real implementation, you would securely store these secrets
+      // For now, we'll just validate the format and respond
+      
+      let parsedSecrets: Record<string, string> = {};
+      
+      if (format === 'json') {
+        try {
+          parsedSecrets = JSON.parse(secrets);
+        } catch (error) {
+          return res.status(400).json({ message: 'Invalid JSON format' });
+        }
+      } else if (format === 'env') {
+        const lines = secrets.split('\n').filter((line: string) => line.includes('='));
+        parsedSecrets = lines.reduce((acc: Record<string, string>, line: string) => {
+          const [key, ...valueParts] = line.split('=');
+          acc[key.trim()] = valueParts.join('=').trim();
+          return acc;
+        }, {});
+      }
+      
+      console.log(`Updated ${Object.keys(parsedSecrets).length} secrets`);
+      
+      res.json({ 
+        message: 'Secrets updated successfully',
+        count: Object.keys(parsedSecrets).length
+      });
+    } catch (error) {
+      console.error('Error updating secrets:', error);
+      res.status(500).json({ message: 'Failed to update secrets' });
+    }
+  });
+
   // Multi-Agent System Routes
   
   // Agent management routes

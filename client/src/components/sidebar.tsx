@@ -11,17 +11,20 @@ import {
   Rocket, 
   FlaskConical,
   Settings,
-  Code
+  Code,
+  Monitor
 } from "lucide-react";
 
 const navigationItems = [
   { href: "/", icon: Home, label: "Dashboard" },
+  { href: "/workspace", icon: Monitor, label: "Workspace" },
   { href: "/generate", icon: Wand2, label: "Code Generation" },
   { href: "/debug", icon: Bug, label: "Debug Assistant" },
   { href: "/github", icon: Github, label: "GitHub Integration" },
   { href: "/docs", icon: Book, label: "Documentation" },
   { href: "/deploy", icon: Rocket, label: "Deployment" },
   { href: "/testing", icon: FlaskConical, label: "API Testing" },
+  { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
 export default function Sidebar() {
@@ -89,9 +92,11 @@ export default function Sidebar() {
               {user?.email || 'john@example.com'}
             </p>
           </div>
-          <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-100">
-            <Settings className="w-4 h-4" />
-          </Button>
+          <Link href="/settings">
+            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-slate-100">
+              <Settings className="w-4 h-4" />
+            </Button>
+          </Link>
         </div>
       </div>
     </div>
