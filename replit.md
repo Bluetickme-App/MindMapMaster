@@ -240,6 +240,12 @@ Changelog:
   - Project-based team collaboration features
   - Advanced consensus generation and decision-making
   - Real-time status monitoring and connection management
+- July 07, 2025. Added PostgreSQL database integration:
+  - Created database connection with Drizzle ORM
+  - Replaced in-memory storage with DatabaseStorage
+  - Successfully migrated all data models to database
+  - Fixed sidebar navigation and created dedicated pages for all features
+  - All API endpoints now functional with persistent data storage
 
 ## User Preferences
 

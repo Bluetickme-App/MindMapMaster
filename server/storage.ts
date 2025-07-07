@@ -10,6 +10,8 @@ import {
   type AgentKnowledge, type InsertAgentKnowledge, type CollaborativeDocument, type InsertCollaborativeDocument,
   type DesignAsset, type InsertDesignAsset, type WorkflowTask, type InsertWorkflowTask
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -110,6 +112,507 @@ export interface IStorage {
   updateWorkflowTask(id: number, task: Partial<InsertWorkflowTask>): Promise<WorkflowTask>;
   assignTask(taskId: number, agentId: number): Promise<WorkflowTask>;
   completeTask(taskId: number, actualHours?: number): Promise<WorkflowTask>;
+}
+
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: number, updateData: Partial<InsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async getProject(id: number): Promise<Project | undefined> {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project || undefined;
+  }
+
+  async getProjectsByUser(userId: number): Promise<Project[]> {
+    return await db.select().from(projects).where(eq(projects.userId, userId));
+  }
+
+  async createProject(insertProject: InsertProject): Promise<Project> {
+    const [project] = await db
+      .insert(projects)
+      .values(insertProject)
+      .returning();
+    return project;
+  }
+
+  async updateProject(id: number, updateData: Partial<InsertProject>): Promise<Project> {
+    const [project] = await db
+      .update(projects)
+      .set(updateData)
+      .where(eq(projects.id, id))
+      .returning();
+    return project;
+  }
+
+  async deleteProject(id: number): Promise<void> {
+    await db.delete(projects).where(eq(projects.id, id));
+  }
+
+  async getCodeGeneration(id: number): Promise<CodeGeneration | undefined> {
+    const [generation] = await db.select().from(codeGenerations).where(eq(codeGenerations.id, id));
+    return generation || undefined;
+  }
+
+  async getCodeGenerationsByUser(userId: number): Promise<CodeGeneration[]> {
+    return await db.select().from(codeGenerations).where(eq(codeGenerations.userId, userId));
+  }
+
+  async createCodeGeneration(insertGeneration: InsertCodeGeneration): Promise<CodeGeneration> {
+    const [generation] = await db
+      .insert(codeGenerations)
+      .values(insertGeneration)
+      .returning();
+    return generation;
+  }
+
+  async getApiTest(id: number): Promise<ApiTest | undefined> {
+    const [test] = await db.select().from(apiTests).where(eq(apiTests.id, id));
+    return test || undefined;
+  }
+
+  async getApiTestsByUser(userId: number): Promise<ApiTest[]> {
+    return await db.select().from(apiTests).where(eq(apiTests.userId, userId));
+  }
+
+  async createApiTest(insertTest: InsertApiTest): Promise<ApiTest> {
+    const [test] = await db
+      .insert(apiTests)
+      .values(insertTest)
+      .returning();
+    return test;
+  }
+
+  async updateApiTest(id: number, updateData: Partial<InsertApiTest>): Promise<ApiTest> {
+    const [test] = await db
+      .update(apiTests)
+      .set(updateData)
+      .where(eq(apiTests.id, id))
+      .returning();
+    return test;
+  }
+
+  async deleteApiTest(id: number): Promise<void> {
+    await db.delete(apiTests).where(eq(apiTests.id, id));
+  }
+
+  async getGithubRepository(id: number): Promise<GithubRepository | undefined> {
+    const [repo] = await db.select().from(githubRepositories).where(eq(githubRepositories.id, id));
+    return repo || undefined;
+  }
+
+  async getGithubRepositoriesByUser(userId: number): Promise<GithubRepository[]> {
+    return await db.select().from(githubRepositories).where(eq(githubRepositories.userId, userId));
+  }
+
+  async createGithubRepository(insertRepo: InsertGithubRepository): Promise<GithubRepository> {
+    const [repo] = await db
+      .insert(githubRepositories)
+      .values(insertRepo)
+      .returning();
+    return repo;
+  }
+
+  async updateGithubRepository(id: number, updateData: Partial<InsertGithubRepository>): Promise<GithubRepository> {
+    const [repo] = await db
+      .update(githubRepositories)
+      .set(updateData)
+      .where(eq(githubRepositories.id, id))
+      .returning();
+    return repo;
+  }
+
+  async deleteGithubRepository(id: number): Promise<void> {
+    await db.delete(githubRepositories).where(eq(githubRepositories.id, id));
+  }
+
+  // Agent operations
+  async getAgent(id: number): Promise<Agent | undefined> {
+    const [agent] = await db.select().from(agents).where(eq(agents.id, id));
+    return agent || undefined;
+  }
+
+  async getAllAgents(): Promise<Agent[]> {
+    return await db.select().from(agents);
+  }
+
+  async getAgentsByType(type: string): Promise<Agent[]> {
+    return await db.select().from(agents).where(eq(agents.type, type));
+  }
+
+  async createAgent(insertAgent: InsertAgent): Promise<Agent> {
+    const [agent] = await db
+      .insert(agents)
+      .values(insertAgent)
+      .returning();
+    return agent;
+  }
+
+  async updateAgent(id: number, updateData: Partial<InsertAgent>): Promise<Agent> {
+    const [agent] = await db
+      .update(agents)
+      .set(updateData)
+      .where(eq(agents.id, id))
+      .returning();
+    return agent;
+  }
+
+  async updateAgentStatus(id: number, status: string): Promise<Agent> {
+    const [agent] = await db
+      .update(agents)
+      .set({ status })
+      .where(eq(agents.id, id))
+      .returning();
+    return agent;
+  }
+
+  // Conversation operations
+  async getConversation(id: number): Promise<Conversation | undefined> {
+    const [conversation] = await db.select().from(conversations).where(eq(conversations.id, id));
+    return conversation || undefined;
+  }
+
+  async getConversationsByProject(projectId: number): Promise<Conversation[]> {
+    return await db.select().from(conversations).where(eq(conversations.projectId, projectId));
+  }
+
+  async getConversationsByParticipant(participantId: number): Promise<Conversation[]> {
+    // For array contains queries, we would need to use SQL operations
+    // For now, return all conversations and filter in memory (not optimal for production)
+    const allConversations = await db.select().from(conversations);
+    return allConversations.filter(conv => 
+      conv.participantIds && conv.participantIds.includes(participantId)
+    );
+  }
+
+  async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
+    const [conversation] = await db
+      .insert(conversations)
+      .values(insertConversation)
+      .returning();
+    return conversation;
+  }
+
+  async updateConversation(id: number, updateData: Partial<InsertConversation>): Promise<Conversation> {
+    const [conversation] = await db
+      .update(conversations)
+      .set(updateData)
+      .where(eq(conversations.id, id))
+      .returning();
+    return conversation;
+  }
+
+  async addParticipantToConversation(conversationId: number, participantId: number): Promise<void> {
+    const conversation = await this.getConversation(conversationId);
+    if (conversation) {
+      const updatedParticipants = [...(conversation.participantIds || []), participantId];
+      await db
+        .update(conversations)
+        .set({ participantIds: updatedParticipants })
+        .where(eq(conversations.id, conversationId));
+    }
+  }
+
+  // Message operations
+  async getMessage(id: number): Promise<Message | undefined> {
+    const [message] = await db.select().from(messages).where(eq(messages.id, id));
+    return message || undefined;
+  }
+
+  async getMessagesByConversation(conversationId: number): Promise<Message[]> {
+    return await db.select().from(messages).where(eq(messages.conversationId, conversationId));
+  }
+
+  async getMessageThread(parentMessageId: number): Promise<Message[]> {
+    return await db.select().from(messages).where(eq(messages.parentMessageId, parentMessageId));
+  }
+
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const [message] = await db
+      .insert(messages)
+      .values(insertMessage)
+      .returning();
+    return message;
+  }
+
+  async updateMessage(id: number, updateData: Partial<InsertMessage>): Promise<Message> {
+    const [message] = await db
+      .update(messages)
+      .set(updateData)
+      .where(eq(messages.id, id))
+      .returning();
+    return message;
+  }
+
+  async addReactionToMessage(messageId: number, reaction: string, userId: number): Promise<void> {
+    const message = await this.getMessage(messageId);
+    if (message) {
+      const currentReactions = message.reactions || {};
+      currentReactions[reaction] = [...(currentReactions[reaction] || []), userId];
+      await db
+        .update(messages)
+        .set({ reactions: currentReactions })
+        .where(eq(messages.id, messageId));
+    }
+  }
+
+  // Agent Session operations
+  async getAgentSession(id: number): Promise<AgentSession | undefined> {
+    const [session] = await db.select().from(agentSessions).where(eq(agentSessions.id, id));
+    return session || undefined;
+  }
+
+  async getAgentSessionsByProject(projectId: number): Promise<AgentSession[]> {
+    return await db.select().from(agentSessions).where(eq(agentSessions.projectId, projectId));
+  }
+
+  async getActiveAgentSessions(): Promise<AgentSession[]> {
+    return await db.select().from(agentSessions).where(eq(agentSessions.status, 'active'));
+  }
+
+  async createAgentSession(insertSession: InsertAgentSession): Promise<AgentSession> {
+    const [session] = await db
+      .insert(agentSessions)
+      .values(insertSession)
+      .returning();
+    return session;
+  }
+
+  async updateAgentSession(id: number, updateData: Partial<InsertAgentSession>): Promise<AgentSession> {
+    const [session] = await db
+      .update(agentSessions)
+      .set(updateData)
+      .where(eq(agentSessions.id, id))
+      .returning();
+    return session;
+  }
+
+  async endAgentSession(id: number, outcomes: string[]): Promise<AgentSession> {
+    const [session] = await db
+      .update(agentSessions)
+      .set({ 
+        status: 'completed',
+        outcomes,
+        endedAt: new Date()
+      })
+      .where(eq(agentSessions.id, id))
+      .returning();
+    return session;
+  }
+
+  // Agent Knowledge operations
+  async getAgentKnowledge(id: number): Promise<AgentKnowledge | undefined> {
+    const [knowledge] = await db.select().from(agentKnowledge).where(eq(agentKnowledge.id, id));
+    return knowledge || undefined;
+  }
+
+  async getAgentKnowledgeByAgent(agentId: number): Promise<AgentKnowledge[]> {
+    return await db.select().from(agentKnowledge).where(eq(agentKnowledge.agentId, agentId));
+  }
+
+  async getAgentKnowledgeByProject(projectId: number): Promise<AgentKnowledge[]> {
+    return await db.select().from(agentKnowledge).where(eq(agentKnowledge.projectId, projectId));
+  }
+
+  async searchAgentKnowledge(query: string, agentId?: number): Promise<AgentKnowledge[]> {
+    // Basic text search - in production, you might want to use full-text search
+    const baseQuery = db.select().from(agentKnowledge);
+    if (agentId) {
+      return await baseQuery.where(eq(agentKnowledge.agentId, agentId));
+    }
+    return await baseQuery;
+  }
+
+  async createAgentKnowledge(insertKnowledge: InsertAgentKnowledge): Promise<AgentKnowledge> {
+    const [knowledge] = await db
+      .insert(agentKnowledge)
+      .values(insertKnowledge)
+      .returning();
+    return knowledge;
+  }
+
+  async updateAgentKnowledge(id: number, updateData: Partial<InsertAgentKnowledge>): Promise<AgentKnowledge> {
+    const [knowledge] = await db
+      .update(agentKnowledge)
+      .set(updateData)
+      .where(eq(agentKnowledge.id, id))
+      .returning();
+    return knowledge;
+  }
+
+  // Collaborative Document operations
+  async getCollaborativeDocument(id: number): Promise<CollaborativeDocument | undefined> {
+    const [document] = await db.select().from(collaborativeDocuments).where(eq(collaborativeDocuments.id, id));
+    return document || undefined;
+  }
+
+  async getCollaborativeDocumentsByProject(projectId: number): Promise<CollaborativeDocument[]> {
+    return await db.select().from(collaborativeDocuments).where(eq(collaborativeDocuments.projectId, projectId));
+  }
+
+  async createCollaborativeDocument(insertDocument: InsertCollaborativeDocument): Promise<CollaborativeDocument> {
+    const [document] = await db
+      .insert(collaborativeDocuments)
+      .values(insertDocument)
+      .returning();
+    return document;
+  }
+
+  async updateCollaborativeDocument(id: number, updateData: Partial<InsertCollaborativeDocument>): Promise<CollaborativeDocument> {
+    const [document] = await db
+      .update(collaborativeDocuments)
+      .set(updateData)
+      .where(eq(collaborativeDocuments.id, id))
+      .returning();
+    return document;
+  }
+
+  async lockDocument(id: number, userId: number): Promise<CollaborativeDocument> {
+    const [document] = await db
+      .update(collaborativeDocuments)
+      .set({ 
+        lockedBy: userId,
+        lockedAt: new Date()
+      })
+      .where(eq(collaborativeDocuments.id, id))
+      .returning();
+    return document;
+  }
+
+  async unlockDocument(id: number): Promise<CollaborativeDocument> {
+    const [document] = await db
+      .update(collaborativeDocuments)
+      .set({ 
+        lockedBy: null,
+        lockedAt: null
+      })
+      .where(eq(collaborativeDocuments.id, id))
+      .returning();
+    return document;
+  }
+
+  // Design Asset operations
+  async getDesignAsset(id: number): Promise<DesignAsset | undefined> {
+    const [asset] = await db.select().from(designAssets).where(eq(designAssets.id, id));
+    return asset || undefined;
+  }
+
+  async getDesignAssetsByProject(projectId: number): Promise<DesignAsset[]> {
+    return await db.select().from(designAssets).where(eq(designAssets.projectId, projectId));
+  }
+
+  async getDesignAssetsByType(assetType: string): Promise<DesignAsset[]> {
+    return await db.select().from(designAssets).where(eq(designAssets.assetType, assetType));
+  }
+
+  async createDesignAsset(insertAsset: InsertDesignAsset): Promise<DesignAsset> {
+    const [asset] = await db
+      .insert(designAssets)
+      .values(insertAsset)
+      .returning();
+    return asset;
+  }
+
+  async updateDesignAsset(id: number, updateData: Partial<InsertDesignAsset>): Promise<DesignAsset> {
+    const [asset] = await db
+      .update(designAssets)
+      .set(updateData)
+      .where(eq(designAssets.id, id))
+      .returning();
+    return asset;
+  }
+
+  async approveDesignAsset(id: number, approvedBy: number): Promise<DesignAsset> {
+    const [asset] = await db
+      .update(designAssets)
+      .set({ 
+        approvedBy,
+        approvedAt: new Date()
+      })
+      .where(eq(designAssets.id, id))
+      .returning();
+    return asset;
+  }
+
+  // Workflow Task operations
+  async getWorkflowTask(id: number): Promise<WorkflowTask | undefined> {
+    const [task] = await db.select().from(workflowTasks).where(eq(workflowTasks.id, id));
+    return task || undefined;
+  }
+
+  async getWorkflowTasksByProject(projectId: number): Promise<WorkflowTask[]> {
+    return await db.select().from(workflowTasks).where(eq(workflowTasks.projectId, projectId));
+  }
+
+  async getWorkflowTasksByAgent(agentId: number): Promise<WorkflowTask[]> {
+    return await db.select().from(workflowTasks).where(eq(workflowTasks.assignedAgentId, agentId));
+  }
+
+  async getWorkflowTasksByStatus(status: string): Promise<WorkflowTask[]> {
+    return await db.select().from(workflowTasks).where(eq(workflowTasks.status, status));
+  }
+
+  async createWorkflowTask(insertTask: InsertWorkflowTask): Promise<WorkflowTask> {
+    const [task] = await db
+      .insert(workflowTasks)
+      .values(insertTask)
+      .returning();
+    return task;
+  }
+
+  async updateWorkflowTask(id: number, updateData: Partial<InsertWorkflowTask>): Promise<WorkflowTask> {
+    const [task] = await db
+      .update(workflowTasks)
+      .set(updateData)
+      .where(eq(workflowTasks.id, id))
+      .returning();
+    return task;
+  }
+
+  async assignTask(taskId: number, agentId: number): Promise<WorkflowTask> {
+    const [task] = await db
+      .update(workflowTasks)
+      .set({ assignedAgentId: agentId })
+      .where(eq(workflowTasks.id, taskId))
+      .returning();
+    return task;
+  }
+
+  async completeTask(taskId: number, actualHours?: number): Promise<WorkflowTask> {
+    const [task] = await db
+      .update(workflowTasks)
+      .set({ 
+        status: 'completed',
+        actualHours,
+        completedAt: new Date()
+      })
+      .where(eq(workflowTasks.id, taskId))
+      .returning();
+    return task;
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -892,4 +1395,4 @@ Your communication style is detailed, constructive, and educational, always expl
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
