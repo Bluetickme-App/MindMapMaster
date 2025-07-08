@@ -266,6 +266,7 @@ export class MultiAIProviderService {
   constructor() {
     this.providers.set("openai", new OpenAIProvider());
     this.providers.set("anthropic", new AnthropicProvider());
+    this.providers.set("claude", new AnthropicProvider()); // Add claude alias for anthropic
     this.providers.set("gemini", new GeminiProvider());
   }
 

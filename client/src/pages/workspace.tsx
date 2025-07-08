@@ -101,12 +101,18 @@ export default function WorkspacePage() {
       const response = await fetch(`/api/conversations/${conversationId}/messages`);
       if (response.ok) {
         const data = await response.json();
-        const formattedMessages = data.map((msg: any) => ({
-          id: msg.id.toString(),
-          type: msg.senderType === 'agent' ? 'success' : 'info',
-          message: `${msg.senderType === 'agent' ? `[${getAgentName(msg.senderId)}] ` : ''}${msg.content}`,
-          timestamp: new Date(msg.timestamp).toLocaleTimeString(),
-        }));
+        const formattedMessages = data.map((msg: any) => {
+          const agentInfo = msg.senderType === 'agent' ? agentsQuery.data?.find((a: Agent) => a.id === msg.senderId) : null;
+          return {
+            id: msg.id.toString(),
+            type: msg.senderType === 'agent' ? 'success' : 'info',
+            senderType: msg.senderType,
+            agentName: agentInfo?.name || '',
+            agentProvider: agentInfo?.aiProvider || '',
+            message: msg.content,
+            timestamp: new Date(msg.timestamp).toLocaleTimeString(),
+          };
+        });
         setMessages(formattedMessages);
       }
     } catch (error) {
@@ -590,15 +596,35 @@ export default function WorkspacePage() {
                         <p>Select AI agents and start chatting!</p>
                       </div>
                     ) : (
-                      messages.map((msg, index) => (
-                        <div key={index} className="p-3 bg-muted rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline">{msg.type}</Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {msg.timestamp}
-                            </span>
+                      messages.map((msg: any, index) => (
+                        <div key={index} className={`p-4 rounded-lg ${msg.senderType === 'agent' ? 'bg-blue-50 dark:bg-blue-900/20 ml-8' : 'bg-gray-50 dark:bg-gray-800/50 mr-8'}`}>
+                          <div className="flex items-start gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${msg.senderType === 'agent' ? 'bg-blue-500' : 'bg-gray-500'}`}>
+                              {msg.senderType === 'agent' ? (
+                                <Bot className="w-6 h-6 text-white" />
+                              ) : (
+                                <User className="w-6 h-6 text-white" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-sm">
+                                  {msg.senderType === 'agent' ? msg.agentName : 'You'}
+                                </span>
+                                {msg.senderType === 'agent' && msg.agentProvider && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {msg.agentProvider}
+                                  </Badge>
+                                )}
+                                <span className="text-xs text-muted-foreground ml-auto">
+                                  {msg.timestamp}
+                                </span>
+                              </div>
+                              <div className="prose prose-sm dark:prose-invert max-w-none">
+                                <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-sm">{msg.message}</p>
                         </div>
                       ))
                     )}
