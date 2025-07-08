@@ -893,6 +893,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Web search endpoint for AI agents
+  app.post('/api/web-search', async (req, res) => {
+    try {
+      const { query, maxResults = 5 } = req.body;
+      
+      if (!query) {
+        return res.status(400).json({ message: 'Search query is required' });
+      }
+
+      // Simple web search implementation (you can replace with actual search API)
+      const searchResults = {
+        query,
+        results: [
+          {
+            title: `Search results for: ${query}`,
+            url: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+            snippet: `Web search capability - implement with actual search API like Google Custom Search or Bing Search API`,
+            timestamp: new Date().toISOString()
+          }
+        ],
+        totalResults: 1
+      };
+
+      res.json(searchResults);
+    } catch (error) {
+      console.error('Error performing web search:', error);
+      res.status(500).json({ message: 'Failed to perform web search' });
+    }
+  });
+
+  // Image analysis endpoint
+  app.post('/api/analyze-image', async (req, res) => {
+    try {
+      const { imageData, projectId } = req.body;
+      
+      if (!imageData) {
+        return res.status(400).json({ message: 'Image data is required' });
+      }
+
+      // Try OpenAI vision API first
+      if (process.env.OPENAI_API_KEY) {
+        const { analyzeImage } = await import('./services/openai.js');
+        const analysis = await analyzeImage(imageData);
+        return res.json({ analysis, provider: 'openai' });
+      }
+
+      // Try Claude vision as fallback
+      if (process.env.ANTHROPIC_API_KEY) {
+        const { analyzeImage } = await import('./services/anthropic.js');
+        const analysis = await analyzeImage(imageData);
+        return res.json({ analysis, provider: 'claude' });
+      }
+
+      res.json({
+        analysis: 'Image analysis service unavailable - please configure AI API keys',
+        provider: 'none'
+      });
+    } catch (error) {
+      console.error('Error analyzing image:', error);
+      res.status(500).json({ message: 'Failed to analyze image' });
+    }
+  });
+
+  // Voice transcription endpoint
+  app.post('/api/transcribe-voice', async (req, res) => {
+    try {
+      const { audioData, projectId } = req.body;
+      
+      if (!audioData) {
+        return res.status(400).json({ message: 'Audio data is required' });
+      }
+
+      // Try OpenAI Whisper API
+      if (process.env.OPENAI_API_KEY) {
+        const { transcribeAudio } = await import('./services/openai.js');
+        const transcription = await transcribeAudio(audioData);
+        return res.json({ transcription, provider: 'openai' });
+      }
+
+      res.json({
+        transcription: 'Voice transcription service unavailable - please configure OpenAI API key',
+        provider: 'none'
+      });
+    } catch (error) {
+      console.error('Error transcribing voice:', error);
+      res.status(500).json({ message: 'Failed to transcribe voice' });
+    }
+  });
+
+  // Team agent management endpoints
+  
+  // Get all available development team agents
+  app.get('/api/team-agents', async (req, res) => {
+    try {
+      const { getAllAgents } = await import('./services/team-agents.js');
+      const agents = await getAllAgents();
+      res.json(agents);
+    } catch (error) {
+      console.error('Error getting team agents:', error);
+      res.status(500).json({ message: 'Failed to get team agents' });
+    }
+  });
+
+  // Suggest required agents for a project
+  app.post('/api/suggest-agents', async (req, res) => {
+    try {
+      const requirements = req.body;
+      const { suggestRequiredAgents } = await import('./services/team-agents.js');
+      const suggestedAgents = await suggestRequiredAgents(requirements);
+      res.json(suggestedAgents);
+    } catch (error) {
+      console.error('Error suggesting agents:', error);
+      res.status(500).json({ message: 'Failed to suggest agents' });
+    }
+  });
+
+  // Create team conversation for project
+  app.post('/api/projects/:id/team-conversation', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { agentIds } = req.body;
+      const currentUserId = 1; // TODO: Get from session
+
+      const { createTeamConversation, getAllAgents } = await import('./services/team-agents.js');
+      const allAgents = await getAllAgents();
+      const selectedAgents = allAgents.filter(agent => agentIds.includes(agent.id));
+      
+      const conversationId = await createTeamConversation(
+        parseInt(id),
+        selectedAgents,
+        currentUserId
+      );
+
+      res.json({ conversationId, agents: selectedAgents });
+    } catch (error) {
+      console.error('Error creating team conversation:', error);
+      res.status(500).json({ message: 'Failed to create team conversation' });
+    }
+  });
+
+  // Get team conversation messages
+  app.get('/api/conversations/:id/messages', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { getTeamMessages } = await import('./services/team-agents.js');
+      const messages = await getTeamMessages(parseInt(id));
+      res.json(messages);
+    } catch (error) {
+      console.error('Error getting team messages:', error);
+      res.status(500).json({ message: 'Failed to get team messages' });
+    }
+  });
+
+  // Send message to team conversation
+  app.post('/api/conversations/:id/messages', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { content, messageType = 'text' } = req.body;
+      const currentUserId = 1; // TODO: Get from session
+
+      const { sendTeamMessage } = await import('./services/team-agents.js');
+      await sendTeamMessage(parseInt(id), currentUserId, 'user', content, messageType);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error sending team message:', error);
+      res.status(500).json({ message: 'Failed to send team message' });
+    }
+  });
+
   // Code debugging endpoint
   app.post('/api/debug', async (req, res) => {
     try {

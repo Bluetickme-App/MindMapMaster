@@ -86,11 +86,16 @@ export const agents = pgTable("agents", {
   name: text("name").notNull(),
   avatar: text("avatar"),
   description: text("description"),
+  specialization: text("specialization").notNull(), // php, python, react, vite, css, roadmap, design, ai
   capabilities: text("capabilities").array(),
   personality: text("personality"), // communication style and traits
   status: text("status").notNull().default("active"), // active, busy, offline
   aiModel: text("ai_model").default("gpt-4o"),
+  aiProvider: text("ai_provider").notNull().default("openai"), // openai, claude, gemini
   systemPrompt: text("system_prompt").notNull(),
+  experienceLevel: text("experience_level").notNull().default("senior"), // junior, mid, senior, expert
+  languages: text("languages").array().notNull().default([]), // programming languages
+  frameworks: text("frameworks").array().notNull().default([]), // frameworks/tools
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -112,8 +117,9 @@ export const messages = pgTable("messages", {
   senderId: integer("sender_id").notNull(), // user or agent ID
   senderType: text("sender_type").notNull(), // user, agent
   content: text("content").notNull(),
-  messageType: text("message_type").notNull().default("text"), // text, code, image, file, system
-  metadata: jsonb("metadata"), // code language, file info, etc
+  messageType: text("message_type").notNull().default("text"), // text, code, image, voice, file, system, web_search
+  metadata: jsonb("metadata"), // code language, file info, voice duration, search results, etc
+  attachments: jsonb("attachments"), // file paths, image URLs, voice file paths
   parentMessageId: integer("parent_message_id"), // for threading
   reactions: jsonb("reactions"), // emoji reactions
   timestamp: timestamp("timestamp").defaultNow(),

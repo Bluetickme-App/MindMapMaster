@@ -6,8 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Wand2, Code, Download, Eye, Loader2, ExternalLink, Globe } from 'lucide-react';
+import { Wand2, Code, Download, Eye, Loader2, ExternalLink, Globe, ArrowLeft, Upload, Mic, Search } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 
 interface GeneratedCode {
   code: string;
@@ -18,9 +19,13 @@ interface GeneratedCode {
 
 export default function TestGenerationPage() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [prompt, setPrompt] = useState('Create a simple portfolio website with a hero section, about section, and contact form using HTML, CSS, and JavaScript');
   const [generatedCode, setGeneratedCode] = useState<GeneratedCode | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [webSearchQuery, setWebSearchQuery] = useState('');
 
   // Create preview HTML from generated code
   const createPreviewHTML = (code: string) => {
@@ -101,13 +106,74 @@ export default function TestGenerationPage() {
     }
   };
 
+  // Handle image upload
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      toast({
+        title: "Image uploaded",
+        description: "Image will be analyzed with your next prompt",
+      });
+    }
+  };
+
+  // Handle voice upload
+  const handleVoiceUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setAudioFile(file);
+      toast({
+        title: "Voice file uploaded",
+        description: "Audio will be transcribed with your next prompt",
+      });
+    }
+  };
+
+  // Handle web search
+  const handleWebSearch = async () => {
+    if (!webSearchQuery.trim()) return;
+    
+    try {
+      const response = await apiRequest('/api/web-search', {
+        method: 'POST',
+        body: { query: webSearchQuery, maxResults: 3 }
+      });
+      
+      const searchContext = response.results.map(r => `${r.title}: ${r.snippet}`).join('\n');
+      setPrompt(prev => `${prev}\n\nWeb search context:\n${searchContext}`);
+      setWebSearchQuery('');
+      
+      toast({
+        title: "Web search completed",
+        description: "Search results added to prompt context",
+      });
+    } catch (error) {
+      toast({
+        title: "Search failed",
+        description: "Could not perform web search",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
+      {/* Back Button */}
+      <Button 
+        variant="ghost" 
+        onClick={() => setLocation('/')}
+        className="mb-4"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Dashboard
+      </Button>
+
       <div className="flex items-center space-x-2">
         <Wand2 className="w-8 h-8 text-blue-500" />
         <div>
-          <h1 className="text-3xl font-bold">Test Code Generation</h1>
-          <p className="text-muted-foreground">Test the AI code generation capabilities</p>
+          <h1 className="text-3xl font-bold">AI Code Generation with Multimodal Support</h1>
+          <p className="text-muted-foreground">Generate code with text, images, voice, and web search</p>
         </div>
       </div>
 

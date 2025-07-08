@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
 import CollaborationDashboard from "@/pages/collaboration";
+import TeamAgentsPage from "@/pages/team-agents";
 import GeneratePage from "@/pages/generate";
 import DebugPage from "@/pages/debug";
 import GitHubPage from "@/pages/github";
@@ -22,6 +23,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/collaboration" component={CollaborationDashboard} />
+      <Route path="/team-agents" component={TeamAgentsPage} />
       <Route path="/generate" component={GeneratePage} />
       <Route path="/debug" component={DebugPage} />
       <Route path="/github" component={GitHubPage} />
