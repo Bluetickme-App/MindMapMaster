@@ -276,6 +276,12 @@ Changelog:
   - Enhanced chat with debugging support through image and voice analysis
   - Added back navigation buttons to all pages for better UX
   - Created team agents management interface with AI provider distribution
+- July 08, 2025. Fixed Project Builder HTML generation:
+  - Updated AI system prompt to force HTML-only output instead of explanations
+  - Fixed workspace to prioritize completed projects with generated code
+  - Enhanced preview system to handle both HTML and text content appropriately
+  - Added New Project button to workspace for easy project creation
+  - Improved project code loading and display functionality
 
 ## User Preferences
 

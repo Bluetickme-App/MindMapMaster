@@ -38,7 +38,8 @@ import {
   ArrowLeft,
   Users,
   Bot,
-  MessageSquare
+  MessageSquare,
+  Plus
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -113,12 +114,22 @@ export default function WorkspacePage() {
   // Auto-select most recent project on load
   useEffect(() => {
     if (projectsQuery.data && projectsQuery.data.length > 0 && !selectedProject) {
-      // Sort projects by creation date (most recent first)
-      const sortedProjects = [...projectsQuery.data].sort((a, b) => 
+      // Prioritize projects with "completed" status (from Project Builder) first
+      const completedProjects = projectsQuery.data.filter(p => p.status === 'completed');
+      const otherProjects = projectsQuery.data.filter(p => p.status !== 'completed');
+      
+      // Sort by creation date (most recent first)
+      const sortedCompleted = completedProjects.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-      setSelectedProject(sortedProjects[0]);
-      console.log('Selected project:', sortedProjects[0]);
+      const sortedOthers = otherProjects.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      
+      // Select the most recent completed project first, or most recent overall
+      const projectToSelect = sortedCompleted[0] || sortedOthers[0];
+      setSelectedProject(projectToSelect);
+      console.log('Selected project:', projectToSelect);
     }
   }, [projectsQuery.data, selectedProject]);
 
@@ -508,6 +519,14 @@ export default function WorkspacePage() {
                             )}
                           </Button>
                         )}
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => window.location.href = '/project-builder'}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          New Project
+                        </Button>
                         <Button size="sm" variant="outline">
                           <RefreshCw className="w-4 h-4" />
                         </Button>
