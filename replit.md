@@ -296,6 +296,14 @@ Changelog:
   - Users can select multiple agents and create project-specific conversations
   - Conversation participants are stored correctly in database with project association
   - Full workflow: Select agents → Create conversation → Navigate to collaboration interface
+- July 08, 2025. Redesigned workspace with three-panel Replit-style layout:
+  - Created left panel: File hierarchy with expandable folders (src, components, pages)
+  - Built center panel: AI agent chat with team collaboration features
+  - Added right panel: Tabbed interface with Preview, Console, and Browser tabs
+  - Implemented resizable panels for flexible workspace customization
+  - Integrated agent selection and multi-agent conversation capabilities
+  - Added live preview iframe, terminal console, and browser tabs
+  - Fixed JSX compilation errors and component structure issues
 
 ## User Preferences
 
