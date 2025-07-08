@@ -1,0 +1,57 @@
+
+🚀 Multi-Agent Collaboration System is ready!
+📡 WebSocket server initialized for real-time communication
+🤖 Access collaboration dashboard at /collaboration
+12:44:01 AM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+OpenAI code generation error: AuthenticationError: 401 You have insufficient permissions for this operation. Missing scopes: model.request. Check that you have the correct role in your organization (Reader, Writer, Owner) and project (Member, Owner), and if you're using a restricted API key, that it has the necessary scopes.
+    at Function.generate (/home/runner/workspace/node_modules/openai/src/core/error.ts:76:14)
+    at OpenAI.makeStatusError (/home/runner/workspace/node_modules/openai/src/client.ts:425:28)
+    at OpenAI.makeRequest (/home/runner/workspace/node_modules/openai/src/client.ts:646:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async generateCode (/home/runner/workspace/server/services/openai.ts:39:22)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:820:26) {
+  status: 401,
+  headers: Headers {
+    date: 'Tue, 08 Jul 2025 00:44:37 GMT',
+    'content-type': 'application/json',
+    'content-length': '383',
+    connection: 'keep-alive',
+    'access-control-expose-headers': 'X-Request-ID',
+    'openai-processing-ms': '7',
+    'openai-version': '2020-10-01',
+    'www-authenticate': 'Bearer realm="OpenAI API"',
+    'x-envoy-upstream-service-time': '10',
+    'x-ratelimit-limit-requests': '10000',
+    'x-ratelimit-limit-tokens': '2000000',
+    'x-ratelimit-remaining-requests': '9999',
+    'x-ratelimit-remaining-tokens': '1999846',
+    'x-ratelimit-reset-requests': '6ms',
+    'x-ratelimit-reset-tokens': '4ms',
+    'x-request-id': 'req_54a12cf1cd048bb515ae5250dd8e40d4',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'cf-cache-status': 'DYNAMIC',
+    'set-cookie': '__cf_bm=y4XVliSd00rZDQgMf2SH4112OFmJnQ0ne9ZNQGJsnko-1751935477-1.0.1.1-zgJ1drHgFAMc7QcXUz3q.S5N04425JiR5QhDYV_O3QY.n.Ec.J5vkbAiKJdNq8Fg3f_.NTPcjrkgqSvQIonvlpg66mgaGNGZ564KMIG93rk; path=/; expires=Tue, 08-Jul-25 01:14:37 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None, _cfuvid=F2cae7dwdtOdqP_izso51bPFakBn7NxADaXVQkAoqjY-1751935477871-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+    'x-content-type-options': 'nosniff',
+    server: 'cloudflare',
+    'cf-ray': '95bb8dde3d06762d-SEA',
+    'alt-svc': 'h3=":443"; ma=86400'
+  },
+  requestID: 'req_54a12cf1cd048bb515ae5250dd8e40d4',
+  error: {
+    message: "You have insufficient permissions for this operation. Missing scopes: model.request. Check that you have the correct role in your organization (Reader, Writer, Owner) and project (Member, Owner), and if you're using a restricted API key, that it has the necessary scopes.",
+    type: 'invalid_request_error',
+    param: null,
+    code: null
+  },
+  code: null,
+  param: null,
+  type: 'invalid_request_error'
+}
+OpenAI generation failed: Error: Failed to generate code with OpenAI
+    at generateCode (/home/runner/workspace/server/services/openai.ts:59:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:820:26)
+12:45:19 AM [express] POST /api/generate 200 in 42090ms :: {"code":"```json\n{\n  \"code\": \"<!DOCTY…
