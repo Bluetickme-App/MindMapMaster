@@ -117,6 +117,23 @@ export default function WorkspacePage() {
     }
   }, [projectsQuery.data, selectedProject]);
 
+  // Generate project starter files when project is selected
+  const createProjectWorkspace = useMutation({
+    mutationFn: async (project: any) => {
+      const starterFiles = {
+        'JavaScript': {
+          'React': [
+            { name: 'App.jsx', content: `import React from 'react';\n\nfunction App() {\n  return (\n    <div className="App">\n      <h1>Welcome to ${project.name}</h1>\n      <p>Your ${project.framework} project is ready!</p>\n    </div>\n  );\n}\n\nexport default App;` },
+            { name: 'index.html', content: `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>${project.name}</title>\n</head>\n<body>\n  <div id="root"></div>\n  <script type="module" src="/src/main.jsx"></script>\n</body>\n</html>` },
+            { name: 'package.json', content: `{\n  "name": "${project.name.toLowerCase()}",\n  "private": true,\n  "version": "0.0.0",\n  "type": "module",\n  "scripts": {\n    "dev": "vite",\n    "build": "vite build",\n    "preview": "vite preview"\n  },\n  "dependencies": {\n    "react": "^18.2.0",\n    "react-dom": "^18.2.0"\n  },\n  "devDependencies": {\n    "@vitejs/plugin-react": "^4.0.3",\n    "vite": "^4.4.5"\n  }\n}` }
+          ]
+        }
+      };
+      
+      return starterFiles[project.language]?.[project.framework] || [];
+    }
+  });
+
   // Execute console command mutation
   const executeCommand = useMutation({
     mutationFn: async (command: string) => {
@@ -331,24 +348,30 @@ export default function WorkspacePage() {
             <h1 className="text-lg font-semibold">CodeCraft Workspace</h1>
             
             {/* Project Selector */}
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium">Project:</label>
-              <Select value={selectedProject?.id?.toString() || ''} onValueChange={(value) => {
-                const project = projectsQuery.data?.find((p: any) => p.id.toString() === value);
-                setSelectedProject(project);
-              }}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select a project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projectsQuery.data?.map((project: any) => (
-                    <SelectItem key={project.id} value={project.id.toString()}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {projectsQuery.data && projectsQuery.data.length > 0 && (
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium text-foreground">Project:</label>
+                <Select 
+                  value={selectedProject?.id?.toString() || ''} 
+                  onValueChange={(value) => {
+                    const project = projectsQuery.data?.find((p: any) => p.id.toString() === value);
+                    setSelectedProject(project);
+                    console.log('Selected project:', project);
+                  }}
+                >
+                  <SelectTrigger className="w-48 bg-background border-input">
+                    <SelectValue placeholder="Select a project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projectsQuery.data?.map((project: any) => (
+                      <SelectItem key={project.id} value={project.id.toString()}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             
             <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
@@ -452,33 +475,70 @@ export default function WorkspacePage() {
 
               <TabsContent value="editor" className="h-[calc(100%-60px)] m-0">
                 <div className="h-full p-4">
-                  {selectedFile ? (
-                    <div className="h-full">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-medium">{selectedFile.name}</h3>
-                        <Badge variant="outline">{selectedFile.path}</Badge>
+                  {selectedProject ? (
+                    selectedFile ? (
+                      <div className="h-full">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-2">
+                            <h3 className="text-lg font-medium">{selectedFile.name}</h3>
+                            <Badge variant="secondary" className="text-xs">
+                              {selectedProject.name}
+                            </Badge>
+                          </div>
+                          <Badge variant="outline">{selectedFile.path}</Badge>
+                        </div>
+                        <Textarea
+                          placeholder={`// ${selectedProject.name} - ${selectedFile.name}\n// Start coding your ${selectedProject.framework || selectedProject.language} project here...\n\n`}
+                          className="h-[calc(100%-100px)] font-mono text-sm"
+                          value={fileContent}
+                          onChange={(e) => setFileContent(e.target.value)}
+                        />
+                        <div className="flex justify-end mt-2">
+                          <Button 
+                            onClick={handleSaveFile}
+                            disabled={saveFile.isPending}
+                            size="sm"
+                          >
+                            {saveFile.isPending ? 'Saving...' : 'Save File'}
+                          </Button>
+                        </div>
                       </div>
-                      <Textarea
-                        placeholder="File content will be loaded here..."
-                        className="h-[calc(100%-100px)] font-mono text-sm"
-                        value={fileContent}
-                        onChange={(e) => setFileContent(e.target.value)}
-                      />
-                      <div className="flex justify-end mt-2">
-                        <Button 
-                          onClick={handleSaveFile}
-                          disabled={saveFile.isPending}
-                          size="sm"
-                        >
-                          {saveFile.isPending ? 'Saving...' : 'Save File'}
-                        </Button>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-muted-foreground">
+                        <div className="text-center">
+                          <Package className="w-12 h-12 mx-auto mb-4 text-blue-500" />
+                          <h3 className="font-semibold mb-2 text-foreground">Ready to work on {selectedProject.name}!</h3>
+                          <p className="text-sm mb-4">
+                            {selectedProject.language} • {selectedProject.framework || 'No framework'}
+                          </p>
+                          <Button 
+                            onClick={() => {
+                              const starterFile = {
+                                name: selectedProject.framework === 'React' ? 'App.jsx' : 'index.js',
+                                type: 'file' as const,
+                                path: selectedProject.framework === 'React' ? 'src/App.jsx' : 'src/index.js',
+                                size: 0,
+                                modified: new Date().toISOString()
+                              };
+                              setSelectedFile(starterFile);
+                              setFileContent(`// Welcome to ${selectedProject.name}!\n// This is your ${selectedProject.language} ${selectedProject.framework || ''} project\n// Start building your ${selectedProject.description || 'amazing application'} here\n\nfunction App() {\n  return (\n    <div>\n      <h1>Welcome to ${selectedProject.name}</h1>\n      <p>Your project is ready to go!</p>\n    </div>\n  );\n}\n\nexport default App;`);
+                            }}
+                            className="mb-2"
+                          >
+                            <Code className="w-4 h-4 mr-2" />
+                            Start Coding
+                          </Button>
+                          <p className="text-xs text-muted-foreground">
+                            Click to create your first project file
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    )
                   ) : (
                     <div className="h-full flex items-center justify-center text-muted-foreground">
                       <div className="text-center">
                         <File className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>Select a file from the explorer to edit</p>
+                        <p>Select a project from the dropdown above to start coding</p>
                       </div>
                     </div>
                   )}

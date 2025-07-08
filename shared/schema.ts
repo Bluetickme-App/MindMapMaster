@@ -51,6 +51,19 @@ export const projectConversations = pgTable("project_conversations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Project files storage
+export const projectFiles = pgTable("project_files", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  content: text("content").notNull(),
+  fileType: text("file_type").notNull(), // file, folder
+  size: integer("size").default(0),
+  lastModified: timestamp("last_modified").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const apiTests = pgTable("api_tests", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
