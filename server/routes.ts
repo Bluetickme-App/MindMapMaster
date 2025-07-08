@@ -8,6 +8,7 @@ import { agentOrchestrationService } from "./services/agent-orchestration";
 import { multiAIService } from "./services/multi-ai-provider";
 import { WebSocketManager, webSocketManager } from "./services/websocket-manager";
 import { debugCode } from "./services/openai";
+import { fileSystemService } from "./services/file-system";
 import { 
   insertCodeGenerationSchema, insertProjectSchema, insertApiTestSchema,
   insertAgentSchema, insertConversationSchema, insertMessageSchema,
@@ -2452,10 +2453,109 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     }
   });
   
+  // File System API Routes
+  app.get('/api/files', async (req, res) => {
+    try {
+      const { path: dirPath = '' } = req.query;
+      const fileTree = await fileSystemService.getFileTree(dirPath as string);
+      res.json(fileTree);
+    } catch (error) {
+      console.error('Error fetching file tree:', error);
+      res.status(500).json({ message: 'Failed to fetch file tree' });
+    }
+  });
+
+  app.get('/api/files/content', async (req, res) => {
+    try {
+      const { path: filePath } = req.query;
+      
+      if (!filePath || typeof filePath !== 'string') {
+        return res.status(400).json({ message: 'File path is required' });
+      }
+      
+      const content = await fileSystemService.readFile(filePath);
+      const language = fileSystemService.getLanguageFromFileName(filePath);
+      
+      res.json({
+        content,
+        language,
+        path: filePath
+      });
+    } catch (error) {
+      console.error('Error reading file:', error);
+      res.status(500).json({ message: 'Failed to read file' });
+    }
+  });
+
+  app.post('/api/files/save', async (req, res) => {
+    try {
+      const { path: filePath, content } = req.body;
+      
+      if (!filePath || content === undefined) {
+        return res.status(400).json({ message: 'File path and content are required' });
+      }
+      
+      await fileSystemService.writeFile(filePath, content);
+      res.json({ message: 'File saved successfully' });
+    } catch (error) {
+      console.error('Error saving file:', error);
+      res.status(500).json({ message: 'Failed to save file' });
+    }
+  });
+
+  app.post('/api/files/format', async (req, res) => {
+    try {
+      const { content, language, provider = 'openai' } = req.body;
+      
+      if (!content || !language) {
+        return res.status(400).json({ message: 'Content and language are required' });
+      }
+      
+      const result = await fileSystemService.formatCodeWithAI(content, language, provider);
+      res.json(result);
+    } catch (error) {
+      console.error('Error formatting code:', error);
+      res.status(500).json({ message: 'Failed to format code with AI' });
+    }
+  });
+
+  app.post('/api/files/debug', async (req, res) => {
+    try {
+      const { content, language, error: errorMsg } = req.body;
+      
+      if (!content || !language) {
+        return res.status(400).json({ message: 'Content and language are required' });
+      }
+      
+      const result = await fileSystemService.debugCodeWithAI(content, language, errorMsg);
+      res.json(result);
+    } catch (error) {
+      console.error('Error debugging code:', error);
+      res.status(500).json({ message: 'Failed to debug code with AI' });
+    }
+  });
+
+  app.post('/api/files/explain', async (req, res) => {
+    try {
+      const { content, language } = req.body;
+      
+      if (!content || !language) {
+        return res.status(400).json({ message: 'Content and language are required' });
+      }
+      
+      const result = await fileSystemService.explainCodeWithAI(content, language);
+      res.json(result);
+    } catch (error) {
+      console.error('Error explaining code:', error);
+      res.status(500).json({ message: 'Failed to explain code with AI' });
+    }
+  });
+
   console.log('🚀 Multi-Agent Collaboration System is ready!');
   console.log('📡 WebSocket server initialized for real-time communication');
   console.log('🤖 Access collaboration dashboard at /collaboration');
   console.log('🏠 WeLet AI Agent ready for tenant support');
+  console.log('📁 File System API ready for real-time code editing');
   
   return httpServer;
 }

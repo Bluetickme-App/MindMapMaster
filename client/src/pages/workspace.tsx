@@ -198,49 +198,13 @@ export default function WorkspacePage() {
     },
   });
 
-  // Mock file system
-  const fileSystem: FileNode[] = [
-    {
-      name: 'src',
-      type: 'folder',
-      path: 'src',
-      children: [
-        {
-          name: 'components',
-          type: 'folder',
-          path: 'src/components',
-          children: [
-            { name: 'ui', type: 'folder', path: 'src/components/ui', children: [] },
-            { name: 'Button.tsx', type: 'file', path: 'src/components/Button.tsx' },
-            { name: 'Card.tsx', type: 'file', path: 'src/components/Card.tsx' },
-          ]
-        },
-        {
-          name: 'pages',
-          type: 'folder',
-          path: 'src/pages',
-          children: [
-            { name: 'Home.tsx', type: 'file', path: 'src/pages/Home.tsx' },
-            { name: 'About.tsx', type: 'file', path: 'src/pages/About.tsx' },
-          ]
-        },
-        { name: 'App.tsx', type: 'file', path: 'src/App.tsx' },
-        { name: 'index.tsx', type: 'file', path: 'src/index.tsx' },
-      ]
+  const fileTreeQuery = useQuery({
+    queryKey: ['/api/files'],
+    queryFn: async () => {
+      const response = await fetch('/api/files');
+      return response.json();
     },
-    {
-      name: 'public',
-      type: 'folder',
-      path: 'public',
-      children: [
-        { name: 'index.html', type: 'file', path: 'public/index.html' },
-        { name: 'favicon.ico', type: 'file', path: 'public/favicon.ico' },
-      ]
-    },
-    { name: 'package.json', type: 'file', path: 'package.json' },
-    { name: 'tsconfig.json', type: 'file', path: 'tsconfig.json' },
-    { name: 'README.md', type: 'file', path: 'README.md' },
-  ];
+  });
 
   useEffect(() => {
     if (projectsQuery.data && projectsQuery.data.length > 0) {
@@ -310,29 +274,16 @@ export default function WorkspacePage() {
         setOpenFiles([...openFiles, node]);
       }
       
-      // Load file content
+      // Load real file content from server
       try {
-        // For now, we'll use placeholder content based on file extension
-        // In a real implementation, this would fetch from the server
-        const extension = node.name.split('.').pop() || '';
-        let content = '';
-        
-        if (['js', 'jsx', 'ts', 'tsx'].includes(extension)) {
-          content = `// ${node.name}\n// This is a placeholder for the actual file content\n\nexport default function Component() {\n  return (\n    <div>\n      <h1>Hello from ${node.name}</h1>\n    </div>\n  );\n}`;
-        } else if (['css', 'scss'].includes(extension)) {
-          content = `/* ${node.name} */\n\n.container {\n  display: flex;\n  padding: 1rem;\n}\n\n.title {\n  font-size: 2rem;\n  color: #333;\n}`;
-        } else if (extension === 'html') {
-          content = `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <title>${node.name}</title>\n</head>\n<body>\n  <h1>Hello from ${node.name}</h1>\n</body>\n</html>`;
-        } else if (extension === 'json') {
-          content = `{\n  "name": "${node.name}",\n  "version": "1.0.0",\n  "description": "Sample JSON file"\n}`;
-        } else if (extension === 'md') {
-          content = `# ${node.name}\n\nThis is a markdown file with sample content.\n\n## Features\n\n- Feature 1\n- Feature 2\n- Feature 3`;
+        const response = await fetch(`/api/files/content?path=${encodeURIComponent(node.path)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setFileContent(data.content);
+          setActiveTab('editor');
         } else {
-          content = `// ${node.name}\n// File content would be loaded here`;
+          throw new Error('Failed to fetch file content');
         }
-        
-        setFileContent(content);
-        setActiveTab('editor');
       } catch (error) {
         console.error('Error loading file:', error);
         toast({
@@ -420,58 +371,160 @@ export default function WorkspacePage() {
     
     try {
       const language = getLanguageFromFileName(selectedFile.name);
-      let parser = 'babel';
       
-      // Determine the parser based on language
-      if (['typescript', 'tsx'].includes(language)) {
-        parser = 'typescript';
-      } else if (language === 'css') {
-        parser = 'css';
-      } else if (language === 'scss') {
-        parser = 'scss';
-      } else if (language === 'html') {
-        parser = 'html';
-      } else if (language === 'markdown') {
-        parser = 'markdown';
-      } else if (language === 'json') {
-        parser = 'json';
-      } else if (language === 'yaml') {
-        parser = 'yaml';
+      // Use AI-powered formatting
+      const response = await fetch('/api/files/format', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: fileContent,
+          language,
+          provider: 'openai' // You can make this configurable
+        }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setFileContent(result.formattedCode);
+        toast({
+          title: "Code Formatted",
+          description: result.explanation || "Your code has been formatted successfully",
+        });
+        
+        // Show suggestions if any
+        if (result.suggestions && result.suggestions.length > 0) {
+          console.log('AI Suggestions:', result.suggestions);
+        }
+      } else {
+        throw new Error('Failed to format code');
       }
-      
-      const formatted = await prettier.format(fileContent, {
-        parser,
-        semi: true,
-        singleQuote: true,
-        trailingComma: 'es5',
-        tabWidth: 2,
-        printWidth: 80,
-        bracketSpacing: true,
-        arrowParens: 'avoid',
-        endOfLine: 'lf',
-      });
-      
-      setFileContent(formatted);
-      toast({
-        title: "Code Formatted",
-        description: "Your code has been formatted successfully",
-      });
     } catch (error) {
       console.error('Error formatting code:', error);
       toast({
         title: "Format Error",
-        description: "Unable to format code. Please check syntax errors.",
+        description: "Unable to format code with AI. Please check syntax errors.",
         variant: "destructive",
       });
     }
   };
 
-  const handleSaveFile = () => {
-    // In a real implementation, this would save to the server
-    toast({
-      title: "File Saved",
-      description: `${selectedFile?.name} has been saved successfully`,
-    });
+  const handleSaveFile = async () => {
+    if (!selectedFile || !fileContent) return;
+    
+    try {
+      const response = await fetch('/api/files/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: selectedFile.path,
+          content: fileContent,
+        }),
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "File Saved",
+          description: `${selectedFile.name} has been saved successfully`,
+        });
+      } else {
+        throw new Error('Failed to save file');
+      }
+    } catch (error) {
+      console.error('Error saving file:', error);
+      toast({
+        title: "Save Error",
+        description: "Failed to save file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDebugCode = async () => {
+    if (!selectedFile || !fileContent) return;
+    
+    try {
+      const language = getLanguageFromFileName(selectedFile.name);
+      
+      const response = await fetch('/api/files/debug', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: fileContent,
+          language,
+        }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setFileContent(result.fixedCode);
+        toast({
+          title: "Code Debugged",
+          description: result.explanation || "Code has been analyzed and improved",
+        });
+        
+        if (result.issues && result.issues.length > 0) {
+          console.log('Issues found:', result.issues);
+        }
+      } else {
+        throw new Error('Failed to debug code');
+      }
+    } catch (error) {
+      console.error('Error debugging code:', error);
+      toast({
+        title: "Debug Error",
+        description: "Failed to debug code with AI",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExplainCode = async () => {
+    if (!selectedFile || !fileContent) return;
+    
+    try {
+      const language = getLanguageFromFileName(selectedFile.name);
+      
+      const response = await fetch('/api/files/explain', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: fileContent,
+          language,
+        }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: "Code Explanation",
+          description: result.explanation || "Code analysis completed",
+        });
+        
+        console.log('Code Analysis:', {
+          explanation: result.explanation,
+          keyFeatures: result.keyFeatures,
+          complexity: result.complexity,
+          suggestions: result.suggestions
+        });
+      } else {
+        throw new Error('Failed to explain code');
+      }
+    } catch (error) {
+      console.error('Error explaining code:', error);
+      toast({
+        title: "Explain Error",
+        description: "Failed to explain code with AI",
+        variant: "destructive",
+      });
+    }
   };
 
   const getFileIcon = (node: FileNode) => {
@@ -618,7 +671,7 @@ export default function WorkspacePage() {
             <CardContent className="p-0">
               <ScrollArea className="h-[calc(100vh-200px)]">
                 <div className="p-2">
-                  {renderFileTree(fileSystem)}
+                  {fileTreeQuery.data && renderFileTree(fileTreeQuery.data)}
                 </div>
               </ScrollArea>
             </CardContent>
@@ -905,6 +958,24 @@ export default function WorkspacePage() {
                             >
                               <Code className="w-4 h-4" />
                               Format
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDebugCode()}
+                              title="Debug Code with AI"
+                            >
+                              <Bot className="w-4 h-4" />
+                              Debug
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleExplainCode()}
+                              title="Explain Code with AI"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                              Explain
                             </Button>
                             <Button
                               size="sm"
