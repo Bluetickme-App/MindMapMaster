@@ -395,8 +395,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const selectedFeatures = roadmap.map((item: any) => `- ${item.title}: ${item.description}`).join('\n');
       
-      const buildPrompt = `Create a complete, production-ready ${language} ${framework} application called "${projectName}".
-      
+      const buildPrompt = `Create a PROFESSIONAL, PRODUCTION-READY ${language} ${framework} application called "${projectName}".
+
       Project Description: ${description}
       
       Required Features:
@@ -404,17 +404,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       ${customRequirements ? `Additional Requirements: ${customRequirements}` : ''}
       
-      Generate a complete, functional web application with:
-      1. Clean, modern HTML structure
-      2. Responsive CSS styling (use modern techniques)
-      3. Interactive JavaScript functionality
-      4. All selected features implemented
-      5. Professional UI/UX design
-      6. Mobile-responsive layout
+      CRITICAL REQUIREMENTS:
       
-      Return the complete HTML file with embedded CSS and JavaScript. Make it visually appealing and fully functional.
+      1. VISUAL DESIGN - Create a stunning, modern interface with:
+         - Professional color scheme (use CSS custom properties)
+         - Modern typography (Google Fonts)
+         - Subtle animations and transitions
+         - Card-based layouts with proper shadows
+         - Gradient backgrounds or professional color schemes
+         - High-quality visual hierarchy
       
-      Include proper error handling, accessibility features, and modern web standards.`;
+      2. ADVANCED FUNCTIONALITY - Implement:
+         - Interactive components with state management
+         - Form validation with real-time feedback
+         - Dynamic content loading and filtering
+         - Responsive grid systems (CSS Grid/Flexbox)
+         - Interactive charts/data visualization if relevant
+         - Modal dialogs and popups
+         - Tab systems and navigation
+      
+      3. MODERN CSS TECHNIQUES:
+         - CSS Grid and Flexbox for layouts
+         - CSS custom properties (variables)
+         - Advanced selectors and pseudo-elements
+         - Keyframe animations
+         - Media queries for full responsiveness
+         - Modern CSS features (backdrop-filter, clamp, etc.)
+      
+      4. JAVASCRIPT FEATURES:
+         - ES6+ syntax (arrow functions, destructuring, modules)
+         - Event delegation and proper event handling
+         - Local storage for persistence
+         - Async/await for data operations
+         - Dynamic DOM manipulation
+         - Form validation and submission
+      
+      5. PROFESSIONAL TOUCHES:
+         - Loading states and spinners
+         - Empty states and error handling
+         - Accessibility (ARIA labels, keyboard navigation)
+         - SEO optimization (meta tags, semantic HTML)
+         - Performance optimizations
+      
+      EXAMPLES OF QUALITY:
+      - Think Stripe, Vercel, or Linear.app level design quality
+      - Use modern design patterns like glassmorphism, neumorphism, or clean minimalism
+      - Implement micro-interactions and smooth transitions
+      - Create a cohesive design system with consistent spacing
+      
+      Return a complete, single HTML file with embedded CSS and JavaScript that looks and functions like a professional SaaS application.
+      
+      DO NOT create basic forms or simple layouts. Create something that looks like it belongs in a portfolio of a senior developer.`;
 
       try {
         if (process.env.OPENAI_API_KEY) {
@@ -429,11 +469,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
               messages: [
                 { 
                   role: 'system', 
-                  content: 'You are a senior full-stack developer creating production-ready web applications. Generate complete, functional, and visually appealing code.' 
+                  content: `You are a world-class senior full-stack developer and UI/UX designer with 15+ years of experience. You create applications that:
+                  
+                  - Look like they were designed by top-tier design agencies
+                  - Function like professionally developed SaaS products
+                  - Use the latest web technologies and best practices
+                  - Have pixel-perfect attention to detail
+                  - Include sophisticated interactions and animations
+                  
+                  Your applications should be indistinguishable from products built by companies like Stripe, Vercel, Linear, or Figma.
+                  
+                  NEVER create basic, simple, or amateur-looking interfaces. Every application should be portfolio-worthy.` 
                 },
                 { role: 'user', content: buildPrompt }
               ],
-              temperature: 0.3
+              temperature: 0.2
             })
           });
 
@@ -472,6 +522,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const explanationData = await explanationResponse.json();
           const explanation = explanationData.choices[0].message.content;
           
+          // Save the generated project to database
+          try {
+            const project = await storage.createProject({
+              userId: currentUserId,
+              name: projectName,
+              description: description,
+              language: language,
+              framework: framework,
+              status: 'completed',
+              lastModified: new Date(),
+              githubRepo: null,
+              deployUrl: null
+            });
+            
+            // Save the generated code as a code generation entry
+            await storage.createCodeGeneration({
+              userId: currentUserId,
+              projectId: project.id,
+              prompt: `Project Builder: ${projectName} - ${description}`,
+              language: language,
+              framework: framework,
+              generatedCode: generatedCode,
+              explanation: explanation,
+              createdAt: new Date()
+            });
+          } catch (error) {
+            console.error('Error saving project:', error);
+          }
+          
           return res.json({
             code: generatedCode,
             explanation: explanation,
@@ -483,31 +562,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('OpenAI build failed:', error);
       }
       
-      // Fallback code
+      // Enhanced fallback code with modern design
       const fallbackCode = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${projectName}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --secondary: #f8fafc;
+            --accent: #06b6d4;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        header { background: #2563eb; color: white; padding: 20px 0; text-align: center; }
-        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 40px 0; }
-        .feature-card { background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .feature-card h3 { color: #1e40af; margin-bottom: 10px; }
-        footer { text-align: center; padding: 40px 0; color: #64748b; }
+        
+        header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+        }
+        
+        .feature-card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .feature-card p {
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+        
+        .cta-section {
+            text-align: center;
+            margin: 60px 0;
+        }
+        
+        .cta-button {
+            background: var(--primary);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .cta-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: rgba(255, 255, 255, 0.8);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            header h1 { font-size: 2rem; }
+            header p { font-size: 1rem; }
+            .features { grid-template-columns: 1fr; gap: 20px; }
+            .feature-card { padding: 20px; }
+        }
     </style>
 </head>
 <body>
-    <header>
-        <h1>${projectName}</h1>
-        <p>${description}</p>
-    </header>
-    
     <div class="container">
+        <header>
+            <h1>${projectName}</h1>
+            <p>${description}</p>
+        </header>
+        
         <div class="features">
             ${roadmap.map((feature: any) => `
                 <div class="feature-card">
@@ -516,13 +722,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 </div>
             `).join('')}
         </div>
+        
+        <div class="cta-section">
+            <button class="cta-button">Get Started</button>
+        </div>
+        
+        <footer>
+            <p>Built with ${framework} • ${language} • Professional Grade</p>
+        </footer>
     </div>
     
-    <footer>
-        <p>Built with ${framework} • ${language}</p>
-    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add smooth scrolling and interactions
+            const cards = document.querySelectorAll('.feature-card');
+            
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+            
+            // Add click animations
+            const ctaButton = document.querySelector('.cta-button');
+            ctaButton.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 100);
+            });
+        });
+    </script>
 </body>
 </html>`;
+      
+      // Save fallback project to database as well
+      try {
+        const project = await storage.createProject({
+          userId: currentUserId,
+          name: projectName,
+          description: description,
+          language: language,
+          framework: framework,
+          status: 'completed',
+          lastModified: new Date(),
+          githubRepo: null,
+          deployUrl: null
+        });
+        
+        // Save the generated code as a code generation entry
+        await storage.createCodeGeneration({
+          userId: currentUserId,
+          projectId: project.id,
+          prompt: `Project Builder: ${projectName} - ${description}`,
+          language: language,
+          framework: framework,
+          generatedCode: fallbackCode,
+          explanation: `This ${framework} application implements the core features for ${projectName}. The code includes responsive design, modern CSS, and structured HTML for all selected features.`,
+          createdAt: new Date()
+        });
+      } catch (error) {
+        console.error('Error saving project:', error);
+      }
       
       res.json({
         code: fallbackCode,

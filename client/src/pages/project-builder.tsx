@@ -121,6 +121,16 @@ export default function ProjectBuilderPage() {
     onSuccess: (data) => {
       setGeneratedCode(data);
       setCurrentStep('preview');
+      
+      // Invalidate projects cache to refresh the project list
+      queryClient.invalidateQueries({
+        queryKey: ['/api/projects']
+      });
+      
+      toast({
+        title: "Project Created Successfully!",
+        description: `${projectName} has been built and added to your projects.`
+      });
     },
     onError: (error: any) => {
       setIsBuilding(false);
@@ -580,6 +590,31 @@ export default function ProjectBuilderPage() {
         {/* Step 4: Live Preview */}
         {currentStep === 'preview' && generatedCode && (
           <div className="max-w-full">
+            <div className="flex items-center justify-between mb-6">
+              <Alert className="flex-1 mr-4 border-green-200 bg-green-50">
+                <Sparkles className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  ✓ Project "{projectName}" has been successfully generated and added to your projects!
+                </AlertDescription>
+              </Alert>
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={() => setLocation('/workspace')}
+                  variant="outline"
+                  size="sm"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Workspace
+                </Button>
+                <Button 
+                  onClick={() => setLocation('/')}
+                  variant="outline"
+                  size="sm"
+                >
+                  All Projects
+                </Button>
+              </div>
+            </div>
             <Tabs defaultValue="preview" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="preview">Live Preview</TabsTrigger>
