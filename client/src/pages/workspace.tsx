@@ -94,6 +94,42 @@ export default function WorkspacePage() {
     },
   });
 
+  const fetchConversationMessages = async () => {
+    if (!conversationId) return;
+    
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}/messages`);
+      if (response.ok) {
+        const data = await response.json();
+        const formattedMessages = data.map((msg: any) => ({
+          id: msg.id.toString(),
+          type: msg.senderType === 'agent' ? 'success' : 'info',
+          message: `${msg.senderType === 'agent' ? `[${getAgentName(msg.senderId)}] ` : ''}${msg.content}`,
+          timestamp: new Date(msg.timestamp).toLocaleTimeString(),
+        }));
+        setMessages(formattedMessages);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
+  
+  const getAgentName = (agentId: number) => {
+    const agent = agentsQuery.data?.find((a: Agent) => a.id === agentId);
+    return agent?.name || `Agent ${agentId}`;
+  };
+  
+  // Poll for new messages periodically when conversation is active
+  useEffect(() => {
+    if (!conversationId) return;
+    
+    const interval = setInterval(() => {
+      fetchConversationMessages();
+    }, 3000); // Poll every 3 seconds
+    
+    return () => clearInterval(interval);
+  }, [conversationId]);
+
   const createConversationMutation = useMutation({
     mutationFn: async (data: { agentIds: number[] }) => {
       if (!selectedProject?.id) {
@@ -129,10 +165,14 @@ export default function WorkspacePage() {
         timestamp: new Date().toLocaleTimeString()
       }]);
       setShowAgentSelection(false);
+      setAgentCheckboxes({});
       toast({
         title: "Success",
         description: "Team conversation created successfully!",
       });
+      
+      // Fetch initial messages
+      fetchConversationMessages();
     },
     onError: (error: any) => {
       console.error('Failed to create conversation:', error);
@@ -194,8 +234,17 @@ export default function WorkspacePage() {
     }
   }, [projectsQuery.data]);
 
-  const handleChatCommand = () => {
+  const handleChatCommand = async () => {
     if (!chatCommand.trim()) return;
+    
+    if (!conversationId) {
+      toast({
+        title: "No conversation",
+        description: "Please create a team conversation first",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const newMessage: ConsoleMessage = {
       id: Date.now().toString(),
@@ -205,6 +254,36 @@ export default function WorkspacePage() {
     };
 
     setMessages(prev => [...prev, newMessage]);
+    
+    try {
+      // Send message to the team conversation
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          content: chatCommand,
+          messageType: 'text'
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+      
+      // Poll for agent responses after a short delay
+      setTimeout(() => {
+        fetchConversationMessages();
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    }
+    
     setChatCommand('');
   };
 

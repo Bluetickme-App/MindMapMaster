@@ -335,6 +335,19 @@ Changelog:
   - Fixed apiRequest function to return JSON data instead of Response objects
   - Agents now correctly process and respond to messages in WebSocket conversations
   - Multi-AI provider system verified working with OpenAI, Claude, and Gemini integration
+- July 08, 2025. Fixed workspace chat functionality with agents:
+  - Discovered workspace page lacked message sending functionality to conversations
+  - Added proper message sending to team conversations with POST requests
+  - Implemented periodic polling (3 seconds) to fetch agent responses
+  - Added getAgentName helper to display agent names in messages
+  - Workspace now properly sends messages and displays agent responses
+  - Confirmed agents respond correctly (2.5 second response time)
+- July 08, 2025. Fixed agent response triggering in REST API:
+  - Discovered REST API endpoint only saved messages without triggering agent responses
+  - Modified /api/conversations/:id/messages endpoint to trigger WebSocket manager
+  - Added integration to call websocketManager.triggerAgentResponsesFromAPI after saving messages
+  - Agents now respond to messages sent from workspace via REST API
+  - Multi-agent system fully operational with OpenAI, Claude, and Gemini providers
 
 ## User Preferences
 

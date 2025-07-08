@@ -1726,6 +1726,19 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
       const { sendTeamMessage } = await import('./services/team-agents.js');
       await sendTeamMessage(parseInt(id), currentUserId, 'user', content, messageType);
 
+      // Get conversation to trigger agent responses
+      const conversation = await storage.getConversation(parseInt(id));
+      if (conversation && websocketManager) {
+        console.log('Triggering agent responses for conversation:', id);
+        
+        // Get the message we just created
+        const messages = await storage.getMessagesByConversation(parseInt(id));
+        const userMessage = messages[messages.length - 1];
+        
+        // Trigger agent responses via WebSocket manager
+        await websocketManager.triggerAgentResponsesFromAPI(conversation, userMessage, content);
+      }
+
       res.json({ success: true });
     } catch (error) {
       console.error('Error sending team message:', error);
