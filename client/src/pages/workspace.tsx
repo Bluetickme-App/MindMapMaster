@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, 
   Users, 
+  User,
   Settings, 
   Folder, 
   FolderOpen, 
