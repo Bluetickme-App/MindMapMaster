@@ -188,7 +188,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // GitHub integration routes
-  app.post("/api/github/repositories", async (req, res) => {
+  app.get("/api/github/status", async (req, res) => {
+    try {
+      const user = await storage.getUser(currentUserId);
+      res.json({
+        connected: !!user?.githubToken,
+        user: user?.githubToken ? { username: user.username, name: user.name } : null
+      });
+    } catch (error) {
+      console.error("GitHub status error:", error);
+      res.status(500).json({ message: "Failed to get GitHub status" });
+    }
+  });
+
+  app.post("/api/github/connect", async (req, res) => {
+    try {
+      const { token } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({ message: "GitHub token is required" });
+      }
+
+      // Validate token by fetching user info
+      const githubService = new GitHubService(token);
+      const userInfo = await githubService.getAuthenticatedUser();
+      
+      // Update user with GitHub token
+      await storage.updateUser(currentUserId, { githubToken: token });
+      
+      res.json({ 
+        message: "GitHub connected successfully",
+        user: {
+          id: userInfo.id,
+          login: userInfo.login,
+          name: userInfo.name,
+          email: userInfo.email,
+          avatar_url: userInfo.avatar_url
+        }
+      });
+    } catch (error) {
+      console.error("GitHub connect error:", error);
+      res.status(500).json({ message: "Failed to connect to GitHub. Please check your token." });
+    }
+  });
+
+  app.post("/api/github/disconnect", async (req, res) => {
+    try {
+      await storage.updateUser(currentUserId, { githubToken: null });
+      res.json({ message: "GitHub disconnected successfully" });
+    } catch (error) {
+      console.error("GitHub disconnect error:", error);
+      res.status(500).json({ message: "Failed to disconnect GitHub" });
+    }
+  });
+
+  app.post("/api/github/sync", async (req, res) => {
     try {
       const user = await storage.getUser(currentUserId);
       if (!user?.githubToken) {
@@ -213,20 +267,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.json(repositories);
+      res.json({ message: "Repositories synced successfully", count: repositories.length });
     } catch (error) {
-      console.error("GitHub repositories error:", error);
-      res.status(500).json({ message: "Failed to fetch GitHub repositories" });
+      console.error("GitHub sync error:", error);
+      res.status(500).json({ message: "Failed to sync repositories" });
     }
   });
 
   app.get("/api/github/repositories", async (req, res) => {
     try {
-      const repositories = await storage.getGithubRepositoriesByUser(currentUserId);
+      const user = await storage.getUser(currentUserId);
+      if (!user?.githubToken) {
+        return res.json([]);
+      }
+
+      const githubService = new GitHubService(user.githubToken);
+      const repositories = await githubService.getUserRepositories();
       res.json(repositories);
     } catch (error) {
       console.error("Get GitHub repositories error:", error);
       res.status(500).json({ message: "Failed to fetch repositories" });
+    }
+  });
+
+  // Repository operations
+  app.post("/api/github/repositories", async (req, res) => {
+    try {
+      const user = await storage.getUser(currentUserId);
+      if (!user?.githubToken) {
+        return res.status(401).json({ message: "GitHub not connected" });
+      }
+
+      const { name, description, isPrivate = false } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ message: "Repository name is required" });
+      }
+
+      const githubService = new GitHubService(user.githubToken);
+      const repository = await githubService.createRepository(name, description, isPrivate);
+      
+      res.json(repository);
+    } catch (error) {
+      console.error("Create repository error:", error);
+      res.status(500).json({ message: "Failed to create repository" });
+    }
+  });
+
+  app.get("/api/github/repositories/:owner/:repo", async (req, res) => {
+    try {
+      const user = await storage.getUser(currentUserId);
+      if (!user?.githubToken) {
+        return res.status(401).json({ message: "GitHub not connected" });
+      }
+
+      const { owner, repo } = req.params;
+      const githubService = new GitHubService(user.githubToken);
+      const repository = await githubService.getRepository(owner, repo);
+      
+      res.json(repository);
+    } catch (error) {
+      console.error("Get repository error:", error);
+      res.status(500).json({ message: "Failed to get repository" });
+    }
+  });
+
+  // File operations
+  app.get("/api/github/repositories/:owner/:repo/files/*", async (req, res) => {
+    try {
+      const user = await storage.getUser(currentUserId);
+      if (!user?.githubToken) {
+        return res.status(401).json({ message: "GitHub not connected" });
+      }
+
+      const { owner, repo } = req.params;
+      const path = req.params[0]; // Get the wildcard path
+      
+      const githubService = new GitHubService(user.githubToken);
+      const content = await githubService.getFileContent(owner, repo, path);
+      
+      res.json({ content, path });
+    } catch (error) {
+      console.error("Get file content error:", error);
+      res.status(500).json({ message: "Failed to get file content" });
+    }
+  });
+
+  app.post("/api/github/repositories/:owner/:repo/files", async (req, res) => {
+    try {
+      const user = await storage.getUser(currentUserId);
+      if (!user?.githubToken) {
+        return res.status(401).json({ message: "GitHub not connected" });
+      }
+
+      const { owner, repo } = req.params;
+      const { path, content, message, branch = 'main' } = req.body;
+      
+      if (!path || !content || !message) {
+        return res.status(400).json({ message: "Path, content, and commit message are required" });
+      }
+
+      const githubService = new GitHubService(user.githubToken);
+      const result = await githubService.createOrUpdateFile(owner, repo, path, content, message, branch);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Create/update file error:", error);
+      res.status(500).json({ message: "Failed to create/update file" });
+    }
+  });
+
+  app.get("/api/github/repositories/:owner/:repo/branches", async (req, res) => {
+    try {
+      const user = await storage.getUser(currentUserId);
+      if (!user?.githubToken) {
+        return res.status(401).json({ message: "GitHub not connected" });
+      }
+
+      const { owner, repo } = req.params;
+      const githubService = new GitHubService(user.githubToken);
+      const branches = await githubService.getBranches(owner, repo);
+      
+      res.json(branches);
+    } catch (error) {
+      console.error("Get branches error:", error);
+      res.status(500).json({ message: "Failed to get branches" });
+    }
+  });
+
+  app.get("/api/github/repositories/:owner/:repo/tree", async (req, res) => {
+    try {
+      const user = await storage.getUser(currentUserId);
+      if (!user?.githubToken) {
+        return res.status(401).json({ message: "GitHub not connected" });
+      }
+
+      const { owner, repo } = req.params;
+      const { sha = 'main' } = req.query;
+      
+      const githubService = new GitHubService(user.githubToken);
+      const tree = await githubService.getRepositoryTree(owner, repo, sha as string);
+      
+      res.json(tree);
+    } catch (error) {
+      console.error("Get repository tree error:", error);
+      res.status(500).json({ message: "Failed to get repository tree" });
     }
   });
 
