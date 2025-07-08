@@ -2456,7 +2456,63 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
   // File System API Routes
   app.get('/api/files', async (req, res) => {
     try {
-      const { path: dirPath = '' } = req.query;
+      const { path: dirPath = '', projectId } = req.query;
+      
+      // If projectId is provided, load project-specific files
+      if (projectId) {
+        const project = await storage.getProject(parseInt(projectId as string));
+        if (project) {
+          // Try to get project code from code generation or workspace files
+          const codeGenerations = await storage.getCodeGenerationsByProject(project.id);
+          const workspaceFiles = await storage.getWorkspaceFilesByProject(project.id);
+          
+          let fileTree = [];
+          
+          // Add generated code files
+          if (codeGenerations.length > 0) {
+            const latestCode = codeGenerations[0]; // Get most recent
+            fileTree.push({
+              name: `${project.name.toLowerCase()}.html`,
+              type: 'file',
+              path: `${project.name.toLowerCase()}.html`,
+              size: latestCode.code?.length || 0,
+              modified: latestCode.createdAt
+            });
+          }
+          
+          // Add workspace files if any
+          for (const file of workspaceFiles) {
+            fileTree.push({
+              name: file.fileName,
+              type: file.fileType === 'folder' ? 'folder' : 'file',
+              path: file.filePath,
+              size: file.content?.length || 0,
+              modified: file.lastModified
+            });
+          }
+          
+          // If no project files, show project structure
+          if (fileTree.length === 0) {
+            fileTree = [
+              {
+                name: 'src',
+                type: 'folder',
+                path: 'src',
+                children: [
+                  { name: 'index.html', type: 'file', path: 'src/index.html' },
+                  { name: 'style.css', type: 'file', path: 'src/style.css' },
+                  { name: 'script.js', type: 'file', path: 'src/script.js' }
+                ]
+              },
+              { name: 'README.md', type: 'file', path: 'README.md' }
+            ];
+          }
+          
+          return res.json(fileTree);
+        }
+      }
+      
+      // Default behavior - load actual filesystem
       const fileTree = await fileSystemService.getFileTree(dirPath as string);
       res.json(fileTree);
     } catch (error) {
@@ -2467,12 +2523,199 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
 
   app.get('/api/files/content', async (req, res) => {
     try {
-      const { path: filePath } = req.query;
+      const { path: filePath, projectId } = req.query;
       
       if (!filePath || typeof filePath !== 'string') {
         return res.status(400).json({ message: 'File path is required' });
       }
       
+      // If projectId is provided, load project-specific content
+      if (projectId) {
+        const project = await storage.getProject(parseInt(projectId as string));
+        if (project) {
+          // Check if it's a generated HTML file
+          if (filePath.endsWith('.html') && filePath.includes(project.name.toLowerCase())) {
+            const codeGenerations = await storage.getCodeGenerationsByProject(project.id);
+            if (codeGenerations.length > 0) {
+              const latestCode = codeGenerations[0];
+              const language = fileSystemService.getLanguageFromFileName(filePath);
+              return res.json({
+                content: latestCode.code || '',
+                language,
+                path: filePath
+              });
+            }
+          }
+          
+          // Return template content for project files
+          const extension = filePath.split('.').pop();
+          let templateContent = '';
+          
+          switch (extension) {
+            case 'html':
+              templateContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${project.name}</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to ${project.name}</h1>
+        <p>This is a ${project.language} project built with ${project.framework}.</p>
+        <div class="description">
+            <p>${project.description || 'Start building your project here!'}</p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>`;
+              break;
+            case 'css':
+              templateContent = `/* ${project.name} - Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 2.5em;
+}
+
+p {
+    color: #666;
+    font-size: 1.2em;
+    line-height: 1.6;
+}
+
+.description {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}`;
+              break;
+            case 'js':
+              templateContent = `// ${project.name} - JavaScript
+console.log('Welcome to ${project.name}!');
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('${project.name} is ready!');
+    
+    // Add your JavaScript code here
+    const container = document.querySelector('.container');
+    if (container) {
+        container.addEventListener('click', function() {
+            console.log('Container clicked!');
+        });
+    }
+    
+    // Example: Add dynamic content
+    setTimeout(() => {
+        const description = document.querySelector('.description');
+        if (description) {
+            description.innerHTML += '<p><strong>Status:</strong> Application loaded successfully!</p>';
+        }
+    }, 1000);
+});
+
+// Add your custom functions here
+function initializeApp() {
+    // Your initialization code
+}
+
+// Call initialization
+initializeApp();`;
+              break;
+            case 'md':
+              templateContent = `# ${project.name}
+
+## Overview
+${project.description || 'This is a modern web application built with cutting-edge technologies.'}
+
+## Technology Stack
+- **Language**: ${project.language || 'JavaScript'}
+- **Framework**: ${project.framework || 'Vanilla JS'}
+- **Status**: ${project.status || 'Active'}
+
+## Features
+- 🚀 Fast and responsive design
+- 💻 Modern development workflow
+- 🎨 Beautiful user interface
+- 🔧 Easy to customize and extend
+
+## Getting Started
+1. Open the project files in the editor
+2. Edit the HTML, CSS, and JavaScript files
+3. Use the live preview to see changes in real-time
+4. Deploy when ready!
+
+## Project Structure
+\`\`\`
+${project.name.toLowerCase()}/
+├── src/
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
+└── README.md
+\`\`\`
+
+## Development Notes
+- Use the Monaco editor for advanced code editing
+- The AI assistant can help with debugging and explaining code
+- Live preview updates automatically when you save files
+
+---
+Created with ❤️ using CodeCraft Platform
+`;
+              break;
+            default:
+              templateContent = `// ${project.name} - ${filePath}
+// Project: ${project.name}
+// Language: ${project.language}
+// Framework: ${project.framework}
+
+// Add your ${extension} code here
+console.log('File: ${filePath}');
+`;
+          }
+          
+          const language = fileSystemService.getLanguageFromFileName(filePath);
+          return res.json({
+            content: templateContent,
+            language,
+            path: filePath
+          });
+        }
+      }
+      
+      // Default behavior - load from filesystem
       const content = await fileSystemService.readFile(filePath);
       const language = fileSystemService.getLanguageFromFileName(filePath);
       
@@ -2489,14 +2732,40 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
 
   app.post('/api/files/save', async (req, res) => {
     try {
-      const { path: filePath, content } = req.body;
+      const { path: filePath, content, projectId } = req.body;
       
       if (!filePath || content === undefined) {
         return res.status(400).json({ message: 'File path and content are required' });
       }
       
-      await fileSystemService.writeFile(filePath, content);
-      res.json({ message: 'File saved successfully' });
+      // If projectId is provided, save as workspace file
+      if (projectId) {
+        try {
+          // Save to workspace files system (for project-specific files)
+          const workspaceFile = {
+            projectId: parseInt(projectId),
+            fileName: filePath.split('/').pop() || filePath,
+            filePath: filePath,
+            fileType: 'file',
+            content: content,
+            lastModified: new Date().toISOString()
+          };
+          
+          // For now, save to filesystem as backup
+          await fileSystemService.writeFile(filePath, content);
+          
+          res.json({ message: 'Project file saved successfully' });
+        } catch (error) {
+          console.error('Error saving project file:', error);
+          // Fallback to regular file save
+          await fileSystemService.writeFile(filePath, content);
+          res.json({ message: 'File saved successfully' });
+        }
+      } else {
+        // Regular file save
+        await fileSystemService.writeFile(filePath, content);
+        res.json({ message: 'File saved successfully' });
+      }
     } catch (error) {
       console.error('Error saving file:', error);
       res.status(500).json({ message: 'Failed to save file' });

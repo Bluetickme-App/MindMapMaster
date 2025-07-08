@@ -82,6 +82,7 @@ export default function WorkspacePage() {
   const [fileContent, setFileContent] = useState<string>('');
   const [openFiles, setOpenFiles] = useState<FileNode[]>([]);
   const [activeTab, setActiveTab] = useState<string>('preview');
+  const [previewContent, setPreviewContent] = useState<string>('');
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -199,11 +200,13 @@ export default function WorkspacePage() {
   });
 
   const fileTreeQuery = useQuery({
-    queryKey: ['/api/files'],
+    queryKey: ['/api/files', selectedProject?.id],
     queryFn: async () => {
-      const response = await fetch('/api/files');
+      const params = selectedProject?.id ? `?projectId=${selectedProject.id}` : '';
+      const response = await fetch(`/api/files${params}`);
       return response.json();
     },
+    enabled: true
   });
 
   useEffect(() => {
@@ -211,6 +214,13 @@ export default function WorkspacePage() {
       setSelectedProject(projectsQuery.data[0]);
     }
   }, [projectsQuery.data]);
+
+  // Refetch file tree when project changes
+  useEffect(() => {
+    if (selectedProject) {
+      queryClient.invalidateQueries({ queryKey: ['/api/files'] });
+    }
+  }, [selectedProject, queryClient]);
 
   const handleChatCommand = async () => {
     if (!chatCommand.trim()) return;
@@ -276,11 +286,25 @@ export default function WorkspacePage() {
       
       // Load real file content from server
       try {
-        const response = await fetch(`/api/files/content?path=${encodeURIComponent(node.path)}`);
+        const params = new URLSearchParams({
+          path: node.path
+        });
+        
+        // Add projectId if a project is selected
+        if (selectedProject?.id) {
+          params.append('projectId', selectedProject.id.toString());
+        }
+        
+        const response = await fetch(`/api/files/content?${params}`);
         if (response.ok) {
           const data = await response.json();
           setFileContent(data.content);
           setActiveTab('editor');
+          
+          // Update live preview if it's an HTML file
+          if (node.path.endsWith('.html')) {
+            setPreviewContent(data.content);
+          }
         } else {
           throw new Error('Failed to fetch file content');
         }
@@ -422,6 +446,7 @@ export default function WorkspacePage() {
         body: JSON.stringify({
           path: selectedFile.path,
           content: fileContent,
+          projectId: selectedProject?.id
         }),
       });
       
@@ -430,6 +455,11 @@ export default function WorkspacePage() {
           title: "File Saved",
           description: `${selectedFile.name} has been saved successfully`,
         });
+        
+        // Update live preview if it's an HTML file
+        if (selectedFile.path.endsWith('.html')) {
+          setPreviewContent(fileContent);
+        }
       } else {
         throw new Error('Failed to save file');
       }
@@ -1103,11 +1133,29 @@ export default function WorkspacePage() {
                 <TabsContent value="preview" className="h-[calc(100vh-240px)] m-0">
                   <div className="h-full p-4">
                     <div className="bg-white rounded-lg border h-full">
-                      <iframe
-                        src="/preview"
-                        className="w-full h-full rounded-lg"
-                        title="Project Preview"
-                      />
+                      {previewContent ? (
+                        <iframe
+                          srcDoc={previewContent}
+                          className="w-full h-full rounded-lg"
+                          title="Live Preview"
+                          sandbox="allow-scripts allow-same-origin"
+                        />
+                      ) : selectedProject ? (
+                        <div className="h-full flex items-center justify-center text-muted-foreground">
+                          <div className="text-center">
+                            <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            <p>Select an HTML file to preview</p>
+                            <p className="text-sm mt-2">Project: {selectedProject.name}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-muted-foreground">
+                          <div className="text-center">
+                            <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            <p>Select a project to start previewing</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </TabsContent>
