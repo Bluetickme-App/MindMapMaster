@@ -315,35 +315,19 @@ export class WebSocketManager {
       return;
     }
 
-    // Process multiple agent responses like a natural meeting
-    const responsesToProcess = Math.min(queue.length, 2); // Process up to 2 agents at once
-    const agentResponses = [];
-    
-    for (let i = 0; i < responsesToProcess; i++) {
-      const { messageId, agentId } = queue.shift()!;
-      agentResponses.push({ messageId, agentId });
-    }
-    
-    console.log(`[Queue] Processing ${responsesToProcess} agent responses simultaneously`);
+    // Process one agent response at a time to avoid overwhelming
+    const { messageId, agentId } = queue.shift()!;
+    console.log(`[Queue] Processing response for agent ${agentId}, message ${messageId}`);
     
     try {
-      // Get conversation context once for all agents
+      // Get conversation context
       const conversation = await storage.getConversation(conversationId);
       const recentMessages = await storage.getMessagesByConversation(conversationId);
+      const userMessage = recentMessages.find(m => m.id === messageId);
       
-      if (!conversation) {
-        console.error(`[Queue] No conversation found: ${conversationId}`);
+      if (!conversation || !userMessage) {
+        console.error(`[Queue] No conversation or user message found for agent ${agentId} in conversation ${conversationId}`);
         return;
-      }
-      
-      // Process each agent response
-      for (const { messageId, agentId } of agentResponses) {
-        const userMessage = recentMessages.find(m => m.id === messageId);
-        
-        if (!userMessage) {
-          console.error(`[Queue] No message found for agent ${agentId}, message ${messageId}`);
-          continue;
-        }
       }
 
       console.log(`[Queue] Agent ${agentId} is responding to: "${userMessage.content}"`);

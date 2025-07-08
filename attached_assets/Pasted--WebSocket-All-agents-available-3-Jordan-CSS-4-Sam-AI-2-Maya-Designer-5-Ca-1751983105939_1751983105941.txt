@@ -1,0 +1,72 @@
+[WebSocket] All agents available: [
+  '3:Jordan CSS',
+  '4:Sam AI',
+  '2:Maya Designer',
+  '5:Carlos PHP',
+  '6:Riley Python',
+  '7:Taylor React',
+  '8:Morgan Vite',
+  '1:Alex Roadmap'
+]
+[Agent 1] Alex Roadmap shouldRespond: false (mentioned: false, role: false, question: false, keywords: false, chance: 0.1)
+[WebSocket] Agent 1 should respond: false
+[Agent 2] Maya Designer shouldRespond: false (mentioned: false, role: false, question: false, keywords: false, chance: 0.1)
+[WebSocket] Agent 2 should respond: false
+[Agent 3] Jordan CSS shouldRespond: false (mentioned: false, role: false, question: false, keywords: false, chance: 0.1)
+[WebSocket] Agent 3 should respond: false
+[Agent 4] Sam AI shouldRespond: false (mentioned: false, role: false, question: false, keywords: false, chance: 0.1)
+[WebSocket] Agent 4 should respond: false
+[Agent 7] Taylor React shouldRespond: false (mentioned: false, role: false, question: false, keywords: false, chance: 0.1)
+[WebSocket] Agent 7 should respond: false
+[REST API] Agent response triggering completed for conversation 36
+1:57:31 PM [express] POST /api/conversations/36/messages 200 in 550ms :: {"success":true}
+[Queue] Processing queue for conversation 36, queue length: 0
+[Queue] No items in queue for conversation 36
+1:57:33 PM [express] GET /api/conversations 304 in 66ms :: []
+1:57:34 PM [express] GET /api/conversations 304 in 62ms :: []
+Conversation found: true
+WebSocket manager available: true
+Triggering agent responses for conversation: 36
+Conversation participants: [ 1, 2, 3, 4, 7 ]
+[REST API] Triggering agent responses for conversation 36, participants: [ 1, 2, 3, 4, 7 ]
+[WebSocket] Starting triggerAgentResponses for conversation 36
+[WebSocket] Found 5 agents in conversation 36: [ 1, 2, 3, 4, 7 ]
+[WebSocket] All agents available: [
+  '3:Jordan CSS',
+  '4:Sam AI',
+  '2:Maya Designer',
+  '5:Carlos PHP',
+  '6:Riley Python',
+  '7:Taylor React',
+  '8:Morgan Vite',
+  '1:Alex Roadmap'
+]
+[Agent 1] Alex Roadmap shouldRespond: true (mentioned: false, role: false, question: false, keywords: false, chance: 0.3)
+[WebSocket] Agent 1 should respond: true
+[WebSocket] Agent 1 will respond to message: "can we get this meeting started"
+[Agent 2] Maya Designer shouldRespond: false (mentioned: false, role: false, question: false, keywords: false, chance: 0.3)
+[WebSocket] Agent 2 should respond: false
+[Agent 3] Jordan CSS shouldRespond: true (mentioned: false, role: false, question: false, keywords: false, chance: 0.3)
+[WebSocket] Agent 3 should respond: true
+[WebSocket] Agent 3 will respond to message: "can we get this meeting started"
+[Agent 4] Sam AI shouldRespond: false (mentioned: false, role: false, question: false, keywords: false, chance: 0.3)
+[WebSocket] Agent 4 should respond: false
+[Agent 7] Taylor React shouldRespond: true (mentioned: false, role: false, question: false, keywords: false, chance: 0.3)
+[WebSocket] Agent 7 should respond: true
+[WebSocket] Agent 7 will respond to message: "can we get this meeting started"
+[REST API] Agent response triggering completed for conversation 36
+1:58:04 PM [express] POST /api/conversations/36/messages 200 in 719ms :: {"success":true}
+[Queue] Processing queue for conversation 36, queue length: 3
+[Queue] Processing 2 agent responses simultaneously
+Error processing agent response: ReferenceError: agentId is not defined
+    at WebSocketManager.processAgentResponseQueue (/home/runner/workspace/server/services/websocket-manager.ts:349:36)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+[Queue] Processing queue for conversation 36, queue length: 1
+[Queue] Processing 1 agent responses simultaneously
+Error processing agent response: ReferenceError: agentId is not defined
+    at WebSocketManager.processAgentResponseQueue (/home/runner/workspace/server/services/websocket-manager.ts:349:36)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+1:58:07 PM [express] GET /api/conversations 304 in 60ms :: []
+[Queue] Processing queue for conversation 36, queue length: 0
+[Queue] No items in queue for conversation 36
+1:58:08 PM [express] GET /api/conversations 304 in 60ms :: []
