@@ -1,0 +1,34 @@
+🚀 Multi-Agent Collaboration System is ready!
+📡 WebSocket server initialized for real-time communication
+🤖 Access collaboration dashboard at /collaboration
+🏠 WeLet AI Agent ready for tenant support
+📁 File System API ready for real-time code editing
+1:03:23 PM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+1:03:28 PM [express] GET /api/agents 200 in 281ms :: [{"id":7,"type":"react_senior","name":"Taylor R…
+1:03:33 PM [express] GET /api/agents 200 in 61ms :: [{"id":7,"type":"react_senior","name":"Taylor Re…
+1:25:28 PM [express] POST /api/conversations 200 in 614ms :: {"id":35,"projectId":null,"title":"5-Pa…
+Conversation found: true
+WebSocket manager available: true
+Triggering agent responses for conversation: 35
+Conversation participants: null
+[REST API] Triggering agent responses for conversation 35, participants: null
+[WebSocket] Starting triggerAgentResponses for conversation 35
+[WebSocket] No participants found in conversation 35
+[REST API] Agent response triggering completed for conversation 35
+1:25:28 PM [express] POST /api/conversations/35/messages 200 in 239ms :: {"success":true}
+1:25:29 PM [express] GET /api/conversations 200 in 61ms :: []
+1:25:30 PM [express] GET /api/conversations 304 in 60ms :: []
+Conversation found: true
+WebSocket manager available: true
+Triggering agent responses for conversation: 35
+Conversation participants: null
+[REST API] Triggering agent responses for conversation 35, participants: null
+[WebSocket] Starting triggerAgentResponses for conversation 35
+[WebSocket] No participants found in conversation 35
+[REST API] Agent response triggering completed for conversation 35
+1:25:41 PM [express] POST /api/conversations/35/messages 200 in 371ms :: {"success":true}
+1:25:43 PM [express] GET /api/conversations 304 in 59ms :: []
+1:25:44 PM [express] GET /api/conversations 304 in 61ms :: []

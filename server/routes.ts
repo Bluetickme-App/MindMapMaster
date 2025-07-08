@@ -2146,6 +2146,13 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
         ...req.body,
         createdBy: currentUserId,
       });
+      
+      // For team discussions, automatically add default participants if none provided
+      if (validatedData.type === 'team_discussion' && !validatedData.participants) {
+        // Add key team members for collaborative discussions
+        validatedData.participants = [1, 2, 3, 4, 7]; // Alex, Maya, Jordan, Sam, Taylor
+      }
+      
       const conversation = await storage.createConversation(validatedData);
       res.json(conversation);
     } catch (error) {

@@ -254,19 +254,49 @@ export class WebSocketManager {
     const agent = await storage.getAgent(agentId);
     if (!agent) return false;
 
-    // Make agents respond more frequently for testing multi-AI providers
+    // Make conversations feel like natural meetings
     const mentionedByName = content.toLowerCase().includes(agent.name.toLowerCase());
     const mentionedByRole = content.toLowerCase().includes(agent.type.replace('_', ' '));
     const isQuestion = content.includes('?');
-    const isGeneralMessage = content.length > 10; // Any substantial message
+    const isGeneralMessage = content.length > 10;
     const isTestMessage = content.toLowerCase().includes('test') || content.toLowerCase().includes('provider');
-
-    // Respond if mentioned, is a question, test message, or frequently to general messages
-    const shouldRespond = mentionedByName || mentionedByRole || isQuestion || isTestMessage || (isGeneralMessage && Math.random() > 0.2);
     
-    console.log(`[Agent ${agentId}] ${agent.name} shouldRespond: ${shouldRespond} (mentioned: ${mentionedByName}, role: ${mentionedByRole}, question: ${isQuestion}, test: ${isTestMessage})`);
+    // Enhanced natural conversation triggers
+    const hasKeywords = this.hasRelevantKeywords(content, agent);
+    const isProjectDiscussion = content.toLowerCase().includes('project') || content.toLowerCase().includes('website') || content.toLowerCase().includes('enhancement');
+    const isCollaborativeMessage = content.toLowerCase().includes('team') || content.toLowerCase().includes('discuss') || content.toLowerCase().includes('together');
+    
+    // More natural response patterns like a real meeting
+    let responseChance = 0.1; // Base chance
+    
+    if (mentionedByName) responseChance = 1.0;
+    else if (mentionedByRole) responseChance = 0.9;
+    else if (isQuestion) responseChance = 0.7;
+    else if (hasKeywords) responseChance = 0.6;
+    else if (isProjectDiscussion) responseChance = 0.5;
+    else if (isCollaborativeMessage) responseChance = 0.4;
+    else if (isTestMessage) responseChance = 0.8;
+    else if (isGeneralMessage) responseChance = 0.3;
+    
+    const shouldRespond = Math.random() < responseChance;
+    
+    console.log(`[Agent ${agentId}] ${agent.name} shouldRespond: ${shouldRespond} (mentioned: ${mentionedByName}, role: ${mentionedByRole}, question: ${isQuestion}, keywords: ${hasKeywords}, chance: ${responseChance})`);
     
     return shouldRespond;
+  }
+
+  private hasRelevantKeywords(content: string, agent: any): boolean {
+    const lowercaseContent = content.toLowerCase();
+    const agentKeywords = {
+      'roadmap_specialist': ['plan', 'timeline', 'phase', 'milestone', 'strategy', 'roadmap'],
+      'design_specialist': ['design', 'ui', 'ux', 'visual', 'user', 'interface', 'accessibility'],
+      'css_specialist': ['css', 'style', 'animation', 'responsive', 'layout', 'design'],
+      'ai_specialist': ['ai', 'intelligent', 'machine learning', 'automation', 'smart'],
+      'react_senior': ['react', 'component', 'frontend', 'typescript', 'architecture']
+    };
+    
+    const keywords = agentKeywords[agent.type] || [];
+    return keywords.some(keyword => lowercaseContent.includes(keyword));
   }
 
   private queueAgentResponse(conversationId: number, messageId: number, agentId: number): void {
@@ -285,19 +315,35 @@ export class WebSocketManager {
       return;
     }
 
-    // Process one agent response at a time to avoid overwhelming
-    const { messageId, agentId } = queue.shift()!;
-    console.log(`[Queue] Processing response for agent ${agentId}, message ${messageId}`);
+    // Process multiple agent responses like a natural meeting
+    const responsesToProcess = Math.min(queue.length, 2); // Process up to 2 agents at once
+    const agentResponses = [];
+    
+    for (let i = 0; i < responsesToProcess; i++) {
+      const { messageId, agentId } = queue.shift()!;
+      agentResponses.push({ messageId, agentId });
+    }
+    
+    console.log(`[Queue] Processing ${responsesToProcess} agent responses simultaneously`);
     
     try {
-      // Get conversation context
+      // Get conversation context once for all agents
       const conversation = await storage.getConversation(conversationId);
       const recentMessages = await storage.getMessagesByConversation(conversationId);
-      const userMessage = recentMessages.find(m => m.id === messageId);
       
-      if (!conversation || !userMessage) {
-        console.error(`[Queue] No conversation or user message found for agent ${agentId} in conversation ${conversationId}`);
+      if (!conversation) {
+        console.error(`[Queue] No conversation found: ${conversationId}`);
         return;
+      }
+      
+      // Process each agent response
+      for (const { messageId, agentId } of agentResponses) {
+        const userMessage = recentMessages.find(m => m.id === messageId);
+        
+        if (!userMessage) {
+          console.error(`[Queue] No message found for agent ${agentId}, message ${messageId}`);
+          continue;
+        }
       }
 
       console.log(`[Queue] Agent ${agentId} is responding to: "${userMessage.content}"`);
