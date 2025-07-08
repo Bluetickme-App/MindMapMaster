@@ -1,0 +1,40 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "npm run build:railway",
+    "watchPatterns": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+  },
+  "deploy": {
+    "startCommand": "npm run start:railway",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 30,
+    "restartPolicyType": "on_failure",
+    "restartPolicyMaxRetries": 3
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "NODE_ENV": "production",
+        "PORT": "${{PORT}}",
+        "DATABASE_URL": "${{DATABASE_URL}}",
+        "OPENAI_API_KEY": "${{OPENAI_API_KEY}}",
+        "ANTHROPIC_API_KEY": "${{ANTHROPIC_API_KEY}}",
+        "GOOGLE_API_KEY": "${{GOOGLE_API_KEY}}",
+        "GEMINI_API_KEY": "${{GEMINI_API_KEY}}"
+      }
+    }
+  },
+  "services": [
+    {
+      "name": "web",
+      "source": {
+        "type": "image",
+        "image": "node:20-alpine"
+      },
+      "variables": {
+        "NODE_ENV": "production"
+      }
+    }
+  ]
+}

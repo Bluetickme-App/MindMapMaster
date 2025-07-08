@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "name": "codecraft-ai-platform",
+  "builds": [
+    {
+      "src": "server/index.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["server/**", "shared/**", "client/dist/**"]
+      }
+    },
+    {
+      "src": "client/**",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "client/dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server/index.ts"
+    },
+    {
+      "src": "/health",
+      "dest": "/server/index.ts"
+    },
+    {
+      "src": "/ready",
+      "dest": "/server/index.ts"
+    },
+    {
+      "src": "/ws",
+      "dest": "/server/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/client/dist/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "DATABASE_URL": "@database_url",
+    "OPENAI_API_KEY": "@openai_api_key",
+    "ANTHROPIC_API_KEY": "@anthropic_api_key",
+    "GOOGLE_API_KEY": "@google_api_key",
+    "GEMINI_API_KEY": "@gemini_api_key"
+  },
+  "functions": {
+    "server/index.ts": {
+      "maxDuration": 30
+    }
+  },
+  "regions": ["iad1"],
+  "github": {
+    "silent": true
+  }
+}
