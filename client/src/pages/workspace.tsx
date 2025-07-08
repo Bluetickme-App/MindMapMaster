@@ -14,6 +14,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import Editor from '@monaco-editor/react';
+import * as prettier from 'prettier';
 import { 
   ArrowLeft, 
   Users, 
@@ -33,7 +35,9 @@ import {
   Terminal,
   Globe,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  X,
+  Save
 } from 'lucide-react';
 
 interface FileNode {
@@ -75,6 +79,9 @@ export default function WorkspacePage() {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['src', 'components']));
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [agentCheckboxes, setAgentCheckboxes] = useState<Record<number, boolean>>({});
+  const [fileContent, setFileContent] = useState<string>('');
+  const [openFiles, setOpenFiles] = useState<FileNode[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('preview');
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -294,8 +301,47 @@ export default function WorkspacePage() {
     setChatCommand('');
   };
 
-  const handleFileSelect = (node: FileNode) => {
-    setSelectedFile(node);
+  const handleFileSelect = async (node: FileNode) => {
+    if (node.type === 'file') {
+      setSelectedFile(node);
+      
+      // Add to open files if not already open
+      if (!openFiles.find(f => f.path === node.path)) {
+        setOpenFiles([...openFiles, node]);
+      }
+      
+      // Load file content
+      try {
+        // For now, we'll use placeholder content based on file extension
+        // In a real implementation, this would fetch from the server
+        const extension = node.name.split('.').pop() || '';
+        let content = '';
+        
+        if (['js', 'jsx', 'ts', 'tsx'].includes(extension)) {
+          content = `// ${node.name}\n// This is a placeholder for the actual file content\n\nexport default function Component() {\n  return (\n    <div>\n      <h1>Hello from ${node.name}</h1>\n    </div>\n  );\n}`;
+        } else if (['css', 'scss'].includes(extension)) {
+          content = `/* ${node.name} */\n\n.container {\n  display: flex;\n  padding: 1rem;\n}\n\n.title {\n  font-size: 2rem;\n  color: #333;\n}`;
+        } else if (extension === 'html') {
+          content = `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <title>${node.name}</title>\n</head>\n<body>\n  <h1>Hello from ${node.name}</h1>\n</body>\n</html>`;
+        } else if (extension === 'json') {
+          content = `{\n  "name": "${node.name}",\n  "version": "1.0.0",\n  "description": "Sample JSON file"\n}`;
+        } else if (extension === 'md') {
+          content = `# ${node.name}\n\nThis is a markdown file with sample content.\n\n## Features\n\n- Feature 1\n- Feature 2\n- Feature 3`;
+        } else {
+          content = `// ${node.name}\n// File content would be loaded here`;
+        }
+        
+        setFileContent(content);
+        setActiveTab('editor');
+      } catch (error) {
+        console.error('Error loading file:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load file content",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const toggleFolder = (path: string) => {
@@ -337,6 +383,95 @@ export default function WorkspacePage() {
     console.log('Selected project:', selectedProject);
     
     createConversationMutation.mutate({ agentIds: selectedAgentIds });
+  };
+
+  const getLanguageFromFileName = (fileName: string): string => {
+    const extension = fileName.split('.').pop()?.toLowerCase() || '';
+    const languageMap: Record<string, string> = {
+      'js': 'javascript',
+      'jsx': 'javascript',
+      'ts': 'typescript',
+      'tsx': 'typescript',
+      'css': 'css',
+      'scss': 'scss',
+      'html': 'html',
+      'json': 'json',
+      'md': 'markdown',
+      'py': 'python',
+      'java': 'java',
+      'cpp': 'cpp',
+      'c': 'c',
+      'cs': 'csharp',
+      'php': 'php',
+      'rb': 'ruby',
+      'go': 'go',
+      'rs': 'rust',
+      'sh': 'shell',
+      'yaml': 'yaml',
+      'yml': 'yaml',
+      'xml': 'xml',
+      'sql': 'sql',
+    };
+    return languageMap[extension] || 'plaintext';
+  };
+
+  const handleFormatCode = async () => {
+    if (!selectedFile || !fileContent) return;
+    
+    try {
+      const language = getLanguageFromFileName(selectedFile.name);
+      let parser = 'babel';
+      
+      // Determine the parser based on language
+      if (['typescript', 'tsx'].includes(language)) {
+        parser = 'typescript';
+      } else if (language === 'css') {
+        parser = 'css';
+      } else if (language === 'scss') {
+        parser = 'scss';
+      } else if (language === 'html') {
+        parser = 'html';
+      } else if (language === 'markdown') {
+        parser = 'markdown';
+      } else if (language === 'json') {
+        parser = 'json';
+      } else if (language === 'yaml') {
+        parser = 'yaml';
+      }
+      
+      const formatted = await prettier.format(fileContent, {
+        parser,
+        semi: true,
+        singleQuote: true,
+        trailingComma: 'es5',
+        tabWidth: 2,
+        printWidth: 80,
+        bracketSpacing: true,
+        arrowParens: 'avoid',
+        endOfLine: 'lf',
+      });
+      
+      setFileContent(formatted);
+      toast({
+        title: "Code Formatted",
+        description: "Your code has been formatted successfully",
+      });
+    } catch (error) {
+      console.error('Error formatting code:', error);
+      toast({
+        title: "Format Error",
+        description: "Unable to format code. Please check syntax errors.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveFile = () => {
+    // In a real implementation, this would save to the server
+    toast({
+      title: "File Saved",
+      description: `${selectedFile?.name} has been saved successfully`,
+    });
   };
 
   const getFileIcon = (node: FileNode) => {
@@ -663,8 +798,12 @@ export default function WorkspacePage() {
               <CardTitle className="text-sm">Development Tools</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <Tabs defaultValue="preview" className="h-full">
-                <TabsList className="grid w-full grid-cols-3">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="editor">
+                    <Code className="w-4 h-4 mr-2" />
+                    Editor
+                  </TabsTrigger>
                   <TabsTrigger value="preview">
                     <Eye className="w-4 h-4 mr-2" />
                     Preview
@@ -678,6 +817,217 @@ export default function WorkspacePage() {
                     Browser
                   </TabsTrigger>
                 </TabsList>
+                
+                <TabsContent value="editor" className="h-[calc(100vh-240px)] m-0">
+                  <div className="h-full flex flex-col">
+                    {selectedFile ? (
+                      <>
+                        <div className="flex items-center justify-between px-4 py-2 border-b">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4" />
+                            <span className="text-sm font-medium">{selectedFile.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  title="Extensions"
+                                >
+                                  <Settings className="w-4 h-4" />
+                                  Extensions
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle>Editor Extensions</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <Card className="p-4">
+                                      <div className="flex items-start justify-between">
+                                        <div>
+                                          <h4 className="font-semibold">Prettier - Code Formatter</h4>
+                                          <p className="text-sm text-muted-foreground mt-1">
+                                            Format your code using the #1 Code Formatter
+                                          </p>
+                                          <Badge className="mt-2" variant="secondary">Installed</Badge>
+                                        </div>
+                                        <Code className="w-8 h-8 text-muted-foreground" />
+                                      </div>
+                                    </Card>
+                                    <Card className="p-4">
+                                      <div className="flex items-start justify-between">
+                                        <div>
+                                          <h4 className="font-semibold">ESLint</h4>
+                                          <p className="text-sm text-muted-foreground mt-1">
+                                            Find and fix problems in JavaScript code
+                                          </p>
+                                          <Button size="sm" variant="outline" className="mt-2">Install</Button>
+                                        </div>
+                                        <FileText className="w-8 h-8 text-muted-foreground" />
+                                      </div>
+                                    </Card>
+                                    <Card className="p-4">
+                                      <div className="flex items-start justify-between">
+                                        <div>
+                                          <h4 className="font-semibold">GitLens</h4>
+                                          <p className="text-sm text-muted-foreground mt-1">
+                                            Supercharge Git within VS Code
+                                          </p>
+                                          <Button size="sm" variant="outline" className="mt-2">Install</Button>
+                                        </div>
+                                        <Database className="w-8 h-8 text-muted-foreground" />
+                                      </div>
+                                    </Card>
+                                    <Card className="p-4">
+                                      <div className="flex items-start justify-between">
+                                        <div>
+                                          <h4 className="font-semibold">Auto Import</h4>
+                                          <p className="text-sm text-muted-foreground mt-1">
+                                            Automatically finds and imports modules
+                                          </p>
+                                          <Button size="sm" variant="outline" className="mt-2">Install</Button>
+                                        </div>
+                                        <RefreshCw className="w-8 h-8 text-muted-foreground" />
+                                      </div>
+                                    </Card>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleFormatCode()}
+                              title="Format Code (Alt+Shift+F)"
+                            >
+                              <Code className="w-4 h-4" />
+                              Format
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleSaveFile()}
+                              title="Save (Ctrl+S)"
+                            >
+                              <Save className="w-4 h-4" />
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedFile(null);
+                                setOpenFiles(openFiles.filter(f => f.path !== selectedFile.path));
+                              }}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <Editor
+                            height="100%"
+                            defaultLanguage={getLanguageFromFileName(selectedFile.name)}
+                            language={getLanguageFromFileName(selectedFile.name)}
+                            value={fileContent}
+                            onChange={(value) => setFileContent(value || '')}
+                            theme="vs-dark"
+                            options={{
+                              minimap: { enabled: true },
+                              fontSize: 14,
+                              lineNumbers: 'on',
+                              rulers: [80],
+                              wordWrap: 'off',
+                              automaticLayout: true,
+                              formatOnPaste: true,
+                              formatOnType: true,
+                              scrollBeyondLastLine: false,
+                              fixedOverflowWidgets: true,
+                              suggestOnTriggerCharacters: true,
+                              acceptSuggestionOnEnter: 'on',
+                              tabCompletion: 'on',
+                              wordBasedSuggestions: true,
+                              contextmenu: true,
+                              quickSuggestions: {
+                                other: true,
+                                comments: false,
+                                strings: false
+                              },
+                              parameterHints: {
+                                enabled: true
+                              },
+                              suggestSelection: 'first',
+                              folding: true,
+                              foldingStrategy: 'indentation',
+                              showFoldingControls: 'always',
+                              bracketPairColorization: {
+                                enabled: true
+                              },
+                              renderWhitespace: 'selection',
+                              renderControlCharacters: false,
+                              renderLineHighlight: 'all',
+                              renderValidationDecorations: 'on',
+                              smoothScrolling: true,
+                              cursorBlinking: 'phase',
+                              cursorSmoothCaretAnimation: true,
+                              accessibilitySupport: 'auto'
+                            }}
+                            onMount={(editor, monaco) => {
+                              // Configure Monaco for error detection
+                              monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                                noSemanticValidation: false,
+                                noSyntaxValidation: false,
+                              });
+                              
+                              monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+                                target: monaco.languages.typescript.ScriptTarget.ESNext,
+                                allowNonTsExtensions: true,
+                                moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+                                module: monaco.languages.typescript.ModuleKind.ESNext,
+                                noEmit: true,
+                                esModuleInterop: true,
+                                jsx: monaco.languages.typescript.JsxEmit.React,
+                                reactNamespace: 'React',
+                                allowJs: true,
+                                typeRoots: ['node_modules/@types']
+                              });
+                              
+                              // Add keyboard shortcuts
+                              editor.addAction({
+                                id: 'format-code',
+                                label: 'Format Code',
+                                keybindings: [
+                                  monaco.KeyMod.Alt | monaco.KeyMod.Shift | monaco.KeyCode.KEY_F
+                                ],
+                                contextMenuGroupId: 'navigation',
+                                run: () => handleFormatCode()
+                              });
+                              
+                              editor.addAction({
+                                id: 'save-file',
+                                label: 'Save File',
+                                keybindings: [
+                                  monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S
+                                ],
+                                run: () => handleSaveFile()
+                              });
+                            }}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-muted-foreground">
+                        <div className="text-center">
+                          <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p>Select a file to start editing</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
                 
                 <TabsContent value="preview" className="h-[calc(100vh-240px)] m-0">
                   <div className="h-full p-4">
