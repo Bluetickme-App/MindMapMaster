@@ -300,12 +300,13 @@ export default function WorkspacePage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="sm" 
               onClick={() => setLocation('/')}
+              className="bg-primary hover:bg-primary/90 text-white font-medium"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+              Back to Dashboard
             </Button>
             <h1 className="text-xl font-bold">Development Workspace</h1>
             {selectedProject && (
@@ -313,6 +314,14 @@ export default function WorkspacePage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => setLocation('/create-project')}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Project
+            </Button>
             <Button 
               size="sm" 
               variant="outline"

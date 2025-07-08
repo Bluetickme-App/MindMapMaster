@@ -99,6 +99,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/projects/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteProject(id);
+      res.json({ message: "Project deleted successfully" });
+    } catch (error) {
+      console.error("Delete project error:", error);
+      res.status(500).json({ message: "Failed to delete project" });
+    }
+  });
+
   // API testing routes
   app.post("/api/test-api", async (req, res) => {
     try {
