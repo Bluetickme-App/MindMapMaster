@@ -434,6 +434,15 @@ Changelog:
   - Resolved WebSocket connection issues for Replit deployment environment
   - Multi-agent collaboration fully operational via REST API with natural response patterns
   - Agents provide expert responses: Jordan CSS (Gemini), Maya Designer (Claude), Sam AI (OpenAI)
+- July 08, 2025. Fixed GitHub import functionality that was failing with URL errors:
+  - Resolved "response.json is not a function" error by fixing mutation response handling
+  - Fixed GitHub URL construction from repository data when html_url is null
+  - Enhanced backend to handle both direct URLs and repository objects
+  - Added intelligent language and framework detection based on repository metadata
+  - Improved project creation with proper repository information extraction
+  - GitHub import now works correctly from both repository list and URL input
+  - System successfully imports TypeScript, Python, and other language repositories
+  - All import methods now properly navigate to workspace after successful import
 
 ## User Preferences
 

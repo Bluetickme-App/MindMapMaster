@@ -1605,30 +1605,46 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
       
       // Handle both direct URL and repository object
       let repoUrl = url;
+      let repoName = '';
+      let repoDescription = '';
+      let repoLanguage = 'javascript';
+      
       if (!repoUrl && repository) {
-        repoUrl = repository.html_url || repository.clone_url;
+        repoUrl = repository.html_url || repository.clone_url || `https://github.com/${repository.full_name}`;
+        repoName = repository.name;
+        repoDescription = repository.description || `Imported from GitHub: ${repository.full_name}`;
+        repoLanguage = repository.language?.toLowerCase() || 'javascript';
       }
       
       if (!repoUrl) {
         return res.status(400).json({ message: 'GitHub URL is required' });
       }
 
-      // Extract repo info from GitHub URL
-      const urlParts = repoUrl.replace('https://github.com/', '').split('/');
-      if (urlParts.length < 2) {
-        return res.status(400).json({ message: 'Invalid GitHub URL' });
+      // Extract repo info from GitHub URL if not provided
+      if (!repoName) {
+        const urlParts = repoUrl.replace('https://github.com/', '').split('/');
+        if (urlParts.length < 2) {
+          return res.status(400).json({ message: 'Invalid GitHub URL' });
+        }
+
+        const [owner, repo] = urlParts;
+        repoName = repo.replace('.git', '');
+        repoDescription = `Imported from GitHub: ${owner}/${repoName}`;
       }
 
-      const [owner, repo] = urlParts;
-      const repoName = repo.replace('.git', '');
+      // Determine framework based on language
+      let framework = 'react';
+      if (repoLanguage === 'python') framework = 'flask';
+      if (repoLanguage === 'java') framework = 'spring';
+      if (repoLanguage === 'php') framework = 'laravel';
 
       // Mock GitHub import - in production, this would clone the actual repo
       const project = await storage.createProject({
         userId: currentUserId,
         name: repoName,
-        description: `Imported from GitHub: ${owner}/${repoName}`,
-        language: 'javascript', // Would be detected from repo
-        framework: 'react', // Would be detected from repo
+        description: repoDescription,
+        language: repoLanguage,
+        framework: framework,
         status: 'active',
         isPublic: true,
         githubUrl: repoUrl

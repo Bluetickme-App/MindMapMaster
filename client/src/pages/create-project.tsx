@@ -193,7 +193,10 @@ export default function CreateProjectPage() {
 
   const handleGitHubImport = (repo: GitHubRepo) => {
     console.log('Importing GitHub repository:', repo);
-    importFromGitHub.mutate(repo.html_url);
+    // Construct GitHub URL from full_name if html_url is not available
+    const githubUrl = repo.html_url || `https://github.com/${repo.full_name}`;
+    console.log('Using GitHub URL:', githubUrl);
+    importFromGitHub.mutate(githubUrl);
   };
 
   const handleUrlImport = () => {
