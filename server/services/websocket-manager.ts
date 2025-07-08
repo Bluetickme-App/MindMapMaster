@@ -209,10 +209,12 @@ export class WebSocketManager {
       allAgents.some(agent => agent.id === id)
     );
     
+    console.log(`[WebSocket] Found ${agentIds.length} agents in conversation ${conversation.id}:`, agentIds);
+    
     for (const agentId of agentIds) {
       // Check if agent should respond (not every message needs all agents to respond)
       if (await this.shouldAgentRespond(agentId, content, conversation)) {
-        console.log(`Agent ${agentId} will respond to message: "${content}"`);
+        console.log(`[WebSocket] Agent ${agentId} will respond to message: "${content}"`);
         this.queueAgentResponse(conversation.id, userMessage.id, agentId);
       }
     }
@@ -221,6 +223,12 @@ export class WebSocketManager {
     setTimeout(() => {
       this.processAgentResponseQueue(conversation.id);
     }, 500); // Small delay to make it feel more natural
+  }
+
+  // Public method for triggering agent responses from REST API
+  async triggerAgentResponsesFromAPI(conversation: any, userMessage: any, content: string): Promise<void> {
+    console.log(`[REST API] Triggering agent responses for conversation ${conversation.id}`);
+    await this.triggerAgentResponses(conversation, userMessage, content);
   }
 
   private async shouldAgentRespond(agentId: number, content: string, conversation: any): Promise<boolean> {

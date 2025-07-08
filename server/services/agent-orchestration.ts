@@ -60,14 +60,13 @@ export class AgentOrchestrationService {
       // Build context-aware prompt
       const contextPrompt = this.buildContextPrompt(agent, context, relevantKnowledge);
       
-      console.log(`[Agent ${agentId}] Making OpenAI API call...`);
+      // Import and use the multi-AI provider system
+      const { multiAIService } = await import('./multi-ai-provider.js');
       
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // Force use of gpt-4o
-        messages: [
-          { 
-            role: "system", 
-            content: `You are ${agent.name}, a ${agent.specialization} specialist. ${agent.systemPrompt}
+      const aiProvider = agent.aiProvider || 'openai';
+      console.log(`[Agent ${agentId}] Using ${aiProvider} provider for ${agent.name}`);
+      
+      const systemPrompt = `You are ${agent.name}, a ${agent.specialization} specialist. ${agent.systemPrompt}
 
 RESPOND IN JSON FORMAT:
 {
@@ -76,33 +75,37 @@ RESPOND IN JSON FORMAT:
   "metadata": {},
   "confidence": 0.8,
   "reasoning": "why you provided this response"
-}`
-          },
-          { role: "user", content: `Context: ${contextPrompt}\n\nUser message: ${userMessage}` }
-        ],
-        temperature: 0.7,
-        max_tokens: 500
-      });
+}`;
 
-      console.log(`[Agent ${agentId}] OpenAI response received`);
+      const userPrompt = `Context: ${contextPrompt}\n\nUser message: ${userMessage}`;
 
-      let result;
-      const rawContent = response.choices[0].message.content || '';
-      
       try {
-        // Try to parse as JSON first
-        result = JSON.parse(rawContent);
-      } catch (e) {
-        console.log(`[Agent ${agentId}] Failed to parse JSON, using fallback response`);
-        // Fallback: create structured response from raw content
-        result = {
-          content: rawContent || `Hi! I'm ${agent.name} and I'm ready to help with your ${agent.specialization} needs. How can I assist you?`,
-          messageType: "text",
-          metadata: {},
-          confidence: 0.7,
-          reasoning: "Direct response due to JSON parsing failure"
-        };
-      }
+        const aiResponse = await multiAIService.generateResponse(
+          aiProvider,
+          userPrompt,
+          systemPrompt,
+          aiProvider === 'openai' ? 'gpt-4o' : 
+          aiProvider === 'claude' ? 'claude-sonnet-4-20250514' : 
+          'gemini-2.5-flash'
+        );
+
+        console.log(`[Agent ${agentId}] ${aiProvider} response received`);
+
+        let result;
+        try {
+          // Try to parse as JSON first
+          result = JSON.parse(aiResponse.content);
+        } catch (e) {
+          console.log(`[Agent ${agentId}] Failed to parse JSON, using fallback response`);
+          // Fallback: create structured response from raw content
+          result = {
+            content: aiResponse.content || `Hi! I'm ${agent.name} and I'm ready to help with your ${agent.specialization} needs. How can I assist you?`,
+            messageType: "text",
+            metadata: { provider: aiProvider },
+            confidence: aiResponse.confidence || 0.7,
+            reasoning: `Response from ${agent.name} using ${aiProvider} provider`
+          };
+        }
       
       // Store agent's learning from this interaction
       try {
@@ -113,14 +116,27 @@ RESPOND IN JSON FORMAT:
 
       console.log(`[Agent ${agentId}] Response generated: "${result.content}"`);
 
-      return {
-        agentId,
-        content: result.content || `Hello! I'm ${agent.name}, ready to help with ${agent.specialization}!`,
-        messageType: result.messageType || "text",
-        metadata: result.metadata || {},
-        confidence: result.confidence || 0.8,
-        reasoning: result.reasoning || "Generated response"
-      };
+        return {
+          agentId,
+          content: result.content || `Hello! I'm ${agent.name}, ready to help with ${agent.specialization}!`,
+          messageType: result.messageType || "text",
+          metadata: result.metadata || { provider: aiProvider },
+          confidence: result.confidence || 0.8,
+          reasoning: result.reasoning || `Generated response using ${aiProvider}`
+        };
+
+      } catch (aiError) {
+        console.error(`[Agent ${agentId}] ${aiProvider} provider failed:`, aiError);
+        // Fallback response when AI provider fails
+        return {
+          agentId,
+          content: `Hi! I'm ${agent.name}, your ${agent.specialization} specialist. I'm temporarily unable to access my AI provider (${aiProvider}), but I'm ready to help with your project. Could you please rephrase your request?`,
+          messageType: "text",
+          metadata: { provider: aiProvider, error: true },
+          confidence: 0.5,
+          reasoning: `Fallback response due to ${aiProvider} provider error`
+        };
+      }
 
     } catch (error) {
       console.error(`[Agent ${agentId}] Error generating response:`, error);

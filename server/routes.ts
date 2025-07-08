@@ -1930,7 +1930,32 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
         senderType: "user",
       });
       const message = await storage.createMessage(validatedData);
-      res.json(message);
+      
+      // Notify WebSocket clients about the new message
+      if (websocketManager) {
+        websocketManager.broadcastToConversation(conversationId, {
+          type: 'user_message',
+          conversationId,
+          senderId: message.senderId,
+          senderType: message.senderType,
+          content: message.content,
+          messageId: message.id,
+          timestamp: message.timestamp
+        });
+
+        // Trigger agent responses for REST API messages
+        try {
+          const conversation = await storage.getConversation(conversationId);
+          if (conversation && conversation.participants) {
+            console.log(`[REST API] Triggering agent responses for conversation ${conversationId}`);
+            await websocketManager.triggerAgentResponsesFromAPI(conversation, message, validatedData.content);
+          }
+        } catch (error) {
+          console.error('Error triggering agent responses from REST API:', error);
+        }
+      }
+      
+      res.json({ success: true, message });
     } catch (error) {
       console.error("Create message error:", error);
       res.status(500).json({ message: "Failed to create message" });
