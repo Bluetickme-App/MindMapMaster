@@ -76,10 +76,11 @@ export default function ProjectBuilderPage() {
   const generateRoadmap = useMutation({
     mutationFn: async (projectData: any) => {
       const response = await apiRequest('POST', '/api/generate-roadmap', projectData);
-      return response.roadmap;
+      const data = await response.json();
+      return data.roadmap;
     },
     onSuccess: (data) => {
-      setRoadmapItems(data);
+      setRoadmapItems(data || []);
       setCurrentStep('roadmap');
     },
     onError: (error: any) => {
@@ -109,12 +110,13 @@ export default function ProjectBuilderPage() {
       }, 1000);
 
       const response = await apiRequest('POST', '/api/build-project', roadmapData);
+      const data = await response.json();
       
       clearInterval(interval);
       setBuildProgress(100);
       setIsBuilding(false);
       
-      return response;
+      return data;
     },
     onSuccess: (data) => {
       setGeneratedCode(data);
@@ -406,7 +408,7 @@ export default function ProjectBuilderPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {roadmapItems.map((item) => (
+                      {roadmapItems.length > 0 ? roadmapItems.map((item) => (
                         <div key={item.id} className="flex items-start space-x-3 p-3 border rounded-lg">
                           <Checkbox 
                             checked={item.completed}
@@ -432,7 +434,11 @@ export default function ProjectBuilderPage() {
                             <p className="text-sm text-muted-foreground">{item.description}</p>
                           </div>
                         </div>
-                      ))}
+                      )) : (
+                        <div className="text-center text-muted-foreground py-8">
+                          <p>Loading roadmap...</p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
