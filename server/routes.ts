@@ -2412,9 +2412,50 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
   const wsManager = new WebSocketManager(httpServer);
   (global as any).webSocketManager = wsManager;
   
+  // WeLet AI Chat API endpoint
+  app.post('/api/welet/chat', async (req, res) => {
+    try {
+      const { message, conversationHistory = [] } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ message: 'Message is required' });
+      }
+      
+      const { weletAIAgent } = await import('./services/welet-ai-agent.js');
+      const response = await weletAIAgent.processMessage(message, conversationHistory);
+      
+      res.json({ 
+        response,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('WeLet chat error:', error);
+      res.status(500).json({ message: 'Failed to process chat message' });
+    }
+  });
+  
+  // WeLet maintenance update endpoint
+  app.get('/api/welet/maintenance/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { weletAIAgent } = await import('./services/welet-ai-agent.js');
+      const update = await weletAIAgent.getMaintenanceUpdate(id);
+      
+      if (update) {
+        res.json({ update });
+      } else {
+        res.status(404).json({ message: 'Maintenance request not found' });
+      }
+    } catch (error) {
+      console.error('Maintenance update error:', error);
+      res.status(500).json({ message: 'Failed to get maintenance update' });
+    }
+  });
+  
   console.log('🚀 Multi-Agent Collaboration System is ready!');
   console.log('📡 WebSocket server initialized for real-time communication');
   console.log('🤖 Access collaboration dashboard at /collaboration');
+  console.log('🏠 WeLet AI Agent ready for tenant support');
   
   return httpServer;
 }
