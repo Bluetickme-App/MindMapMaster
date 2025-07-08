@@ -733,6 +733,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isPublic: false
       });
 
+      // Initialize project assistant for the new project
+      try {
+        const { initializeProjectAssistant } = await import('./services/project-assistant.js');
+        await initializeProjectAssistant(project.id, 'openai');
+      } catch (error) {
+        console.error('Failed to initialize project assistant:', error);
+      }
+
       res.json(project);
     } catch (error) {
       console.error('Error generating project:', error);
@@ -804,18 +812,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced AI code generation endpoint (Codex-style)
+  // Enhanced AI code generation endpoint with project context
   app.post('/api/generate', async (req, res) => {
     try {
-      const { prompt, language = 'javascript', framework } = req.body;
+      const { prompt, language = 'javascript', framework, projectId, aiProvider = 'openai' } = req.body;
       
       if (!prompt) {
         return res.status(400).json({ message: 'Prompt is required' });
       }
 
-      // Try OpenAI first (enhanced with Codex-style prompts)
+      // If projectId is provided, use project-aware generation with memory
+      if (projectId) {
+        try {
+          const { generateCodeWithContext } = await import('./services/project-assistant.js');
+          const result = await generateCodeWithContext(
+            parseInt(projectId),
+            prompt,
+            language,
+            framework,
+            aiProvider
+          );
+          return res.json(result);
+        } catch (error) {
+          console.error('Project-aware generation failed:', error);
+          // Fall through to regular generation
+        }
+      }
+
+      // Regular generation without project context
       try {
-        if (process.env.OPENAI_API_KEY) {
+        if (process.env.OPENAI_API_KEY && aiProvider === 'openai') {
           const { generateCode } = await import('./services/openai.js');
           const result = await generateCode(prompt, language, framework);
           return res.json(result);
@@ -826,7 +852,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Try Anthropic as fallback
       try {
-        if (process.env.ANTHROPIC_API_KEY) {
+        if (process.env.ANTHROPIC_API_KEY && aiProvider === 'claude') {
           const { generateCode } = await import('./services/anthropic.js');
           const result = await generateCode(prompt, language, framework);
           return res.json(result);
@@ -845,6 +871,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error generating code:', error);
       res.status(500).json({ message: 'Failed to generate code' });
+    }
+  });
+
+  // Get project conversation history
+  app.get('/api/projects/:id/conversations', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { aiProvider } = req.query;
+
+      const { getProjectConversationHistory } = await import('./services/project-assistant.js');
+      const history = await getProjectConversationHistory(
+        parseInt(id),
+        aiProvider as 'openai' | 'claude' | 'gemini'
+      );
+
+      res.json(history);
+    } catch (error) {
+      console.error('Error getting conversation history:', error);
+      res.status(500).json({ message: 'Failed to get conversation history' });
     }
   });
 

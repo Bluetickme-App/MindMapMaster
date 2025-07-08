@@ -22,6 +22,8 @@ export const projects = pgTable("projects", {
   framework: text("framework"),
   status: text("status").notNull().default("active"), // active, paused, completed
   githubRepo: text("github_repo"),
+  assistantId: text("assistant_id"), // OpenAI Assistant ID for this project
+  threadId: text("thread_id"), // OpenAI Thread ID for conversation history
   lastModified: timestamp("last_modified").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -34,6 +36,18 @@ export const codeGenerations = pgTable("code_generations", {
   language: text("language").notNull(),
   framework: text("framework"),
   generatedCode: text("generated_code").notNull(),
+  aiProvider: text("ai_provider").notNull().default("openai"), // openai, claude, gemini
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Project conversation history for all AI providers
+export const projectConversations = pgTable("project_conversations", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  role: text("role").notNull(), // user, assistant
+  content: text("content").notNull(),
+  aiProvider: text("ai_provider").notNull(), // openai, claude, gemini
+  metadata: jsonb("metadata"), // Store additional context like code generated, etc.
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Wand2, Code, Download, Eye, Loader2, ExternalLink } from 'lucide-react';
+import { Wand2, Code, Download, Eye, Loader2, ExternalLink, Globe } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 interface GeneratedCode {
