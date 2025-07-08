@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { 
   File, 
@@ -86,6 +87,7 @@ export default function WorkspacePage() {
   const [secretsFormat, setSecretsFormat] = useState<'json' | 'env'>('json');
   const [fileContent, setFileContent] = useState<string>('');
   const [showTeamAgents, setShowTeamAgents] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<any>(null);
 
   // Fetch file system from backend
   const { data: fileSystem = [], refetch: refetchFiles } = useQuery<FileNode[]>({
@@ -101,6 +103,19 @@ export default function WorkspacePage() {
   const { data: backendSecrets = {} } = useQuery<Record<string, string>>({
     queryKey: ['/api/workspace/secrets'],
   });
+
+  // Fetch projects
+  const projectsQuery = useQuery({
+    queryKey: ['/api/projects'],
+    enabled: true
+  });
+
+  // Auto-select first project on load
+  useEffect(() => {
+    if (projectsQuery.data && projectsQuery.data.length > 0 && !selectedProject) {
+      setSelectedProject(projectsQuery.data[0]);
+    }
+  }, [projectsQuery.data, selectedProject]);
 
   // Execute console command mutation
   const executeCommand = useMutation({
@@ -314,6 +329,27 @@ export default function WorkspacePage() {
               Back
             </Button>
             <h1 className="text-lg font-semibold">CodeCraft Workspace</h1>
+            
+            {/* Project Selector */}
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium">Project:</label>
+              <Select value={selectedProject?.id?.toString() || ''} onValueChange={(value) => {
+                const project = projectsQuery.data?.find((p: any) => p.id.toString() === value);
+                setSelectedProject(project);
+              }}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projectsQuery.data?.map((project: any) => (
+                    <SelectItem key={project.id} value={project.id.toString()}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
             <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
               Running
@@ -498,76 +534,117 @@ export default function WorkspacePage() {
                       </Button>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3">
-                      <Card>
-                        <CardContent className="p-3">
+                    {/* Project Context */}
+                    {selectedProject && (
+                      <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                        <CardContent className="p-4">
                           <div className="flex items-center space-x-2">
-                            <Bot className="w-6 h-6 text-blue-500" />
+                            <Package className="w-5 h-5 text-blue-500" />
                             <div>
-                              <h4 className="font-medium text-sm">Alex Roadmap</h4>
-                              <p className="text-xs text-muted-foreground">Project Planning</p>
+                              <h4 className="font-medium text-blue-700 dark:text-blue-300">
+                                Working on: {selectedProject.name}
+                              </h4>
+                              <p className="text-sm text-blue-600 dark:text-blue-400">
+                                {selectedProject.language} • {selectedProject.framework || 'No framework'}
+                              </p>
                             </div>
                           </div>
-                          <Button variant="outline" size="sm" className="w-full mt-2">
-                            <MessageSquare className="w-3 h-3 mr-1" />
-                            Chat
-                          </Button>
                         </CardContent>
                       </Card>
+                    )}
 
-                      <Card>
-                        <CardContent className="p-3">
-                          <div className="flex items-center space-x-2">
-                            <Bot className="w-6 h-6 text-purple-500" />
-                            <div>
-                              <h4 className="font-medium text-sm">Maya Designer</h4>
-                              <p className="text-xs text-muted-foreground">UI/UX Design</p>
-                            </div>
-                          </div>
-                          <Button variant="outline" size="sm" className="w-full mt-2">
-                            <MessageSquare className="w-3 h-3 mr-1" />
-                            Chat
-                          </Button>
-                        </CardContent>
-                      </Card>
+                    {!selectedProject && (
+                      <Alert>
+                        <Package className="w-4 h-4" />
+                        <AlertDescription>
+                          <strong>Select a project above</strong> to get AI agents working on your specific project context.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {/* Recommended Agents for Selected Project */}
+                    {selectedProject && (
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Recommended Agents for {selectedProject.name}</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          {selectedProject.language === 'JavaScript' && (
+                            <>
+                              <Card className="border-green-200 dark:border-green-800">
+                                <CardContent className="p-3">
+                                  <div className="flex items-center space-x-2">
+                                    <Bot className="w-6 h-6 text-green-500" />
+                                    <div>
+                                      <h4 className="font-medium text-sm">Taylor React</h4>
+                                      <p className="text-xs text-muted-foreground">Perfect for your React project</p>
+                                    </div>
+                                  </div>
+                                  <Button variant="outline" size="sm" className="w-full mt-2">
+                                    <MessageSquare className="w-3 h-3 mr-1" />
+                                    Chat About {selectedProject.name}
+                                  </Button>
+                                </CardContent>
+                              </Card>
 
-                      <Card>
-                        <CardContent className="p-3">
-                          <div className="flex items-center space-x-2">
-                            <Bot className="w-6 h-6 text-green-500" />
-                            <div>
-                              <h4 className="font-medium text-sm">Taylor React</h4>
-                              <p className="text-xs text-muted-foreground">Frontend Development</p>
-                            </div>
-                          </div>
-                          <Button variant="outline" size="sm" className="w-full mt-2">
-                            <MessageSquare className="w-3 h-3 mr-1" />
-                            Chat
-                          </Button>
-                        </CardContent>
-                      </Card>
+                              <Card className="border-orange-200 dark:border-orange-800">
+                                <CardContent className="p-3">
+                                  <div className="flex items-center space-x-2">
+                                    <Bot className="w-6 h-6 text-orange-500" />
+                                    <div>
+                                      <h4 className="font-medium text-sm">Casey Vite</h4>
+                                      <p className="text-xs text-muted-foreground">Build optimization</p>
+                                    </div>
+                                  </div>
+                                  <Button variant="outline" size="sm" className="w-full mt-2">
+                                    <MessageSquare className="w-3 h-3 mr-1" />
+                                    Chat About {selectedProject.name}
+                                  </Button>
+                                </CardContent>
+                              </Card>
+                            </>
+                          )}
+                          
+                          <Card className="border-purple-200 dark:border-purple-800">
+                            <CardContent className="p-3">
+                              <div className="flex items-center space-x-2">
+                                <Bot className="w-6 h-6 text-purple-500" />
+                                <div>
+                                  <h4 className="font-medium text-sm">Maya Designer</h4>
+                                  <p className="text-xs text-muted-foreground">UI/UX for your project</p>
+                                </div>
+                              </div>
+                              <Button variant="outline" size="sm" className="w-full mt-2">
+                                <MessageSquare className="w-3 h-3 mr-1" />
+                                Chat About {selectedProject.name}
+                              </Button>
+                            </CardContent>
+                          </Card>
 
-                      <Card>
-                        <CardContent className="p-3">
-                          <div className="flex items-center space-x-2">
-                            <Bot className="w-6 h-6 text-orange-500" />
-                            <div>
-                              <h4 className="font-medium text-sm">Sam AI</h4>
-                              <p className="text-xs text-muted-foreground">AI Integration</p>
-                            </div>
-                          </div>
-                          <Button variant="outline" size="sm" className="w-full mt-2">
-                            <MessageSquare className="w-3 h-3 mr-1" />
-                            Chat
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </div>
+                          <Card className="border-blue-200 dark:border-blue-800">
+                            <CardContent className="p-3">
+                              <div className="flex items-center space-x-2">
+                                <Bot className="w-6 h-6 text-blue-500" />
+                                <div>
+                                  <h4 className="font-medium text-sm">Alex Roadmap</h4>
+                                  <p className="text-xs text-muted-foreground">Plan next features</p>
+                                </div>
+                              </div>
+                              <Button variant="outline" size="sm" className="w-full mt-2">
+                                <MessageSquare className="w-3 h-3 mr-1" />
+                                Chat About {selectedProject.name}
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </div>
+                    )}
 
                     <Alert>
                       <Bot className="w-4 h-4" />
                       <AlertDescription>
-                        Click "Manage Team" to configure your development team agents and create collaborative conversations.
+                        {selectedProject 
+                          ? `Agents have context about your ${selectedProject.name} project and can help with specific tasks.`
+                          : 'Select a project to get personalized agent recommendations and project-specific assistance.'
+                        }
                       </AlertDescription>
                     </Alert>
                   </div>
