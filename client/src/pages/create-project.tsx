@@ -112,8 +112,9 @@ export default function CreateProjectPage() {
   // Import from GitHub mutation
   const importFromGitHub = useMutation({
     mutationFn: async (repoUrl: string) => {
+      console.log('GitHub import mutation called with:', repoUrl);
       const response = await apiRequest('POST', '/api/projects/import/github', { url: repoUrl });
-      return await response.json();
+      return response;
     },
     onSuccess: (data) => {
       toast({
@@ -191,6 +192,7 @@ export default function CreateProjectPage() {
   };
 
   const handleGitHubImport = (repo: GitHubRepo) => {
+    console.log('Importing GitHub repository:', repo);
     importFromGitHub.mutate(repo.html_url);
   };
 

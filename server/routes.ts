@@ -1599,14 +1599,22 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
 
   app.post('/api/projects/import/github', async (req, res) => {
     try {
-      const { url } = req.body;
+      const { url, repository } = req.body;
       
-      if (!url) {
+      console.log('GitHub import request:', { body: req.body, url, repository });
+      
+      // Handle both direct URL and repository object
+      let repoUrl = url;
+      if (!repoUrl && repository) {
+        repoUrl = repository.html_url || repository.clone_url;
+      }
+      
+      if (!repoUrl) {
         return res.status(400).json({ message: 'GitHub URL is required' });
       }
 
       // Extract repo info from GitHub URL
-      const urlParts = url.replace('https://github.com/', '').split('/');
+      const urlParts = repoUrl.replace('https://github.com/', '').split('/');
       if (urlParts.length < 2) {
         return res.status(400).json({ message: 'Invalid GitHub URL' });
       }
@@ -1623,7 +1631,7 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
         framework: 'react', // Would be detected from repo
         status: 'active',
         isPublic: true,
-        githubUrl: url
+        githubUrl: repoUrl
       });
 
       res.json(project);
