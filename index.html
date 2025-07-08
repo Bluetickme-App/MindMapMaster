@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeLet Properties - Next-Generation AI Property Management</title>
+    <meta name="description" content="Revolutionary property management platform with AI-powered tenant support, predictive maintenance, and smart analytics. Experience the future of real estate technology.">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M19 7h-3V6a4 4 0 0 0-8 0v1H5a1 1 0 0 0-1 1v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8a1 1 0 0 0-1-1zM10 6a2 2 0 0 1 4 0v1h-4V6zm8 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9h2v1a1 1 0 0 0 2 0V9h4v1a1 1 0 0 0 2 0V9h2v10z' fill='%23007acc'/></svg>">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-animation">
+            <div class="loading-logo">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="loading-text">WeLet Properties</div>
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-building"></i>
+                <span>WeLet Properties</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="#home" class="nav-link active">Home</a>
+                <a href="#properties" class="nav-link">Properties</a>
+                <a href="#services" class="nav-link">Services</a>
+                <a href="#ai-support" class="nav-link">AI Support</a>
+                <a href="#analytics" class="nav-link">Analytics</a>
+                <a href="#contact" class="nav-link">Contact</a>
+                <div class="nav-actions">
+                    <button class="btn-login">Login</button>
+                    <button class="btn-primary">Get Started</button>
+                </div>
+            </div>
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-background">
+            <div class="hero-particles"></div>
+            <div class="hero-gradient"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-animation">
+                <div class="hero-text">
+                    <h1 class="hero-title">
+                        The Future of <span class="gradient-text">Property Management</span>
+                        <span class="typing-cursor">|</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        Revolutionary AI-powered platform combining predictive maintenance, 
+                        intelligent tenant support, and cutting-edge analytics for unprecedented 
+                        property management efficiency.
+                    </p>
+                    <div class="hero-features">
+                        <div class="feature-tag">
+                            <i class="fas fa-robot"></i>
+                            <span>AI-Powered</span>
+                        </div>
+                        <div class="feature-tag">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Predictive Analytics</span>
+                        </div>
+                        <div class="feature-tag">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Enterprise Security</span>
+                        </div>
+                    </div>
+                    <div class="hero-buttons">
+                        <button class="btn-primary hero-btn" onclick="startDemo()">
+                            <i class="fas fa-play"></i>
+                            <span>Start Demo</span>
+                        </button>
+                        <button class="btn-secondary hero-btn" onclick="scrollToSection('properties')">
+                            <i class="fas fa-search"></i>
+                            <span>Explore Properties</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="dashboard-preview">
+                        <div class="dashboard-header">
+                            <div class="dashboard-title">Property Dashboard</div>
+                            <div class="dashboard-status">
+                                <span class="status-dot active"></span>
+                                <span>Live</span>
+                            </div>
+                        </div>
+                        <div class="dashboard-content">
+                            <div class="metric-card">
+                                <div class="metric-value">2,847</div>
+                                <div class="metric-label">Properties</div>
+                                <div class="metric-change positive">+12.5%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">98.7%</div>
+                                <div class="metric-label">Satisfaction</div>
+                                <div class="metric-change positive">+2.3%</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">15s</div>
+                                <div class="metric-label">Response Time</div>
+                                <div class="metric-change negative">-67%</div>
+                            </div>
+                        </div>
+                        <div class="dashboard-chart">
+                            <div class="chart-line"></div>
+                            <div class="chart-dots">
+                                <div class="chart-dot"></div>
+                                <div class="chart-dot"></div>
+                                <div class="chart-dot"></div>
+                                <div class="chart-dot"></div>
+                                <div class="chart-dot"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" data-count="5847">0</div>
+                    <div class="stat-label">Properties Managed</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" data-count="98.9">0</div>
+                    <div class="stat-label">% Satisfaction Rate</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" data-count="24">0</div>
+                    <div class="stat-label">/7 AI Support</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" data-count="89">0</div>
+                    <div class="stat-label">% Cost Reduction</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Search -->
+    <section class="property-search">
+        <div class="container">
+            <div class="search-header">
+                <h2>Find Your Perfect Property</h2>
+                <p>Advanced AI-powered search with predictive recommendations</p>
+            </div>
+            <div class="search-card">
+                <div class="search-form">
+                    <div class="search-group">
+                        <label>
+                            <i class="fas fa-map-marker-alt"></i>
+                            <input type="text" placeholder="Enter location or postcode" id="locationInput" autocomplete="off">
+                        </label>
+                        <div class="search-suggestions" id="locationSuggestions"></div>
+                    </div>
+                    <div class="search-group">
+                        <label>
+                            <i class="fas fa-home"></i>
+                            <select id="propertyType">
+                                <option value="">All Property Types</option>
+                                <option value="apartment">Apartment</option>
+                                <option value="house">House</option>
+                                <option value="studio">Studio</option>
+                                <option value="commercial">Commercial</option>
+                                <option value="luxury">Luxury</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="search-group">
+                        <label>
+                            <i class="fas fa-pound-sign"></i>
+                            <input type="text" placeholder="Budget (e.g., £1000-2000)" id="budgetInput">
+                        </label>
+                    </div>
+                    <div class="search-group">
+                        <label>
+                            <i class="fas fa-bed"></i>
+                            <select id="bedrooms">
+                                <option value="">Any Bedrooms</option>
+                                <option value="studio">Studio</option>
+                                <option value="1">1 Bedroom</option>
+                                <option value="2">2 Bedrooms</option>
+                                <option value="3">3 Bedrooms</option>
+                                <option value="4">4+ Bedrooms</option>
+                            </select>
+                        </label>
+                    </div>
+                    <button class="search-btn" onclick="searchProperties()">
+                        <i class="fas fa-search"></i>
+                        <span>Search Properties</span>
+                    </button>
+                </div>
+                <div class="search-filters">
+                    <div class="filter-tags">
+                        <button class="filter-tag" data-filter="pet-friendly">
+                            <i class="fas fa-paw"></i>
+                            Pet Friendly
+                        </button>
+                        <button class="filter-tag" data-filter="furnished">
+                            <i class="fas fa-couch"></i>
+                            Furnished
+                        </button>
+                        <button class="filter-tag" data-filter="parking">
+                            <i class="fas fa-car"></i>
+                            Parking
+                        </button>
+                        <button class="filter-tag" data-filter="garden">
+                            <i class="fas fa-tree"></i>
+                            Garden
+                        </button>
+                        <button class="filter-tag" data-filter="new-build">
+                            <i class="fas fa-hammer"></i>
+                            New Build
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Properties -->
+    <section id="properties" class="featured-properties">
+        <div class="container">
+            <div class="section-header">
+                <h2>Featured Properties</h2>
+                <p>Discover premium properties with virtual tours and AI-powered insights</p>
+                <div class="section-controls">
+                    <div class="view-toggle">
+                        <button class="view-btn active" data-view="grid">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="view-btn" data-view="list">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                    <div class="sort-dropdown">
+                        <select id="sortProperties">
+                            <option value="featured">Featured</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="newest">Newest First</option>
+                            <option value="rating">Highest Rated</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="properties-grid" id="propertiesGrid">
+                <!-- Properties will be dynamically loaded here -->
+            </div>
+
+            <div class="load-more">
+                <button class="btn-secondary" onclick="loadMoreProperties()">
+                    <i class="fas fa-plus"></i>
+                    Load More Properties
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Support Section -->
+    <section id="ai-support" class="ai-support">
+        <div class="container">
+            <div class="ai-support-content">
+                <div class="ai-support-text">
+                    <h2>Revolutionary AI Tenant Support</h2>
+                    <p>Experience next-generation property management with our advanced AI assistant that handles everything from maintenance requests to lease inquiries with unprecedented efficiency.</p>
+                    
+                    <div class="ai-capabilities">
+                        <div class="capability">
+                            <div class="capability-icon">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <div class="capability-content">
+                                <h4>Natural Language Processing</h4>
+                                <p>Understands complex tenant requests in multiple languages with 99.7% accuracy</p>
+                            </div>
+                        </div>
+                        <div class="capability">
+                            <div class="capability-icon">
+                                <i class="fas fa-wrench"></i>
+                            </div>
+                            <div class="capability-content">
+                                <h4>Predictive Maintenance</h4>
+                                <p>Identifies potential issues before they occur, reducing emergency repairs by 78%</p>
+                            </div>
+                        </div>
+                        <div class="capability">
+                            <div class="capability-icon">
+                                <i class="fas fa-lightning-bolt"></i>
+                            </div>
+                            <div class="capability-content">
+                                <h4>Instant Resolution</h4>
+                                <p>Resolves 89% of tenant requests within 15 seconds through intelligent automation</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-stats">
+                        <div class="ai-stat">
+                            <div class="ai-stat-number">15s</div>
+                            <div class="ai-stat-label">Average Response Time</div>
+                        </div>
+                        <div class="ai-stat">
+                            <div class="ai-stat-number">99.7%</div>
+                            <div class="ai-stat-label">Accuracy Rate</div>
+                        </div>
+                        <div class="ai-stat">
+                            <div class="ai-stat-number">89%</div>
+                            <div class="ai-stat-label">Auto-Resolution</div>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" onclick="openAIDemo()">
+                        <i class="fas fa-robot"></i>
+                        Try AI Assistant
+                    </button>
+                </div>
+                
+                <div class="ai-demo">
+                    <div class="chat-window">
+                        <div class="chat-header">
+                            <div class="chat-user">
+                                <i class="fas fa-robot"></i>
+                                <div class="chat-user-info">
+                                    <span class="chat-user-name">WeLet AI Assistant</span>
+                                    <span class="chat-user-status">Online</span>
+                                </div>
+                            </div>
+                            <div class="chat-actions">
+                                <button class="chat-action">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chat-messages" id="chatMessages">
+                            <!-- Messages will be dynamically added here -->
+                        </div>
+                        <div class="chat-input">
+                            <div class="input-group">
+                                <input type="text" placeholder="Type your message..." id="chatInput">
+                                <button class="chat-send" onclick="sendMessage()">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <div class="quick-actions">
+                                <button class="quick-action" onclick="sendQuickMessage('heating issue')">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    Heating Issue
+                                </button>
+                                <button class="quick-action" onclick="sendQuickMessage('maintenance request')">
+                                    <i class="fas fa-wrench"></i>
+                                    Maintenance
+                                </button>
+                                <button class="quick-action" onclick="sendQuickMessage('lease inquiry')">
+                                    <i class="fas fa-file-contract"></i>
+                                    Lease Inquiry
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analytics Dashboard -->
+    <section id="analytics" class="analytics">
+        <div class="container">
+            <div class="section-header">
+                <h2>Advanced Analytics & Insights</h2>
+                <p>Data-driven property management with real-time insights and predictive analytics</p>
+            </div>
+            
+            <div class="analytics-dashboard">
+                <div class="analytics-row">
+                    <div class="analytics-card">
+                        <div class="analytics-header">
+                            <h3>Revenue Analytics</h3>
+                            <div class="analytics-period">
+                                <select>
+                                    <option>Last 30 Days</option>
+                                    <option>Last 90 Days</option>
+                                    <option>Last Year</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="analytics-value">
+                            <span class="value">£2.4M</span>
+                            <span class="change positive">+18.5%</span>
+                        </div>
+                        <div class="analytics-chart">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="analytics-card">
+                        <div class="analytics-header">
+                            <h3>Occupancy Rate</h3>
+                            <div class="analytics-status">
+                                <span class="status-dot active"></span>
+                                <span>Live</span>
+                            </div>
+                        </div>
+                        <div class="analytics-value">
+                            <span class="value">96.8%</span>
+                            <span class="change positive">+2.1%</span>
+                        </div>
+                        <div class="occupancy-visual">
+                            <div class="occupancy-ring">
+                                <div class="occupancy-fill" style="--percentage: 96.8"></div>
+                                <div class="occupancy-center">96.8%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="analytics-row">
+                    <div class="analytics-card wide">
+                        <div class="analytics-header">
+                            <h3>Maintenance Predictions</h3>
+                            <div class="analytics-filters">
+                                <button class="filter-btn active">All</button>
+                                <button class="filter-btn">Critical</button>
+                                <button class="filter-btn">Scheduled</button>
+                            </div>
+                        </div>
+                        <div class="maintenance-list">
+                            <div class="maintenance-item critical">
+                                <div class="maintenance-icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div class="maintenance-content">
+                                    <h4>HVAC System - Building A</h4>
+                                    <p>Predicted failure in 7 days based on sensor data</p>
+                                    <span class="maintenance-date">Scheduled: Tomorrow 10:00 AM</span>
+                                </div>
+                                <div class="maintenance-probability">
+                                    <span class="probability-label">89%</span>
+                                    <span class="probability-text">Probability</span>
+                                </div>
+                            </div>
+                            <div class="maintenance-item warning">
+                                <div class="maintenance-icon">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                </div>
+                                <div class="maintenance-content">
+                                    <h4>Elevator Motor - Building C</h4>
+                                    <p>Unusual vibration patterns detected</p>
+                                    <span class="maintenance-date">Scheduled: Friday 2:00 PM</span>
+                                </div>
+                                <div class="maintenance-probability">
+                                    <span class="probability-label">67%</span>
+                                    <span class="probability-text">Probability</span>
+                                </div>
+                            </div>
+                            <div class="maintenance-item info">
+                                <div class="maintenance-icon">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                                <div class="maintenance-content">
+                                    <h4>Water Heater - Building B</h4>
+                                    <p>Routine maintenance due next week</p>
+                                    <span class="maintenance-date">Scheduled: Next Monday 9:00 AM</span>
+                                </div>
+                                <div class="maintenance-probability">
+                                    <span class="probability-label">45%</span>
+                                    <span class="probability-text">Probability</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="services">
+        <div class="container">
+            <div class="section-header">
+                <h2>Comprehensive Property Solutions</h2>
+                <p>End-to-end property management services powered by cutting-edge technology</p>
+            </div>
+            
+            <div class="services-grid">
+                <div class="service-card featured">
+                    <div class="service-header">
+                        <div class="service-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="service-badge">AI-Powered</div>
+                    </div>
+                    <h3>Intelligent Property Management</h3>
+                    <p>Complete automation of property operations with AI-driven decision making, tenant screening, and portfolio optimization.</p>
+                    <ul class="service-features">
+                        <li><i class="fas fa-check"></i> Automated rent collection & invoicing</li>
+                        <li><i class="fas fa-check"></i> AI-powered tenant screening</li>
+                        <li><i class="fas fa-check"></i> Dynamic pricing optimization</li>
+                        <li><i class="fas fa-check"></i> Smart contract management</li>
+                        <li><i class="fas fa-check"></i> Predictive vacancy management</li>
+                    </ul>
+                    <button class="service-btn">
+                        <span>Learn More</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-header">
+                        <div class="service-icon">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="service-badge">Predictive</div>
+                    </div>
+                    <h3>Smart Maintenance System</h3>
+                    <p>Revolutionary predictive maintenance with IoT sensors, automated contractor dispatch, and real-time monitoring.</p>
+                    <ul class="service-features">
+                        <li><i class="fas fa-check"></i> IoT sensor network monitoring</li>
+                        <li><i class="fas fa-check"></i> Predictive failure analysis</li>
+                        <li><i class="fas fa-check"></i> Automated contractor dispatch</li>
+                        <li><i class="fas fa-check"></i> Real-time progress tracking</li>
+                        <li><i class="fas fa-check"></i> Cost optimization algorithms</li>
+                    </ul>
+                    <button class="service-btn">
+                        <span>Learn More</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-header">
+                        <div class="service-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="service-badge">Analytics</div>
+                    </div>
+                    <h3>Advanced Analytics Platform</h3>
+                    <p>Comprehensive data analytics with machine learning insights, market predictions, and performance optimization.</p>
+                    <ul class="service-features">
+                        <li><i class="fas fa-check"></i> Real-time market analysis</li>
+                        <li><i class="fas fa-check"></i> Tenant behavior insights</li>
+                        <li><i class="fas fa-check"></i> Revenue optimization models</li>
+                        <li><i class="fas fa-check"></i> Performance benchmarking</li>
+                        <li><i class="fas fa-check"></i> Custom reporting dashboards</li>
+                    </ul>
+                    <button class="service-btn">
+                        <span>Learn More</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-header">
+                        <div class="service-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="service-badge">Security</div>
+                    </div>
+                    <h3>Enterprise Security Suite</h3>
+                    <p>Bank-grade security with encrypted communications, secure access control, and compliance monitoring.</p>
+                    <ul class="service-features">
+                        <li><i class="fas fa-check"></i> End-to-end encryption</li>
+                        <li><i class="fas fa-check"></i> Multi-factor authentication</li>
+                        <li><i class="fas fa-check"></i> Role-based access control</li>
+                        <li><i class="fas fa-check"></i> Compliance monitoring</li>
+                        <li><i class="fas fa-check"></i> Audit trail management</li>
+                    </ul>
+                    <button class="service-btn">
+                        <span>Learn More</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="contact-content">
+                <div class="contact-info">
+                    <h2>Ready to Transform Your Property Management?</h2>
+                    <p>Join thousands of property managers who have revolutionized their operations with our AI-powered platform.</p>
+                    
+                    <div class="contact-stats">
+                        <div class="contact-stat">
+                            <div class="stat-number">89%</div>
+                            <div class="stat-label">Cost Reduction</div>
+                        </div>
+                        <div class="contact-stat">
+                            <div class="stat-number">24/7</div>
+                            <div class="stat-label">AI Support</div>
+                        </div>
+                        <div class="contact-stat">
+                            <div class="stat-number">15s</div>
+                            <div class="stat-label">Response Time</div>
+                        </div>
+                    </div>
+
+                    <div class="contact-details">
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div class="contact-content">
+                                <h4>Phone</h4>
+                                <p>+44 20 7123 4567</p>
+                                <span>24/7 Support Available</span>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="contact-content">
+                                <h4>Email</h4>
+                                <p>hello@weletproperties.com</p>
+                                <span>Response within 1 hour</span>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="contact-content">
+                                <h4>Office</h4>
+                                <p>123 Tech Quarter, London EC2A 4BX</p>
+                                <span>Open Mon-Fri 9AM-6PM</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="contact-form">
+                    <div class="form-header">
+                        <h3>Get Started Today</h3>
+                        <p>Schedule a personalized demo</p>
+                    </div>
+                    <form id="contactForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">First Name</label>
+                                <input type="text" id="firstName" name="firstName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name</label>
+                                <input type="text" id="lastName" name="lastName" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" name="phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="company">Company</label>
+                            <input type="text" id="company" name="company">
+                        </div>
+                        <div class="form-group">
+                            <label for="propertyCount">Properties Managed</label>
+                            <select id="propertyCount" name="propertyCount">
+                                <option value="">Select range</option>
+                                <option value="1-10">1-10 Properties</option>
+                                <option value="11-50">11-50 Properties</option>
+                                <option value="51-100">51-100 Properties</option>
+                                <option value="100+">100+ Properties</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="service">Service Interest</label>
+                            <select id="service" name="service" required>
+                                <option value="">Select service</option>
+                                <option value="full-management">Full Property Management</option>
+                                <option value="ai-support">AI Tenant Support</option>
+                                <option value="maintenance">Smart Maintenance</option>
+                                <option value="analytics">Analytics Platform</option>
+                                <option value="consultation">Consultation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Message</label>
+                            <textarea id="message" name="message" rows="4" placeholder="Tell us about your property management needs..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary form-submit">
+                            <i class="fas fa-rocket"></i>
+                            <span>Schedule Demo</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <i class="fas fa-building"></i>
+                        <span>WeLet Properties</span>
+                    </div>
+                    <p>Revolutionizing property management through AI-powered innovation and cutting-edge technology solutions.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="social-link">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <a href="#" class="social-link">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a href="#" class="social-link">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="social-link">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Platform</h4>
+                    <ul>
+                        <li><a href="#">Property Management</a></li>
+                        <li><a href="#">AI Tenant Support</a></li>
+                        <li><a href="#">Smart Maintenance</a></li>
+                        <li><a href="#">Analytics Dashboard</a></li>
+                        <li><a href="#">Mobile App</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Solutions</h4>
+                    <ul>
+                        <li><a href="#">Enterprise</a></li>
+                        <li><a href="#">Small Business</a></li>
+                        <li><a href="#">Individual Landlords</a></li>
+                        <li><a href="#">Property Developers</a></li>
+                        <li><a href="#">Real Estate Agents</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="#">API Reference</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Case Studies</a></li>
+                        <li><a href="#">Webinars</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Press</a></li>
+                        <li><a href="#">Partners</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-bottom-content">
+                    <p>&copy; 2024 WeLet Properties. All rights reserved.</p>
+                    <div class="footer-links">
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Terms of Service</a>
+                        <a href="#">Cookie Policy</a>
+                        <a href="#">Security</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- AI Chat Modal -->
+    <div id="aiChatModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>AI Assistant Demo</h3>
+                <button class="modal-close" onclick="closeAIDemo()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="demo-chat-window">
+                    <div class="demo-messages" id="demoMessages">
+                        <!-- Demo messages will be added here -->
+                    </div>
+                    <div class="demo-input">
+                        <input type="text" placeholder="Ask me anything..." id="demoInput">
+                        <button onclick="sendDemoMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
