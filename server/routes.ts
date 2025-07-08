@@ -7,6 +7,7 @@ import { GitHubService } from "./services/github";
 import { agentOrchestrationService } from "./services/agent-orchestration";
 import { multiAIService } from "./services/multi-ai-provider";
 import { WebSocketManager, webSocketManager } from "./services/websocket-manager";
+import { debugCode } from "./services/openai";
 import { 
   insertCodeGenerationSchema, insertProjectSchema, insertApiTestSchema,
   insertAgentSchema, insertConversationSchema, insertMessageSchema,
