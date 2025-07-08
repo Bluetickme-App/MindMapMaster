@@ -14,6 +14,8 @@ import DeployPage from "@/pages/deploy";
 import TestingPage from "@/pages/testing";
 import SettingsPage from "@/pages/settings";
 import WorkspacePage from "@/pages/workspace";
+import ShowcaseWebsite from "@/pages/showcase-website";
+import TeamShowcaseDiscussion from "@/pages/team-showcase-discussion";
 import TestGenerationPage from "@/pages/test-generation";
 import CreateProjectPage from "@/pages/create-project";
 import ProjectBuilderPage from "@/pages/project-builder";
@@ -34,6 +36,8 @@ function Router() {
       <Route path="/testing" component={TestingPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/workspace" component={WorkspacePage} />
+      <Route path="/showcase" component={ShowcaseWebsite} />
+      <Route path="/team-discussion" component={TeamShowcaseDiscussion} />
       <Route path="/test-generation" component={TestGenerationPage} />
       <Route path="/create-project" component={CreateProjectPage} />
       <Route path="/project-builder" component={ProjectBuilderPage} />

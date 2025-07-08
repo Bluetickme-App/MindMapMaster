@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wand2, Bug, Github, Rocket, Users, Plus } from "lucide-react";
+import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function QuickActions() {
@@ -58,6 +58,24 @@ export default function QuickActions() {
       color: "purple-500",
       onClick: () => {
         setLocation('/deploy');
+      },
+    },
+    {
+      title: "Showcase Website",
+      description: "5-page professional portfolio",
+      icon: Globe,
+      color: "green-500",
+      onClick: () => {
+        setLocation('/showcase');
+      },
+    },
+    {
+      title: "Team Discussion",
+      description: "AI agents design collaboration",
+      icon: MessageSquare,
+      color: "cyan-500",
+      onClick: () => {
+        setLocation('/team-discussion');
       },
     },
   ];
