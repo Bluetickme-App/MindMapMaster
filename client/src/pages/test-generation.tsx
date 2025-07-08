@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Wand2, Code, Download, Eye, Loader2 } from 'lucide-react';
+import { Wand2, Code, Download, Eye, Loader2, ExternalLink } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 interface GeneratedCode {
@@ -20,6 +20,24 @@ export default function TestGenerationPage() {
   const { toast } = useToast();
   const [prompt, setPrompt] = useState('Create a simple portfolio website with a hero section, about section, and contact form using HTML, CSS, and JavaScript');
   const [generatedCode, setGeneratedCode] = useState<GeneratedCode | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+
+  // Create preview HTML from generated code
+  const createPreviewHTML = (code: string) => {
+    return `data:text/html;charset=utf-8,${encodeURIComponent(code)}`;
+  };
+
+  // Open preview in new window
+  const openPreview = () => {
+    if (generatedCode?.code) {
+      const previewWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+      if (previewWindow) {
+        previewWindow.document.write(generatedCode.code);
+        previewWindow.document.close();
+        previewWindow.focus();
+      }
+    }
+  };
 
   // Generate code mutation
   const generateCode = useMutation({
@@ -165,10 +183,32 @@ export default function TestGenerationPage() {
                   </pre>
                 </div>
                 
-                <div className="flex space-x-2">
-                  <Button onClick={previewCode} variant="outline" size="sm">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedCode.code);
+                      toast({
+                        title: "Code copied",
+                        description: "Generated code has been copied to clipboard",
+                      });
+                    }}
+                  >
+                    <Code className="w-4 h-4 mr-2" />
+                    Copy Code
+                  </Button>
+                  <Button onClick={openPreview} variant="outline" size="sm">
                     <Eye className="w-4 h-4 mr-2" />
                     Preview
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPreview(!showPreview)}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    {showPreview ? 'Hide Preview' : 'Show Preview'}
                   </Button>
                   <Button onClick={downloadCode} variant="outline" size="sm">
                     <Download className="w-4 h-4 mr-2" />
@@ -184,6 +224,40 @@ export default function TestGenerationPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Live Preview Window (Replit-style) */}
+        {showPreview && generatedCode && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Live Preview
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPreview(false)}
+                  className="ml-auto"
+                >
+                  ×
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border border-border rounded-lg overflow-hidden">
+                <div className="bg-muted p-2 text-sm font-medium border-b border-border flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  Preview Window - Live Code Execution
+                </div>
+                <iframe
+                  srcDoc={generatedCode.code}
+                  className="w-full h-96 border-0"
+                  title="Code Preview"
+                  sandbox="allow-scripts allow-same-origin"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Quick Test Prompts */}

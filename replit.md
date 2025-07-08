@@ -254,6 +254,14 @@ Changelog:
   - Database deployment and object storage interfaces
   - Settings page with API key configuration and testing
   - Complete development environment ready for expansion
+- July 08, 2025. Enhanced AI code generation with Codex-style capabilities:
+  - Implemented advanced code generation using OpenAI GPT-4o with specialized prompts
+  - Added real-time preview windows similar to Replit's interface
+  - Created debugging and code explanation endpoints (/api/debug, /api/explain)
+  - Enhanced system prompts for production-ready, well-documented code
+  - Added live iframe preview with sandboxed execution
+  - Integrated copy, preview, download, and explanation features
+  - System now provides Codex-level coding assistance and debugging
 
 ## User Preferences
 

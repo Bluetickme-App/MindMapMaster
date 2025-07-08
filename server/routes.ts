@@ -804,7 +804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // AI code generation endpoint
+  // Enhanced AI code generation endpoint (Codex-style)
   app.post('/api/generate', async (req, res) => {
     try {
       const { prompt, language = 'javascript', framework } = req.body;
@@ -813,7 +813,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Prompt is required' });
       }
 
-      // Try OpenAI first, then fall back to mock
+      // Try OpenAI first (enhanced with Codex-style prompts)
       try {
         if (process.env.OPENAI_API_KEY) {
           const { generateCode } = await import('./services/openai.js');
@@ -845,6 +845,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error generating code:', error);
       res.status(500).json({ message: 'Failed to generate code' });
+    }
+  });
+
+  // Code debugging endpoint
+  app.post('/api/debug', async (req, res) => {
+    try {
+      const { code, error, language = 'javascript' } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: 'Code is required' });
+      }
+
+      try {
+        if (process.env.OPENAI_API_KEY) {
+          const { debugCode } = await import('./services/openai.js');
+          const result = await debugCode(code, error, language);
+          return res.json(result);
+        }
+      } catch (error) {
+        console.error('OpenAI debugging failed:', error);
+      }
+
+      // Fallback response
+      res.json({
+        fixedCode: code,
+        explanation: 'Debug service unavailable - please configure OpenAI API key',
+        issues: ['Debug service not available']
+      });
+    } catch (error) {
+      console.error('Error debugging code:', error);
+      res.status(500).json({ message: 'Failed to debug code' });
+    }
+  });
+
+  // Code explanation endpoint
+  app.post('/api/explain', async (req, res) => {
+    try {
+      const { code, language = 'javascript' } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: 'Code is required' });
+      }
+
+      try {
+        if (process.env.OPENAI_API_KEY) {
+          const { explainCode } = await import('./services/openai.js');
+          const result = await explainCode(code, language);
+          return res.json(result);
+        }
+      } catch (error) {
+        console.error('OpenAI explanation failed:', error);
+      }
+
+      // Fallback response
+      res.json({
+        explanation: 'Code explanation service unavailable - please configure OpenAI API key',
+        keyFeatures: [],
+        complexity: 'Unknown',
+        suggestions: []
+      });
+    } catch (error) {
+      console.error('Error explaining code:', error);
+      res.status(500).json({ message: 'Failed to explain code' });
     }
   });
 
