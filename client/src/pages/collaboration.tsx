@@ -149,8 +149,12 @@ export default function CollaborationDashboard() {
     };
     
     websocket.onmessage = (event) => {
-      const message: WebSocketMessage = JSON.parse(event.data);
-      handleWebSocketMessage(message);
+      try {
+        const message: WebSocketMessage = JSON.parse(event.data);
+        handleWebSocketMessage(message);
+      } catch (error) {
+        console.log('Non-JSON WebSocket message received:', event.data);
+      }
     };
     
     websocket.onclose = () => {

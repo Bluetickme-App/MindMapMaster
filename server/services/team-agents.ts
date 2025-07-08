@@ -324,9 +324,43 @@ export async function createTeamConversation(
   }
 }
 
+// Initialize agents in database if they don't exist
+export async function initializeAgents(): Promise<void> {
+  try {
+    const existingAgents = await db.select().from(agents);
+    
+    if (existingAgents.length === 0) {
+      console.log('Initializing team agents in database...');
+      
+      for (const agentData of DEV_TEAM_AGENTS) {
+        await db.insert(agents).values({
+          type: agentData.type,
+          name: agentData.name,
+          specialization: agentData.specialization,
+          capabilities: agentData.capabilities,
+          languages: agentData.languages,
+          frameworks: agentData.frameworks,
+          aiProvider: agentData.aiProvider,
+          systemPrompt: agentData.systemPrompt,
+          experienceLevel: agentData.experienceLevel,
+          status: 'active',
+          lastActive: new Date()
+        });
+      }
+      
+      console.log(`Initialized ${DEV_TEAM_AGENTS.length} team agents`);
+    }
+  } catch (error) {
+    console.error('Error initializing agents:', error);
+  }
+}
+
 // Get all available agents
 export async function getAllAgents(): Promise<DevTeamAgent[]> {
   try {
+    // Initialize agents if they don't exist
+    await initializeAgents();
+    
     const allAgents = await db.select().from(agents);
     return allAgents.map(agent => ({
       id: agent.id,

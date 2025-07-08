@@ -1588,6 +1588,18 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
 
   // Team agent management endpoints
   
+  // Initialize agents in database
+  app.post('/api/agents/initialize', async (req, res) => {
+    try {
+      const { initializeAgents } = await import('./services/team-agents.js');
+      await initializeAgents();
+      res.json({ message: 'Agents initialized successfully' });
+    } catch (error) {
+      console.error('Error initializing agents:', error);
+      res.status(500).json({ message: 'Failed to initialize agents' });
+    }
+  });
+
   // Get all available development team agents
   app.get('/api/team-agents', async (req, res) => {
     try {
