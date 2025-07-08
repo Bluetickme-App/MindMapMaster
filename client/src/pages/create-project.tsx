@@ -90,7 +90,7 @@ export default function CreateProjectPage() {
       template?: string;
     }) => {
       const response = await apiRequest('POST', '/api/projects', data);
-      return await response.json();
+      return response;
     },
     onSuccess: (data) => {
       toast({
@@ -137,7 +137,7 @@ export default function CreateProjectPage() {
   const generateProject = useMutation({
     mutationFn: async (prompt: string) => {
       const response = await apiRequest('POST', '/api/projects/generate', { prompt });
-      return await response.json();
+      return response;
     },
     onSuccess: (data) => {
       toast({
