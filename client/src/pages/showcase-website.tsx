@@ -7,10 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Home, Users, Settings, Briefcase, MessageSquare, Star, 
   Code, Palette, Database, Rocket, Globe, ArrowRight,
-  CheckCircle, Clock, TrendingUp, Award, Zap
+  CheckCircle, Clock, TrendingUp, Award, Zap, Play,
+  ExternalLink, Github, Twitter, Linkedin, Mail,
+  Shield, Sparkles, Target, Brain, Lightbulb, Menu, X
 } from "lucide-react";
 
 const navigation = [
@@ -136,6 +139,17 @@ export default function ShowcaseWebsite() {
     email: "",
     message: ""
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [counters, setCounters] = useState({
+    projects: 0,
+    satisfaction: 0,
+    support: 0,
+    experience: 0
+  });
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const { toast } = useToast();
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -145,10 +159,80 @@ export default function ShowcaseWebsite() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.message) {
+      toast({
+        title: "Please fill all fields",
+        description: "All fields are required to send a message.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      toast({
+        title: "Message sent!",
+        description: "We'll get back to you within 24 hours.",
+      });
+      setFormData({ name: "", email: "", message: "" });
+      setIsLoading(false);
+    }, 2000);
+  };
+
+  // Animate counters when scrolled into view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasAnimated) {
+            setHasAnimated(true);
+            // Animate counters
+            const targets = { projects: 500, satisfaction: 98, support: 24, experience: 5 };
+            const duration = 2000;
+            const increment = 50;
+            
+            let current = { projects: 0, satisfaction: 0, support: 0, experience: 0 };
+            const timer = setInterval(() => {
+              let allComplete = true;
+              Object.keys(targets).forEach((key) => {
+                const target = targets[key as keyof typeof targets];
+                const step = target / (duration / increment);
+                if (current[key as keyof typeof current] < target) {
+                  current[key as keyof typeof current] = Math.min(
+                    current[key as keyof typeof current] + step,
+                    target
+                  );
+                  allComplete = false;
+                }
+              });
+              
+              setCounters({ ...current });
+              
+              if (allComplete) {
+                clearInterval(timer);
+              }
+            }, increment);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    const statsElement = document.getElementById('stats-section');
+    if (statsElement) {
+      observer.observe(statsElement);
+    }
+
+    return () => observer.disconnect();
+  }, [hasAnimated]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-700">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-2">
@@ -166,7 +250,7 @@ export default function ShowcaseWebsite() {
                   className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
                     activeSection === item.id
                       ? "bg-blue-600 text-white"
-                      : "text-slate-300 hover:text-white hover:bg-slate-700"
+                      : "text-slate-200 hover:text-white hover:bg-slate-700"
                   }`}
                 >
                   <item.icon className="w-4 h-4" />
@@ -174,7 +258,44 @@ export default function ShowcaseWebsite() {
                 </button>
               ))}
             </div>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="text-slate-300 hover:text-white"
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            </div>
           </div>
+
+          {/* Mobile Navigation */}
+          {mobileMenuOpen && (
+            <div className="md:hidden">
+              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-slate-900/95 backdrop-blur-md">
+                {navigation.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      scrollToSection(item.id);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors w-full text-left ${
+                      activeSection === item.id
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-200 hover:text-white hover:bg-slate-700"
+                    }`}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span>{item.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -188,7 +309,7 @@ export default function ShowcaseWebsite() {
                 {" "}Team
               </span>
             </h1>
-            <p className="text-xl text-slate-300 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-slate-200 mb-8 max-w-3xl mx-auto">
               We're a team of passionate developers, designers, and strategists who craft 
               exceptional digital experiences using cutting-edge AI technology and modern development practices.
             </p>
@@ -204,7 +325,7 @@ export default function ShowcaseWebsite() {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                className="border-slate-500 text-slate-200 hover:bg-slate-800 hover:text-white"
                 onClick={() => scrollToSection("portfolio")}
               >
                 See Our Work
@@ -213,22 +334,28 @@ export default function ShowcaseWebsite() {
           </div>
 
           {/* Team Stats */}
-          <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-white mb-2">500+</div>
-              <div className="text-slate-400">Projects Delivered</div>
+          <div id="stats-section" className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="text-center group hover:transform hover:scale-105 transition-transform duration-300">
+              <div className="text-3xl font-bold text-white mb-2">
+                {Math.round(counters.projects)}+
+              </div>
+              <div className="text-slate-300">Projects Delivered</div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-white mb-2">98%</div>
-              <div className="text-slate-400">Client Satisfaction</div>
+            <div className="text-center group hover:transform hover:scale-105 transition-transform duration-300">
+              <div className="text-3xl font-bold text-white mb-2">
+                {Math.round(counters.satisfaction)}%
+              </div>
+              <div className="text-slate-300">Client Satisfaction</div>
             </div>
-            <div className="text-center">
+            <div className="text-center group hover:transform hover:scale-105 transition-transform duration-300">
               <div className="text-3xl font-bold text-white mb-2">24/7</div>
-              <div className="text-slate-400">Support Available</div>
+              <div className="text-slate-300">Support Available</div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-white mb-2">5+</div>
-              <div className="text-slate-400">Years Experience</div>
+            <div className="text-center group hover:transform hover:scale-105 transition-transform duration-300">
+              <div className="text-3xl font-bold text-white mb-2">
+                {Math.round(counters.experience)}+
+              </div>
+              <div className="text-slate-300">Years Experience</div>
             </div>
           </div>
         </div>
@@ -239,7 +366,7 @@ export default function ShowcaseWebsite() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">Meet Our Team</h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
+            <p className="text-xl text-slate-200 max-w-3xl mx-auto">
               Our diverse team of experts brings together years of experience in modern web development,
               AI integration, and user experience design.
             </p>
@@ -261,7 +388,7 @@ export default function ShowcaseWebsite() {
                   </div>
                   <CardTitle className="text-white">{agent.name}</CardTitle>
                   <p className="text-blue-400">{agent.role}</p>
-                  <Badge variant="secondary" className="bg-slate-800 text-slate-300">
+                  <Badge variant="secondary" className="bg-slate-800 text-slate-200">
                     {agent.provider}
                   </Badge>
                 </CardHeader>
@@ -269,21 +396,21 @@ export default function ShowcaseWebsite() {
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-400">Specialty:</span>
-                      <span className="text-slate-300">{agent.specialty}</span>
+                      <span className="text-slate-200">{agent.specialty}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-400">Experience:</span>
-                      <span className="text-slate-300">{agent.experience}</span>
+                      <span className="text-slate-200">{agent.experience}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-400">Projects:</span>
-                      <span className="text-slate-300">{agent.projects}</span>
+                      <span className="text-slate-200">{agent.projects}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-400">Rating:</span>
                       <div className="flex items-center">
                         <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        <span className="text-slate-300 ml-1">{agent.rating}</span>
+                        <span className="text-slate-200 ml-1">{agent.rating}</span>
                       </div>
                     </div>
                   </div>
@@ -299,7 +426,7 @@ export default function ShowcaseWebsite() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">Our Services</h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
+            <p className="text-xl text-slate-200 max-w-3xl mx-auto">
               From concept to deployment, we provide comprehensive development services
               tailored to your business needs.
             </p>
@@ -319,14 +446,20 @@ export default function ShowcaseWebsite() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-slate-300 mb-6">{service.description}</p>
+                  <p className="text-slate-200 mb-6">{service.description}</p>
                   <div className="space-y-2">
                     {service.features.map((feature, featureIndex) => (
-                      <div key={featureIndex} className="flex items-center text-sm text-slate-400">
+                      <div key={featureIndex} className="flex items-center text-sm text-slate-300 opacity-0 animate-in fade-in duration-500" style={{ animationDelay: `${featureIndex * 100}ms` }}>
                         <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                         {feature}
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-6 pt-6 border-t border-slate-700">
+                    <Button variant="outline" size="sm" className="w-full border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white">
+                      Learn More
+                      <ArrowRight className="ml-2 h-3 w-3" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -340,7 +473,7 @@ export default function ShowcaseWebsite() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">Our Portfolio</h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
+            <p className="text-xl text-slate-200 max-w-3xl mx-auto">
               Explore some of our recent projects that showcase our expertise
               and commitment to excellence.
             </p>
@@ -363,16 +496,26 @@ export default function ShowcaseWebsite() {
                 </div>
                 <CardHeader>
                   <CardTitle className="text-white">{project.title}</CardTitle>
-                  <p className="text-slate-400 text-sm">Client: {project.client}</p>
+                  <p className="text-slate-300 text-sm">Client: {project.client}</p>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-slate-300 mb-4">{project.description}</p>
-                  <div className="flex flex-wrap gap-2">
+                  <p className="text-slate-200 mb-4">{project.description}</p>
+                  <div className="flex flex-wrap gap-2 mb-4">
                     {project.tech.map((tech, techIndex) => (
-                      <Badge key={techIndex} variant="outline" className="text-xs">
+                      <Badge key={techIndex} variant="outline" className="text-xs hover:bg-slate-700 transition-colors">
                         {tech}
                       </Badge>
                     ))}
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" size="sm" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-800">
+                      <Play className="w-3 h-3 mr-2" />
+                      Demo
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-800">
+                      <ExternalLink className="w-3 h-3 mr-2" />
+                      Visit
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -386,7 +529,7 @@ export default function ShowcaseWebsite() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">Get In Touch</h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
+            <p className="text-xl text-slate-200 max-w-3xl mx-auto">
               Ready to start your next project? Let's discuss how we can help
               bring your vision to life.
             </p>
@@ -398,46 +541,62 @@ export default function ShowcaseWebsite() {
                 <CardHeader>
                   <CardTitle className="text-white">Send us a message</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Name
-                    </label>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="bg-slate-800 border-slate-600 text-white"
-                      placeholder="Your name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Email
-                    </label>
-                    <Input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="bg-slate-800 border-slate-600 text-white"
-                      placeholder="your@email.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Message
-                    </label>
-                    <Textarea
-                      value={formData.message}
-                      onChange={(e) => setFormData({...formData, message: e.target.value})}
-                      className="bg-slate-800 border-slate-600 text-white"
-                      placeholder="Tell us about your project..."
-                      rows={6}
-                    />
-                  </div>
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                    Send Message
-                  </Button>
-                </CardContent>
+                <form onSubmit={handleSubmit}>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-200 mb-2">
+                        Name
+                      </label>
+                      <Input
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Your name"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-200 mb-2">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="your@email.com"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-200 mb-2">
+                        Message
+                      </label>
+                      <Textarea
+                        value={formData.message}
+                        onChange={(e) => setFormData({...formData, message: e.target.value})}
+                        className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Tell us about your project..."
+                        rows={6}
+                        required
+                      />
+                    </div>
+                    <Button 
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all duration-300"
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Sending...
+                        </div>
+                      ) : (
+                        "Send Message"
+                      )}
+                    </Button>
+                  </CardContent>
+                </form>
               </Card>
             </div>
 
