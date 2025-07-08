@@ -405,12 +405,13 @@ export default function WorkspacePage() {
                         Select Agents
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="max-w-2xl max-h-[80vh]">
                       <DialogHeader>
                         <DialogTitle>Select AI Agents for Team Chat</DialogTitle>
                       </DialogHeader>
-                      <div className="space-y-4">
-                        {agentsQuery.data?.map((agent: Agent) => (
+                      <ScrollArea className="max-h-[50vh] pr-4">
+                        <div className="space-y-4">
+                          {agentsQuery.data?.map((agent: Agent) => (
                           <div
                             key={agent.id}
                             className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/50"
@@ -454,8 +455,9 @@ export default function WorkspacePage() {
                               </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
                       <div className="flex justify-end space-x-2 pt-4">
                         <Button
                           variant="outline"
