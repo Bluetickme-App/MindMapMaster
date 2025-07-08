@@ -18,6 +18,47 @@ import axios from "axios";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const currentUserId = 1; // For demo purposes, using a fixed user ID
+  
+  // Environment validation for production
+  const requiredEnvVars = ['DATABASE_URL'];
+  const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+  
+  if (missingEnvVars.length > 0) {
+    console.warn(`Warning: Missing environment variables: ${missingEnvVars.join(', ')}`);
+  }
+  
+  // Log environment status
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Database URL configured: ${!!process.env.DATABASE_URL}`);
+  console.log(`OpenAI API Key configured: ${!!process.env.OPENAI_API_KEY}`);
+  console.log(`Google API Key configured: ${!!process.env.GOOGLE_API_KEY}`);
+  console.log(`Anthropic API Key configured: ${!!process.env.ANTHROPIC_API_KEY}`);
+  
+  // Add health check endpoints for production deployment
+  app.get('/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: process.env.npm_package_version || '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      database: !!process.env.DATABASE_URL,
+      ai_providers: {
+        openai: !!process.env.OPENAI_API_KEY,
+        anthropic: !!process.env.ANTHROPIC_API_KEY,
+        google: !!process.env.GOOGLE_API_KEY || !!process.env.GEMINI_API_KEY
+      }
+    });
+  });
+
+  app.get('/ready', (req, res) => {
+    res.status(200).json({ 
+      status: 'ready', 
+      timestamp: new Date().toISOString(),
+      database: !!process.env.DATABASE_URL,
+      port: 5000
+    });
+  });
 
   // Code generation routes
   app.post("/api/generate-code", async (req, res) => {
@@ -2601,9 +2642,23 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
 
   const httpServer = createServer(app);
   
-  // Initialize WebSocket manager for real-time collaboration
-  const wsManager = new WebSocketManager(httpServer);
-  (global as any).webSocketManager = wsManager;
+  // Add error handling for server creation
+  httpServer.on('error', (error: any) => {
+    console.error('HTTP Server error:', error);
+    if (error.code === 'EADDRINUSE') {
+      console.error('Port 5000 is already in use');
+    }
+  });
+  
+  // Initialize WebSocket manager for real-time collaboration with error handling
+  try {
+    const wsManager = new WebSocketManager(httpServer);
+    (global as any).webSocketManager = wsManager;
+    console.log('✅ WebSocket manager initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize WebSocket manager:', error);
+    console.log('⚠️  Continuing without WebSocket support');
+  }
   
   // WeLet AI Chat API endpoint
   app.post('/api/welet/chat', async (req, res) => {
