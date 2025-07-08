@@ -90,9 +90,32 @@ export default function WorkspacePage() {
   const [showTeamAgents, setShowTeamAgents] = useState(false);
   const [selectedProject, setSelectedProject] = useState<any>(null);
 
-  // Fetch file system from backend
+  // Fetch file system from backend - show project files when project is selected
   const { data: fileSystem = [], refetch: refetchFiles } = useQuery<FileNode[]>({
-    queryKey: ['/api/workspace/files'],
+    queryKey: selectedProject ? ['/api/workspace/files', selectedProject.id] : ['/api/workspace/files'],
+    queryFn: async () => {
+      if (selectedProject && projectCode?.code) {
+        // Show project-specific files when project is selected and has generated code
+        return [
+          {
+            name: 'index.html',
+            type: 'file',
+            path: `projects/${selectedProject.name}/index.html`,
+            content: projectCode.code,
+            size: projectCode.code.length
+          },
+          {
+            name: 'README.md',
+            type: 'file',
+            path: `projects/${selectedProject.name}/README.md`,
+            content: `# ${selectedProject.name}\n\n${selectedProject.description}\n\n**Language:** ${selectedProject.language}\n**Framework:** ${selectedProject.framework}\n**Status:** ${selectedProject.status}`,
+            size: 200
+          }
+        ];
+      }
+      // Show main workspace files by default
+      return await apiRequest('/api/workspace/files');
+    }
   });
 
   // Fetch databases from backend

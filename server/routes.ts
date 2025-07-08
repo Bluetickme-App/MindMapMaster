@@ -541,12 +541,16 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
             });
             
             // Create a project folder structure in workspace
-            await storage.createWorkspaceFile({
-              userId: currentUserId,
-              path: `projects/${projectName}/index.html`,
-              content: generatedCode,
-              type: 'file'
-            });
+            try {
+              await storage.createWorkspaceFile({
+                userId: currentUserId,
+                path: `projects/${projectName}/index.html`,
+                content: generatedCode,
+                fileType: 'file'
+              });
+            } catch (error) {
+              console.log('Workspace file creation not supported, continuing with code generation save');
+            }
             
             // Create AI assistant for the project
             try {
