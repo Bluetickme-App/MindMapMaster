@@ -1728,15 +1728,23 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
 
       // Get conversation to trigger agent responses
       const conversation = await storage.getConversation(parseInt(id));
-      if (conversation && websocketManager) {
+      const wsManager = (global as any).webSocketManager;
+      
+      console.log('Conversation found:', !!conversation);
+      console.log('WebSocket manager available:', !!wsManager);
+      
+      if (conversation && wsManager) {
         console.log('Triggering agent responses for conversation:', id);
+        console.log('Conversation participants:', conversation.participants);
         
         // Get the message we just created
         const messages = await storage.getMessagesByConversation(parseInt(id));
         const userMessage = messages[messages.length - 1];
         
         // Trigger agent responses via WebSocket manager
-        await websocketManager.triggerAgentResponsesFromAPI(conversation, userMessage, content);
+        await wsManager.triggerAgentResponsesFromAPI(conversation, userMessage, content);
+      } else {
+        console.log('Cannot trigger agent responses - missing conversation or WebSocket manager');
       }
 
       res.json({ success: true });
