@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Collaboration UI</title>
+    <script>
+        async function testCollaboration() {
+            try {
+                console.log('Testing collaboration API...');
+                
+                const response = await fetch('http://localhost:5000/api/collaborations/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        projectId: 1,
+                        objective: 'Test from UI',
+                        requiredCapabilities: ['ui_design', 'advanced_css']
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('Success:', data);
+                document.getElementById('result').innerHTML = 'Success: ' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Test Collaboration API</h1>
+    <button onclick="testCollaboration()">Start Collaboration</button>
+    <pre id="result"></pre>
+</body>
+</html>

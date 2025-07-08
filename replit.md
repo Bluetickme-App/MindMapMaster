@@ -319,6 +319,16 @@ Changelog:
   - Enhanced error messaging and console logging for debugging
   - Team conversation creation fully functional - users can select agents and create chats
   - Workspace now provides complete embedded agent collaboration without page navigation
+- July 08, 2025. Fixed collaboration start error and multi-AI provider system:
+  - Fixed critical WebSocket manager variable naming issue (websocketManager vs webSocketManager)
+  - Fixed apiRequest to return JSON data instead of Response object
+  - Enhanced error handling with detailed console logging for debugging
+  - Verified multi-AI provider system working with proper distribution:
+    • Maya Designer uses Claude (Anthropic) 
+    • Jordan CSS uses Gemini (Google)
+    • Sam AI uses OpenAI
+  - Collaboration sessions now start successfully with selected agents
+  - System significantly reduces OpenAI token usage by routing to Claude/Gemini
 
 ## User Preferences
 

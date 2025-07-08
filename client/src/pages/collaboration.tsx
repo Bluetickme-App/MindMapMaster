@@ -259,15 +259,31 @@ export default function CollaborationDashboard() {
 
   const startCollaborationSession = useMutation({
     mutationFn: async (data: { objective: string; agentIds: number[] }) => {
-      return await apiRequest('/api/collaborations/start', 'POST', {
-        projectId: 1,
-        objective: data.objective,
-        requiredCapabilities: data.agentIds.map(id => 
-          (agents as Agent[]).find((a: Agent) => a.id === id)?.type || 'general'
-        )
-      });
+      console.log('Starting collaboration with agents:', data.agentIds);
+      
+      try {
+        // Get the selected agents' capabilities
+        const selectedAgentsData = data.agentIds.map(id => 
+          (agents as Agent[]).find((a: Agent) => a.id === id)
+        ).filter(Boolean);
+        
+        console.log('Selected agents:', selectedAgentsData);
+        
+        const response = await apiRequest('POST', '/api/collaborations/start', {
+          projectId: 1,
+          objective: data.objective,
+          requiredCapabilities: selectedAgentsData.flatMap(agent => agent?.capabilities || [])
+        });
+        
+        console.log('API response:', response);
+        return response;
+      } catch (error) {
+        console.error('API error:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Collaboration started successfully:', data);
       toast({
         title: "Collaboration Started",
         description: "Multi-agent collaboration session has been initiated",
@@ -276,11 +292,18 @@ export default function CollaborationDashboard() {
       setCollaborationObjective('');
       setSelectedAgents([]);
       queryClient.invalidateQueries({ queryKey: ['/api/collaborations/active'] });
+      
+      // If we have a conversation ID, navigate to it
+      if (data && data.id) {
+        // Find the conversation created for this collaboration
+        queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+      }
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Failed to start collaboration:', error);
       toast({
         title: "Error",
-        description: "Failed to start collaboration session",
+        description: error?.message || "Failed to start collaboration session",
         variant: "destructive",
       });
     }
