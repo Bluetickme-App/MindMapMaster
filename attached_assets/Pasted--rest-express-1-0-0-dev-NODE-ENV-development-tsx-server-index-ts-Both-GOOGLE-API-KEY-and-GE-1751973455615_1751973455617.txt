@@ -1,0 +1,39 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.
+🚀 Multi-Agent Collaboration System is ready!
+📡 WebSocket server initialized for real-time communication
+🤖 Access collaboration dashboard at /collaboration
+🏠 WeLet AI Agent ready for tenant support
+📁 File System API ready for real-time code editing
+11:16:49 AM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+11:16:54 AM [express] GET /api/projects 200 in 560ms :: [{"id":1,"userId":1,"name":"SelfridgesClone",…
+11:16:55 AM [express] GET /api/user 304 in 60ms :: {"id":1,"username":"developer","email":"developer@…
+11:16:55 AM [express] GET /api/projects 304 in 60ms :: [{"id":1,"userId":1,"name":"SelfridgesClone","…
+11:16:55 AM [express] GET /api/github/repositories 304 in 61ms :: []
+11:16:55 AM [express] GET /api/ai-status 304 in 117ms :: {"status":"online","usage":1,"requestsToday"…
+11:16:57 AM [express] GET /api/files 200 in 20ms :: [{"name":"attached_assets","type":"folder","path"…
+11:16:57 AM [express] GET /api/agents 304 in 68ms :: [{"id":7,"type":"react_senior","name":"Taylor Re…
+Error fetching file tree: TypeError: storage.getWorkspaceFilesByProject is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:2467:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+11:16:58 AM [express] GET /api/files 500 in 131ms :: {"message":"Failed to fetch file tree"}
+11:17:20 AM [express] GET /api/files 304 in 41ms :: [{"name":"attached_assets","type":"folder","path"…
+11:17:20 AM [express] GET /api/projects 304 in 255ms :: [{"id":1,"userId":1,"name":"SelfridgesClone",…
+11:17:20 AM [express] GET /api/agents 304 in 253ms :: [{"id":7,"type":"react_senior","name":"Taylor R…
+Error fetching file tree: TypeError: storage.getWorkspaceFilesByProject is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:2467:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+11:17:20 AM [express] GET /api/files 500 in 122ms :: {"message":"Failed to fetch file tree"}
+11:17:30 AM [express] GET /api/files 304 in 13ms :: [{"name":"attached_assets","type":"folder","path"…
+11:17:30 AM [express] GET /api/projects 304 in 59ms :: [{"id":1,"userId":1,"name":"SelfridgesClone","…
+11:17:30 AM [express] GET /api/agents 304 in 63ms :: [{"id":7,"type":"react_senior","name":"Taylor Re…
+Error fetching file tree: TypeError: storage.getWorkspaceFilesByProject is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:2467:48)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+11:17:30 AM [express] GET /api/files 500 in 121ms :: {"message":"Failed to fetch file tree"}

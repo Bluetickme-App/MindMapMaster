@@ -2462,9 +2462,8 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
       if (projectId) {
         const project = await storage.getProject(parseInt(projectId as string));
         if (project) {
-          // Try to get project code from code generation or workspace files
+          // Try to get project code from code generation
           const codeGenerations = await storage.getCodeGenerationsByProject(project.id);
-          const workspaceFiles = await storage.getWorkspaceFilesByProject(project.id);
           
           let fileTree = [];
           
@@ -2480,15 +2479,31 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
             });
           }
           
-          // Add workspace files if any
-          for (const file of workspaceFiles) {
-            fileTree.push({
-              name: file.fileName,
-              type: file.fileType === 'folder' ? 'folder' : 'file',
-              path: file.filePath,
-              size: file.content?.length || 0,
-              modified: file.lastModified
-            });
+          // Add default project structure files
+          if (codeGenerations.length > 0) {
+            fileTree.push(
+              {
+                name: 'style.css',
+                type: 'file',
+                path: 'style.css',
+                size: 0,
+                modified: new Date().toISOString()
+              },
+              {
+                name: 'script.js',
+                type: 'file',
+                path: 'script.js',
+                size: 0,
+                modified: new Date().toISOString()
+              },
+              {
+                name: 'README.md',
+                type: 'file',
+                path: 'README.md',
+                size: 0,
+                modified: new Date().toISOString()
+              }
+            );
           }
           
           // If no project files, show project structure

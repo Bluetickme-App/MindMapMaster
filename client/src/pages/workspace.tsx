@@ -701,7 +701,7 @@ export default function WorkspacePage() {
             <CardContent className="p-0">
               <ScrollArea className="h-[calc(100vh-200px)]">
                 <div className="p-2">
-                  {fileTreeQuery.data && renderFileTree(fileTreeQuery.data)}
+                  {fileTreeQuery.data && Array.isArray(fileTreeQuery.data) && renderFileTree(fileTreeQuery.data)}
                 </div>
               </ScrollArea>
             </CardContent>
