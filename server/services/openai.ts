@@ -90,10 +90,10 @@ Focus on creating production-ready code that integrates well with any previously
     });
 
     // Wait for completion
-    let runStatus = await openai.beta.threads.runs.retrieve(threadId, run.id);
+    let runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: threadId });
     while (runStatus.status === 'in_progress' || runStatus.status === 'queued') {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      runStatus = await openai.beta.threads.runs.retrieve(threadId, run.id);
+      runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: threadId });
     }
 
     if (runStatus.status !== 'completed') {

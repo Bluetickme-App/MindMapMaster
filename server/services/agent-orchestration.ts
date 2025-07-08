@@ -44,6 +44,8 @@ export class AgentOrchestrationService {
       throw new Error("Agent not found");
     }
 
+    console.log(`[Agent ${agentId}] Generating response for message: "${userMessage}"`);
+
     // Mark agent as busy
     this.agentBusyStatus.set(agentId, true);
     await storage.updateAgentStatus(agentId, "busy");
@@ -58,53 +60,80 @@ export class AgentOrchestrationService {
       // Build context-aware prompt
       const contextPrompt = this.buildContextPrompt(agent, context, relevantKnowledge);
       
+      console.log(`[Agent ${agentId}] Making OpenAI API call...`);
+      
       const response = await openai.chat.completions.create({
-        model: agent.aiModel || "gpt-4o",
+        model: "gpt-4o", // Force use of gpt-4o
         messages: [
           { 
             role: "system", 
-            content: `${agent.systemPrompt}\n\nIMPORTANT: You must respond in JSON format with the following structure:
-            {
-              "content": "your response message here",
-              "messageType": "text",
-              "metadata": {},
-              "confidence": 0.8,
-              "reasoning": "brief explanation of your response"
-            }`
+            content: `You are ${agent.name}, a ${agent.specialization} specialist. ${agent.systemPrompt}
+
+RESPOND IN JSON FORMAT:
+{
+  "content": "your helpful response here",
+  "messageType": "text",
+  "metadata": {},
+  "confidence": 0.8,
+  "reasoning": "why you provided this response"
+}`
           },
-          { role: "system", content: contextPrompt },
-          { role: "user", content: userMessage }
+          { role: "user", content: `Context: ${contextPrompt}\n\nUser message: ${userMessage}` }
         ],
-        response_format: { type: "json_object" },
         temperature: 0.7,
+        max_tokens: 500
       });
 
+      console.log(`[Agent ${agentId}] OpenAI response received`);
+
       let result;
+      const rawContent = response.choices[0].message.content || '';
+      
       try {
-        result = JSON.parse(response.choices[0].message.content || '{}');
+        // Try to parse as JSON first
+        result = JSON.parse(rawContent);
       } catch (e) {
-        // Fallback if JSON parsing fails
+        console.log(`[Agent ${agentId}] Failed to parse JSON, using fallback response`);
+        // Fallback: create structured response from raw content
         result = {
-          content: response.choices[0].message.content || "I'm thinking about your request...",
+          content: rawContent || `Hi! I'm ${agent.name} and I'm ready to help with your ${agent.specialization} needs. How can I assist you?`,
           messageType: "text",
           metadata: {},
           confidence: 0.7,
-          reasoning: "Standard response"
+          reasoning: "Direct response due to JSON parsing failure"
         };
       }
       
       // Store agent's learning from this interaction
-      await this.updateAgentKnowledge(agentId, userMessage, result.content, context);
+      try {
+        await this.updateAgentKnowledge(agentId, userMessage, result.content, context);
+      } catch (error) {
+        console.error(`[Agent ${agentId}] Failed to update knowledge:`, error);
+      }
+
+      console.log(`[Agent ${agentId}] Response generated: "${result.content}"`);
 
       return {
         agentId,
-        content: result.content || "",
+        content: result.content || `Hello! I'm ${agent.name}, ready to help with ${agent.specialization}!`,
         messageType: result.messageType || "text",
         metadata: result.metadata || {},
         confidence: result.confidence || 0.8,
-        reasoning: result.reasoning || ""
+        reasoning: result.reasoning || "Generated response"
       };
 
+    } catch (error) {
+      console.error(`[Agent ${agentId}] Error generating response:`, error);
+      
+      // Provide a fallback response so agents still work
+      return {
+        agentId,
+        content: `Hello! I'm ${agent.name}, a ${agent.specialization} specialist. I'm here to help you with your project. What would you like to work on?`,
+        messageType: "text",
+        metadata: { error: true },
+        confidence: 0.5,
+        reasoning: "Fallback response due to API error"
+      };
     } finally {
       // Mark agent as available
       this.agentBusyStatus.set(agentId, false);
