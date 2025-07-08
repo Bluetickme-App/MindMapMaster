@@ -99,8 +99,11 @@ export class AgentOrchestrationService {
     // Select appropriate agents based on capabilities
     const selectedAgents = await this.selectAgentsForObjective(requiredCapabilities);
     
+    // Generate a smaller ID that fits in PostgreSQL integer range
+    const sessionId = Math.floor(Math.random() * 2147483647); // Max PostgreSQL integer value
+    
     const session: CollaborationSession = {
-      id: Date.now(),
+      id: sessionId,
       projectId,
       participants: selectedAgents,
       objective,
