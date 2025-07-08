@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Users, Bot, Code, Palette, Database, Brain, Settings, CheckCircle, Plus } from 'lucide-react';
+import { ArrowLeft, Users, Bot, Code, Palette, Database, Brain, Settings, CheckCircle, Plus, Upload, Mic, Search } from 'lucide-react';
 
 interface DevTeamAgent {
   id: number;
@@ -39,6 +39,52 @@ export default function TeamAgentsPage() {
     complexity: 'moderate',
     features: ['ui', 'api']
   });
+
+  // Multimodal input states
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [webSearchQuery, setWebSearchQuery] = useState('');
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+    }
+  };
+
+  const handleVoiceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAudioFile(file);
+    }
+  };
+
+  const handleWebSearch = async () => {
+    if (!webSearchQuery.trim()) return;
+    
+    try {
+      const response = await fetch('/api/web-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: webSearchQuery })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        toast({
+          title: "Web search completed",
+          description: `Found information about: ${webSearchQuery}`
+        });
+        setWebSearchQuery('');
+      }
+    } catch (error) {
+      console.error('Web search error:', error);
+      toast({
+        title: "Search failed",
+        description: "Unable to search the web right now"
+      });
+    }
+  };
 
   // Get all available agents
   const { data: agents = [], isLoading: agentsLoading } = useQuery({
@@ -127,9 +173,9 @@ export default function TeamAgentsPage() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className="text-sm font-medium">Language</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Language</label>
               <select 
-                className="w-full mt-1 p-2 border rounded"
+                className="w-full mt-1 p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                 value={requirements.language}
                 onChange={(e) => setRequirements(prev => ({ ...prev, language: e.target.value }))}
               >
@@ -141,9 +187,9 @@ export default function TeamAgentsPage() {
             </div>
             
             <div>
-              <label className="text-sm font-medium">Framework</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Framework</label>
               <select 
-                className="w-full mt-1 p-2 border rounded"
+                className="w-full mt-1 p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                 value={requirements.framework}
                 onChange={(e) => setRequirements(prev => ({ ...prev, framework: e.target.value }))}
               >
@@ -156,9 +202,9 @@ export default function TeamAgentsPage() {
             </div>
             
             <div>
-              <label className="text-sm font-medium">Project Type</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Project Type</label>
               <select 
-                className="w-full mt-1 p-2 border rounded"
+                className="w-full mt-1 p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                 value={requirements.projectType}
                 onChange={(e) => setRequirements(prev => ({ ...prev, projectType: e.target.value }))}
               >
@@ -170,9 +216,9 @@ export default function TeamAgentsPage() {
             </div>
             
             <div>
-              <label className="text-sm font-medium">Complexity</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Complexity</label>
               <select 
-                className="w-full mt-1 p-2 border rounded"
+                className="w-full mt-1 p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                 value={requirements.complexity}
                 onChange={(e) => setRequirements(prev => ({ ...prev, complexity: e.target.value as any }))}
               >
@@ -181,6 +227,76 @@ export default function TeamAgentsPage() {
                 <option value="complex">Complex</option>
               </select>
             </div>
+          </div>
+
+          {/* Multimodal Input Section */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Enhanced Context (Optional)</h4>
+            <div className="flex gap-2 flex-wrap">
+              {/* Image Upload */}
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <Button type="button" variant="outline" size="sm" asChild>
+                  <span>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Image
+                  </span>
+                </Button>
+              </label>
+
+              {/* Voice Upload */}
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleVoiceUpload}
+                  className="hidden"
+                />
+                <Button type="button" variant="outline" size="sm" asChild>
+                  <span>
+                    <Mic className="w-4 h-4 mr-2" />
+                    Upload Voice
+                  </span>
+                </Button>
+              </label>
+
+              {/* Web Search */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={webSearchQuery}
+                  onChange={(e) => setWebSearchQuery(e.target.value)}
+                  placeholder="Search web for context..."
+                  className="px-3 py-1 border rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleWebSearch}
+                  disabled={!webSearchQuery.trim()}
+                >
+                  <Search className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Show uploaded files */}
+            {selectedImage && (
+              <div className="text-sm text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400 p-2 rounded">
+                📸 Image uploaded: {selectedImage.name}
+              </div>
+            )}
+            {audioFile && (
+              <div className="text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400 p-2 rounded">
+                🎤 Voice uploaded: {audioFile.name}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

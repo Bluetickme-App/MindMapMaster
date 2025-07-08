@@ -272,9 +272,9 @@ export async function suggestRequiredAgents(requirements: ProjectRequirement): P
     }
     
     // Get agent details from database
-    const agents = await db.select().from(agents).where(inArray(agents.type, suggestedAgents));
+    const agentDetails = await db.select().from(agents).where(inArray(agents.type, suggestedAgents));
     
-    return agents.map(agent => ({
+    return agentDetails.map(agent => ({
       id: agent.id,
       type: agent.type,
       name: agent.name,
