@@ -89,10 +89,8 @@ export default function CreateProjectPage() {
       framework?: string;
       template?: string;
     }) => {
-      return await apiRequest('/api/projects', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest('POST', '/api/projects', data);
+      return await response.json();
     },
     onSuccess: (data) => {
       toast({
@@ -114,10 +112,8 @@ export default function CreateProjectPage() {
   // Import from GitHub mutation
   const importFromGitHub = useMutation({
     mutationFn: async (repoUrl: string) => {
-      return await apiRequest('/api/projects/import/github', {
-        method: 'POST',
-        body: JSON.stringify({ url: repoUrl }),
-      });
+      const response = await apiRequest('POST', '/api/projects/import/github', { url: repoUrl });
+      return await response.json();
     },
     onSuccess: (data) => {
       toast({
@@ -139,10 +135,8 @@ export default function CreateProjectPage() {
   // Generate project from AI mutation
   const generateProject = useMutation({
     mutationFn: async (prompt: string) => {
-      return await apiRequest('/api/projects/generate', {
-        method: 'POST',
-        body: JSON.stringify({ prompt }),
-      });
+      const response = await apiRequest('POST', '/api/projects/generate', { prompt });
+      return await response.json();
     },
     onSuccess: (data) => {
       toast({

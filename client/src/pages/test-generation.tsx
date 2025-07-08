@@ -24,14 +24,12 @@ export default function TestGenerationPage() {
   // Generate code mutation
   const generateCode = useMutation({
     mutationFn: async (prompt: string) => {
-      return await apiRequest('/api/generate', {
-        method: 'POST',
-        body: JSON.stringify({
-          prompt,
-          language: 'html',
-          framework: 'vanilla'
-        }),
+      const response = await apiRequest('POST', '/api/generate', {
+        prompt,
+        language: 'html',
+        framework: 'vanilla'
       });
+      return await response.json();
     },
     onSuccess: (data) => {
       setGeneratedCode(data);
