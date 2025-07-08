@@ -138,9 +138,18 @@ export default function CollaborationDashboard() {
   // WebSocket connection
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.hostname;
-    const port = window.location.port || '5000';
-    const wsUrl = `${protocol}//${host}:${port}/ws?userId=1`;
+    const isReplit = window.location.hostname.includes('replit.dev');
+    
+    let wsUrl;
+    if (isReplit) {
+      // For Replit deployments, use the current host without explicit port
+      wsUrl = `${protocol}//${window.location.host}/ws?userId=1`;
+    } else {
+      // For local development
+      const host = window.location.hostname;
+      const port = window.location.port || '5000';
+      wsUrl = `${protocol}//${host}:${port}/ws?userId=1`;
+    }
     
     console.log('Connecting to WebSocket:', wsUrl);
     const websocket = new WebSocket(wsUrl);
@@ -218,7 +227,19 @@ export default function CollaborationDashboard() {
       
       case 'system_notification':
         try {
-          const notification = JSON.parse(message.content || '{}');
+          // Handle both string and object content
+          let notification;
+          if (typeof message.content === 'string') {
+            try {
+              notification = JSON.parse(message.content);
+            } catch (parseError) {
+              console.log('Non-JSON system notification:', message.content);
+              notification = { type: 'text', content: message.content };
+            }
+          } else {
+            notification = message.content || {};
+          }
+          
           if (notification.type === 'conversation_history') {
             setMessages(notification.messages || []);
           } else if (notification.type === 'collaborative_session_started') {
@@ -230,6 +251,7 @@ export default function CollaborationDashboard() {
           }
         } catch (error) {
           console.error('Error parsing system notification:', error);
+          console.log('Original message content:', message.content);
         }
         break;
     }
