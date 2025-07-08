@@ -138,8 +138,11 @@ export default function CollaborationDashboard() {
   // WebSocket connection
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws?userId=1`;
+    const host = window.location.hostname;
+    const port = window.location.port || '5000';
+    const wsUrl = `${protocol}//${host}:${port}/ws?userId=1`;
     
+    console.log('Connecting to WebSocket:', wsUrl);
     const websocket = new WebSocket(wsUrl);
     
     websocket.onopen = () => {
