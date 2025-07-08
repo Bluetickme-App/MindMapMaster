@@ -30,6 +30,7 @@ export interface IStorage {
   // Code generation operations
   getCodeGeneration(id: number): Promise<CodeGeneration | undefined>;
   getCodeGenerationsByUser(userId: number): Promise<CodeGeneration[]>;
+  getCodeGenerationsByProject(projectId: number): Promise<CodeGeneration[]>;
   createCodeGeneration(generation: InsertCodeGeneration): Promise<CodeGeneration>;
 
   // API test operations
@@ -179,6 +180,11 @@ export class DatabaseStorage implements IStorage {
 
   async getCodeGenerationsByUser(userId: number): Promise<CodeGeneration[]> {
     return await db.select().from(codeGenerations).where(eq(codeGenerations.userId, userId));
+  }
+
+  async getCodeGenerationsByProject(projectId: number): Promise<CodeGeneration[]> {
+    const generations = await db.select().from(codeGenerations).where(eq(codeGenerations.projectId, projectId));
+    return generations;
   }
 
   async createCodeGeneration(insertGeneration: InsertCodeGeneration): Promise<CodeGeneration> {

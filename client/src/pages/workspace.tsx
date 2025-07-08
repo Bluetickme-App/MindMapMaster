@@ -110,12 +110,28 @@ export default function WorkspacePage() {
     enabled: true
   });
 
-  // Auto-select first project on load
+  // Auto-select most recent project on load
   useEffect(() => {
     if (projectsQuery.data && projectsQuery.data.length > 0 && !selectedProject) {
-      setSelectedProject(projectsQuery.data[0]);
+      // Sort projects by creation date (most recent first)
+      const sortedProjects = [...projectsQuery.data].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setSelectedProject(sortedProjects[0]);
+      console.log('Selected project:', sortedProjects[0]);
     }
   }, [projectsQuery.data, selectedProject]);
+
+  // Load project generated code for preview
+  const { data: projectCode } = useQuery({
+    queryKey: ['/api/projects', selectedProject?.id, 'code'],
+    enabled: !!selectedProject?.id,
+  });
+
+  // Create preview HTML for generated code
+  const createPreviewHTML = (code: string) => {
+    return `data:text/html;charset=utf-8,${encodeURIComponent(code)}`;
+  };
 
   // Generate project starter files when project is selected
   const createProjectWorkspace = useMutation({
@@ -450,26 +466,105 @@ export default function WorkspacePage() {
               <TabsContent value="preview" className="h-[calc(100%-60px)] m-0">
                 <div className="h-full flex flex-col">
                   <div className="border-b px-4 py-2 bg-muted/30">
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        value={previewUrl}
-                        onChange={(e) => setPreviewUrl(e.target.value)}
-                        placeholder="Enter preview URL"
-                        className="flex-1"
-                      />
-                      <Button size="sm">
-                        <RefreshCw className="w-4 h-4" />
-                      </Button>
-                      <Button size="sm">
-                        <Globe className="w-4 h-4" />
-                      </Button>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-medium">
+                          {selectedProject ? `${selectedProject.name} Preview` : 'Live Preview'}
+                        </h3>
+                        {selectedProject && (
+                          <Badge variant="outline">
+                            {selectedProject.language} • {selectedProject.framework || 'HTML'}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {projectCode && projectCode.code && projectCode.code !== null && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              if (projectCode.code.trim().startsWith('<') || projectCode.code.trim().startsWith('<!DOCTYPE')) {
+                                window.open(createPreviewHTML(projectCode.code), '_blank');
+                              } else {
+                                // Copy text to clipboard for non-HTML content
+                                navigator.clipboard.writeText(projectCode.code);
+                                toast({
+                                  title: "Copied to clipboard",
+                                  description: "Project content has been copied to your clipboard."
+                                });
+                              }
+                            }}
+                          >
+                            {projectCode.code.trim().startsWith('<') || projectCode.code.trim().startsWith('<!DOCTYPE') ? (
+                              <>
+                                <Globe className="w-4 h-4 mr-2" />
+                                Open in New Tab
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-4 h-4 mr-2" />
+                                Copy Content
+                              </>
+                            )}
+                          </Button>
+                        )}
+                        <Button size="sm" variant="outline">
+                          <RefreshCw className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  <iframe
-                    src={previewUrl}
-                    className="flex-1 w-full border-0"
-                    title="Live Preview"
-                  />
+                  
+                  {projectCode && projectCode.code && projectCode.code !== null ? (
+                    // Check if it's HTML code (starts with < or <!DOCTYPE)
+                    projectCode.code.trim().startsWith('<') || projectCode.code.trim().startsWith('<!DOCTYPE') ? (
+                      <iframe
+                        srcDoc={projectCode.code}
+                        className="flex-1 w-full border-0"
+                        title={`${selectedProject?.name || 'Project'} Preview`}
+                      />
+                    ) : (
+                      // Show as text/explanation if not HTML
+                      <div className="flex-1 p-6 overflow-auto">
+                        <div className="max-w-4xl mx-auto">
+                          <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+                            <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+                              <strong>Note:</strong> This project contains guidance/explanation rather than executable code.
+                            </p>
+                          </div>
+                          <div className="prose prose-sm max-w-none dark:prose-invert">
+                            <pre className="whitespace-pre-wrap text-sm bg-muted p-4 rounded-lg">
+                              {projectCode.code}
+                            </pre>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  ) : selectedProject ? (
+                    <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                      <div className="text-center">
+                        <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <h3 className="font-semibold mb-2 text-foreground">No Preview Available</h3>
+                        <p className="text-sm mb-4">
+                          This project doesn't have generated code to preview yet.
+                        </p>
+                        <Button 
+                          onClick={() => setLocation('/project-builder')}
+                          variant="outline"
+                        >
+                          <Code className="w-4 h-4 mr-2" />
+                          Generate Code
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                      <div className="text-center">
+                        <Monitor className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>Select a project to see its preview</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
@@ -638,9 +733,14 @@ export default function WorkspacePage() {
                                       <p className="text-xs text-muted-foreground">Perfect for your React project</p>
                                     </div>
                                   </div>
-                                  <Button variant="outline" size="sm" className="w-full mt-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="w-full mt-2"
+                                    onClick={() => setLocation(`/team-agents?project=${selectedProject.id}&agent=react`)}
+                                  >
                                     <MessageSquare className="w-3 h-3 mr-1" />
-                                    Chat About {selectedProject.name}
+                                    Chat About React
                                   </Button>
                                 </CardContent>
                               </Card>
@@ -654,9 +754,14 @@ export default function WorkspacePage() {
                                       <p className="text-xs text-muted-foreground">Build optimization</p>
                                     </div>
                                   </div>
-                                  <Button variant="outline" size="sm" className="w-full mt-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="w-full mt-2"
+                                    onClick={() => setLocation(`/team-agents?project=${selectedProject.id}&agent=vite`)}
+                                  >
                                     <MessageSquare className="w-3 h-3 mr-1" />
-                                    Chat About {selectedProject.name}
+                                    Chat About Vite
                                   </Button>
                                 </CardContent>
                               </Card>
@@ -672,9 +777,14 @@ export default function WorkspacePage() {
                                   <p className="text-xs text-muted-foreground">UI/UX for your project</p>
                                 </div>
                               </div>
-                              <Button variant="outline" size="sm" className="w-full mt-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="w-full mt-2"
+                                onClick={() => setLocation(`/team-agents?project=${selectedProject.id}&agent=designer`)}
+                              >
                                 <MessageSquare className="w-3 h-3 mr-1" />
-                                Chat About {selectedProject.name}
+                                Chat About Design
                               </Button>
                             </CardContent>
                           </Card>
@@ -688,9 +798,14 @@ export default function WorkspacePage() {
                                   <p className="text-xs text-muted-foreground">Plan next features</p>
                                 </div>
                               </div>
-                              <Button variant="outline" size="sm" className="w-full mt-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="w-full mt-2"
+                                onClick={() => setLocation(`/team-agents?project=${selectedProject.id}&agent=roadmap`)}
+                              >
                                 <MessageSquare className="w-3 h-3 mr-1" />
-                                Chat About {selectedProject.name}
+                                Chat About Roadmap
                               </Button>
                             </CardContent>
                           </Card>

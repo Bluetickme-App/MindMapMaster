@@ -536,6 +536,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
               deployUrl: null
             });
             
+            // Create a project folder structure in workspace
+            await storage.createWorkspaceFile({
+              userId: currentUserId,
+              path: `projects/${projectName}/index.html`,
+              content: generatedCode,
+              type: 'file'
+            });
+            
+            // Create AI assistant for the project
+            try {
+              const { initializeProjectAssistant } = await import('./services/project-assistant.js');
+              await initializeProjectAssistant(project.id, projectName, description, language, framework);
+            } catch (error) {
+              console.error('Error creating project assistant:', error);
+            }
+            
             // Save the generated code as a code generation entry
             await storage.createCodeGeneration({
               userId: currentUserId,
@@ -773,6 +789,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           githubRepo: null,
           deployUrl: null
         });
+        
+        // Create a project folder structure in workspace
+        await storage.createWorkspaceFile({
+          userId: currentUserId,
+          path: `projects/${projectName}/index.html`,
+          content: fallbackCode,
+          type: 'file'
+        });
+        
+        // Create AI assistant for the project
+        try {
+          const { initializeProjectAssistant } = await import('./services/project-assistant.js');
+          await initializeProjectAssistant(project.id, projectName, description, language, framework);
+        } catch (error) {
+          console.error('Error creating project assistant:', error);
+        }
         
         // Save the generated code as a code generation entry
         await storage.createCodeGeneration({
@@ -1341,6 +1373,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deploying project:', error);
       res.status(500).json({ message: 'Failed to deploy project' });
+    }
+  });
+
+  // Get project generated code
+  app.get('/api/projects/:id/code', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const projectId = parseInt(id);
+      
+      // Get the latest code generation for this project
+      const codeGenerations = await storage.getCodeGenerationsByProject(projectId);
+      const projectCode = codeGenerations
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+      
+      if (projectCode) {
+        res.json({
+          code: projectCode.generatedCode,
+          explanation: projectCode.explanation,
+          language: projectCode.language,
+          framework: projectCode.framework
+        });
+      } else {
+        res.json({
+          code: null,
+          explanation: 'No generated code found for this project',
+          language: 'javascript',
+          framework: 'html'
+        });
+      }
+    } catch (error) {
+      console.error('Error getting project code:', error);
+      res.status(500).json({ message: 'Failed to get project code' });
     }
   });
 
