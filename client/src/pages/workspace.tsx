@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +33,11 @@ import {
   Code,
   FileText,
   Image as ImageIcon,
-  Package
+  Package,
+  ArrowLeft,
+  Users,
+  Bot,
+  MessageSquare
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -61,6 +66,7 @@ interface ConsoleMessage {
 }
 
 export default function WorkspacePage() {
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const consoleRef = useRef<HTMLDivElement>(null);
@@ -79,6 +85,7 @@ export default function WorkspacePage() {
   const [secrets, setSecrets] = useState<Record<string, string>>({});
   const [secretsFormat, setSecretsFormat] = useState<'json' | 'env'>('json');
   const [fileContent, setFileContent] = useState<string>('');
+  const [showTeamAgents, setShowTeamAgents] = useState(false);
 
   // Fetch file system from backend
   const { data: fileSystem = [], refetch: refetchFiles } = useQuery<FileNode[]>({
@@ -297,6 +304,15 @@ export default function WorkspacePage() {
       <div className="border-b bg-card">
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setLocation('/')}
+              className="mr-2"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
             <h1 className="text-lg font-semibold">CodeCraft Workspace</h1>
             <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
               <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
@@ -307,6 +323,14 @@ export default function WorkspacePage() {
             <Button variant="outline" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowTeamAgents(!showTeamAgents)}
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Team Agents
             </Button>
             <Button variant="outline" size="sm">
               <Settings className="w-4 h-4 mr-2" />
@@ -344,7 +368,7 @@ export default function WorkspacePage() {
           <ResizablePanel defaultSize={50}>
             <Tabs defaultValue="preview" className="h-full">
               <div className="border-b px-4 py-2">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="preview">
                     <Eye className="w-4 h-4 mr-2" />
                     Live Preview
@@ -356,6 +380,10 @@ export default function WorkspacePage() {
                   <TabsTrigger value="database">
                     <Database className="w-4 h-4 mr-2" />
                     Database
+                  </TabsTrigger>
+                  <TabsTrigger value="agents">
+                    <Bot className="w-4 h-4 mr-2" />
+                    AI Agents
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -451,6 +479,97 @@ export default function WorkspacePage() {
                         </CardContent>
                       </Card>
                     ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* AI Agents Tab */}
+              <TabsContent value="agents" className="h-[calc(100%-60px)] m-0">
+                <div className="h-full p-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium">Development Team Agents</h3>
+                      <Button 
+                        onClick={() => setLocation('/team-agents')}
+                        size="sm"
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        Manage Team
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <Card>
+                        <CardContent className="p-3">
+                          <div className="flex items-center space-x-2">
+                            <Bot className="w-6 h-6 text-blue-500" />
+                            <div>
+                              <h4 className="font-medium text-sm">Alex Roadmap</h4>
+                              <p className="text-xs text-muted-foreground">Project Planning</p>
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm" className="w-full mt-2">
+                            <MessageSquare className="w-3 h-3 mr-1" />
+                            Chat
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardContent className="p-3">
+                          <div className="flex items-center space-x-2">
+                            <Bot className="w-6 h-6 text-purple-500" />
+                            <div>
+                              <h4 className="font-medium text-sm">Maya Designer</h4>
+                              <p className="text-xs text-muted-foreground">UI/UX Design</p>
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm" className="w-full mt-2">
+                            <MessageSquare className="w-3 h-3 mr-1" />
+                            Chat
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardContent className="p-3">
+                          <div className="flex items-center space-x-2">
+                            <Bot className="w-6 h-6 text-green-500" />
+                            <div>
+                              <h4 className="font-medium text-sm">Taylor React</h4>
+                              <p className="text-xs text-muted-foreground">Frontend Development</p>
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm" className="w-full mt-2">
+                            <MessageSquare className="w-3 h-3 mr-1" />
+                            Chat
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardContent className="p-3">
+                          <div className="flex items-center space-x-2">
+                            <Bot className="w-6 h-6 text-orange-500" />
+                            <div>
+                              <h4 className="font-medium text-sm">Sam AI</h4>
+                              <p className="text-xs text-muted-foreground">AI Integration</p>
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm" className="w-full mt-2">
+                            <MessageSquare className="w-3 h-3 mr-1" />
+                            Chat
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <Alert>
+                      <Bot className="w-4 h-4" />
+                      <AlertDescription>
+                        Click "Manage Team" to configure your development team agents and create collaborative conversations.
+                      </AlertDescription>
+                    </Alert>
                   </div>
                 </div>
               </TabsContent>
