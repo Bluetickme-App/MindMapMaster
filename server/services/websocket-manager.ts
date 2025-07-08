@@ -30,17 +30,27 @@ export class WebSocketManager {
   private agentResponseQueue: Map<number, Array<{messageId: number, agentId: number}>> = new Map();
 
   constructor(server: Server) {
-    this.wss = new WebSocketServer({ 
-      server, 
-      path: '/ws',
-      verifyClient: (info: any) => {
-        // Add authentication here if needed
-        return true;
-      }
-    });
+    try {
+      this.wss = new WebSocketServer({ 
+        server, 
+        path: '/ws',
+        verifyClient: (info: any) => {
+          // Add authentication here if needed
+          return true;
+        }
+      });
 
-    this.setupWebSocketServer();
-    this.startPeriodicTasks();
+      this.setupWebSocketServer();
+      this.startPeriodicTasks();
+    } catch (error) {
+      console.error('WebSocket server initialization failed:', error);
+      // In production, continue without WebSocket
+      if (process.env.NODE_ENV === 'production') {
+        console.warn('⚠️  WebSocket disabled in production due to error');
+      } else {
+        throw error;
+      }
+    }
   }
 
   private setupWebSocketServer(): void {

@@ -2650,7 +2650,7 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     }
   });
   
-  // Initialize WebSocket manager for real-time collaboration with error handling
+  // Initialize WebSocket manager for real-time collaboration with enhanced error handling
   try {
     const wsManager = new WebSocketManager(httpServer);
     (global as any).webSocketManager = wsManager;
@@ -2658,6 +2658,10 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
   } catch (error) {
     console.error('❌ Failed to initialize WebSocket manager:', error);
     console.log('⚠️  Continuing without WebSocket support');
+    // Don't exit in production - continue without WebSocket
+    if (process.env.NODE_ENV !== 'production') {
+      throw error;
+    }
   }
   
   // WeLet AI Chat API endpoint

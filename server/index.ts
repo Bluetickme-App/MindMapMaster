@@ -126,9 +126,24 @@ app.use((req, res, next) => {
       log(`serving on port ${port}`);
       log(`Environment: ${app.get("env")}`);
       log(`Health check available at /health`);
+      log(`Ready check available at /ready`);
+      
+      // Signal successful startup for deployment
+      if (process.env.NODE_ENV === 'production') {
+        console.log('🚀 Production server successfully started');
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);
-    process.exit(1);
+    // Add timeout handling for production
+    if (process.env.NODE_ENV === 'production') {
+      console.error('❌ Production server startup failed');
+      setTimeout(() => {
+        console.error('⏰ Server startup timeout - exiting');
+        process.exit(1);
+      }, 30000); // 30 second timeout
+    } else {
+      process.exit(1);
+    }
   }
 })();

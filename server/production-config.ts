@@ -43,6 +43,11 @@ export function configureProduction(app: Express) {
   console.log(`   - ANTHROPIC_API_KEY: ${!!process.env.ANTHROPIC_API_KEY}`);
   console.log(`   - GOOGLE_API_KEY: ${!!process.env.GOOGLE_API_KEY}`);
   console.log(`   - GEMINI_API_KEY: ${!!process.env.GEMINI_API_KEY}`);
+  
+  // Add graceful AI provider warnings
+  if (!process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY && !process.env.GOOGLE_API_KEY && !process.env.GEMINI_API_KEY) {
+    console.warn('⚠️  No AI provider API keys found - AI features will be limited');
+  }
 }
 
 export function validateEnvironment() {
