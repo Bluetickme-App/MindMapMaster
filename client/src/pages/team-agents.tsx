@@ -86,6 +86,43 @@ export default function TeamAgentsPage() {
     }
   };
 
+  const handleCreateConversation = async () => {
+    if (selectedAgents.length === 0) {
+      toast({
+        title: "No agents selected",
+        description: "Please select at least one agent to create a conversation"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/projects/1/team-conversation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentIds: selectedAgents })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast({
+          title: "Team conversation created",
+          description: `Created conversation with ${selectedAgents.length} agents`
+        });
+        
+        // Navigate to collaboration page with the new conversation
+        setLocation(`/collaboration?conversation=${data.conversationId}`);
+      } else {
+        throw new Error('Failed to create conversation');
+      }
+    } catch (error) {
+      console.error('Error creating team conversation:', error);
+      toast({
+        title: "Failed to create conversation",
+        description: "Unable to create team conversation right now"
+      });
+    }
+  };
+
   // Get all available agents
   const { data: agents = [], isLoading: agentsLoading } = useQuery({
     queryKey: ['/api/team-agents'],
@@ -331,9 +368,9 @@ export default function TeamAgentsPage() {
                         <p className="text-sm text-muted-foreground capitalize">{agent.specialization} Specialist</p>
                       </div>
                     </div>
-                    <div className="space-y-2">
+                    <div className="flex gap-2 items-center">
                       <Badge className={getProviderColor(agent.aiProvider)}>{agent.aiProvider}</Badge>
-                      <Badge variant="outline">{agent.experienceLevel}</Badge>
+                      <Badge variant="outline" className="text-xs">{agent.experienceLevel}</Badge>
                     </div>
                   </div>
                 );
@@ -364,12 +401,12 @@ export default function TeamAgentsPage() {
                 return (
                   <div 
                     key={agent.id} 
-                    className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                    className={`border rounded-lg p-4 cursor-pointer transition-all relative ${
                       isSelected 
-                        ? 'border-blue-500 bg-blue-50' 
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20' 
                         : isSuggested
-                        ? 'border-green-500 bg-green-50'
-                        : 'hover:border-gray-300 hover:bg-gray-50'
+                        ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
+                        : 'hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-950/20'
                     }`}
                     onClick={() => toggleAgent(agent.id)}
                   >
@@ -385,9 +422,9 @@ export default function TeamAgentsPage() {
                     </div>
                     
                     <div className="space-y-2 mb-3">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
                         <Badge className={getProviderColor(agent.aiProvider)}>{agent.aiProvider}</Badge>
-                        <Badge variant="outline">{agent.experienceLevel}</Badge>
+                        <Badge variant="outline" className="text-xs">{agent.experienceLevel}</Badge>
                       </div>
                       
                       {agent.languages.length > 0 && (
@@ -430,7 +467,11 @@ export default function TeamAgentsPage() {
                 ))}
             </div>
             <div className="mt-4">
-              <Button className="w-full">
+              <Button 
+                className="w-full" 
+                onClick={handleCreateConversation}
+                disabled={selectedAgents.length === 0}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Team Conversation
               </Button>
