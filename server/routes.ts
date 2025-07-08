@@ -26,7 +26,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Prompt and language are required" });
       }
 
-      const result = await generateCode({ prompt, language, framework });
+      const result = await multiAIService.generateCode({ prompt, language, framework });
       
       // Store the generation in storage
       await storage.createCodeGeneration({

@@ -472,6 +472,68 @@ export class MultiAIProviderService {
     return recommendations[agentType]?.[provider] || this.getDefaultModel(provider);
   }
 
+  // Generate code using AI providers
+  async generateCode(options: {
+    prompt: string;
+    language: string;
+    framework?: string;
+    provider?: string;
+  }): Promise<{ code: string; explanation: string; language: string; framework?: string }> {
+    const { prompt, language, framework, provider = "openai" } = options;
+    
+    const systemPrompt = `You are an expert ${language} developer${framework ? ` specializing in ${framework}` : ''}. 
+Generate clean, production-ready code based on the user's request. 
+
+Requirements:
+- Write code that follows best practices for ${language}${framework ? ` and ${framework}` : ''}
+- Include proper error handling and type safety
+- Add clear comments explaining the code
+- Make the code modular and reusable
+- Follow modern coding conventions
+
+Respond with a JSON object containing:
+{
+  "code": "The generated code",
+  "explanation": "Brief explanation of what the code does and how to use it"
+}`;
+
+    try {
+      const response = await this.generateResponse(provider, prompt, systemPrompt);
+      
+      // Try to parse as JSON, fallback to plain text
+      let result;
+      try {
+        result = JSON.parse(response.content);
+      } catch {
+        // If not JSON, treat the entire response as code
+        result = {
+          code: response.content,
+          explanation: `Generated ${language} code${framework ? ` using ${framework}` : ''} based on: ${prompt}`
+        };
+      }
+
+      return {
+        code: result.code || response.content,
+        explanation: result.explanation || `Generated ${language} code`,
+        language,
+        framework
+      };
+    } catch (error) {
+      console.error('Code generation failed:', error);
+      
+      // Try fallback with a different provider
+      if (provider !== "anthropic") {
+        try {
+          return await this.generateCode({ ...options, provider: "anthropic" });
+        } catch (fallbackError) {
+          console.error('Fallback provider also failed:', fallbackError);
+        }
+      }
+      
+      throw new Error(`Code generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   private getDefaultModel(provider: string): string {
     switch (provider) {
       case "openai": return DEFAULT_OPENAI_MODEL;
