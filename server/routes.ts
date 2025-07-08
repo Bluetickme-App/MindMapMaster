@@ -269,6 +269,273 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate development roadmap
+  app.post('/api/generate-roadmap', async (req, res) => {
+    try {
+      const { name, description, language, framework, complexity, template } = req.body;
+      
+      // Generate roadmap based on project requirements
+      const roadmapPrompt = `Generate a comprehensive development roadmap for a ${complexity} ${language} ${framework} project called "${name}".
+      
+      Project Description: ${description}
+      Template: ${template || 'custom'}
+      
+      Create a detailed roadmap with suggested features, components, and implementation steps. Focus on practical, buildable features.
+      
+      Return a JSON array of roadmap items with this structure:
+      {
+        "roadmap": [
+          {
+            "id": "unique-id",
+            "title": "Feature Name",
+            "description": "Detailed description of what this feature does",
+            "category": "core|feature|design|integration",
+            "priority": "high|medium|low",
+            "estimated": "1-2 hours",
+            "completed": false
+          }
+        ]
+      }
+      
+      Include 8-12 realistic, implementable features ranging from core functionality to nice-to-have features.`;
+
+      try {
+        if (process.env.OPENAI_API_KEY) {
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: [
+                { 
+                  role: 'system', 
+                  content: 'You are a senior software architect creating detailed development roadmaps. Always respond with valid JSON.' 
+                },
+                { role: 'user', content: roadmapPrompt }
+              ],
+              response_format: { type: 'json_object' },
+              temperature: 0.7
+            })
+          });
+
+          const data = await response.json();
+          const roadmapData = JSON.parse(data.choices[0].message.content);
+          
+          return res.json(roadmapData);
+        }
+      } catch (error) {
+        console.error('OpenAI roadmap generation failed:', error);
+      }
+      
+      // Fallback roadmap
+      const fallbackRoadmap = {
+        roadmap: [
+          {
+            id: 'setup',
+            title: 'Project Setup',
+            description: 'Initialize project structure and dependencies',
+            category: 'core',
+            priority: 'high',
+            estimated: '30 min',
+            completed: false
+          },
+          {
+            id: 'ui-layout',
+            title: 'UI Layout',
+            description: 'Create basic layout and navigation structure',
+            category: 'design',
+            priority: 'high',
+            estimated: '1-2 hours',
+            completed: false
+          },
+          {
+            id: 'core-functionality',
+            title: 'Core Functionality',
+            description: 'Implement main features and business logic',
+            category: 'feature',
+            priority: 'high',
+            estimated: '3-4 hours',
+            completed: false
+          },
+          {
+            id: 'styling',
+            title: 'Styling & Design',
+            description: 'Add CSS styling and responsive design',
+            category: 'design',
+            priority: 'medium',
+            estimated: '2-3 hours',
+            completed: false
+          },
+          {
+            id: 'testing',
+            title: 'Testing & QA',
+            description: 'Add error handling and test functionality',
+            category: 'integration',
+            priority: 'medium',
+            estimated: '1-2 hours',
+            completed: false
+          }
+        ]
+      };
+      
+      res.json(fallbackRoadmap);
+    } catch (error) {
+      console.error('Error generating roadmap:', error);
+      res.status(500).json({ error: 'Failed to generate roadmap' });
+    }
+  });
+
+  // Build project based on roadmap
+  app.post('/api/build-project', async (req, res) => {
+    try {
+      const { projectName, description, language, framework, roadmap, customRequirements } = req.body;
+      
+      const selectedFeatures = roadmap.map((item: any) => `- ${item.title}: ${item.description}`).join('\n');
+      
+      const buildPrompt = `Create a complete, production-ready ${language} ${framework} application called "${projectName}".
+      
+      Project Description: ${description}
+      
+      Required Features:
+      ${selectedFeatures}
+      
+      ${customRequirements ? `Additional Requirements: ${customRequirements}` : ''}
+      
+      Generate a complete, functional web application with:
+      1. Clean, modern HTML structure
+      2. Responsive CSS styling (use modern techniques)
+      3. Interactive JavaScript functionality
+      4. All selected features implemented
+      5. Professional UI/UX design
+      6. Mobile-responsive layout
+      
+      Return the complete HTML file with embedded CSS and JavaScript. Make it visually appealing and fully functional.
+      
+      Include proper error handling, accessibility features, and modern web standards.`;
+
+      try {
+        if (process.env.OPENAI_API_KEY) {
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: [
+                { 
+                  role: 'system', 
+                  content: 'You are a senior full-stack developer creating production-ready web applications. Generate complete, functional, and visually appealing code.' 
+                },
+                { role: 'user', content: buildPrompt }
+              ],
+              temperature: 0.3
+            })
+          });
+
+          const data = await response.json();
+          const generatedCode = data.choices[0].message.content;
+          
+          // Generate explanation
+          const explanationPrompt = `Explain the ${framework} code structure and implementation for the "${projectName}" project. Cover:
+          1. Architecture overview
+          2. Key components and features
+          3. Implementation details
+          4. How to customize and extend
+          5. Best practices used
+          
+          Keep it concise but comprehensive for developers.`;
+
+          const explanationResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: [
+                { 
+                  role: 'system', 
+                  content: 'You are a technical documentation expert. Provide clear, actionable explanations.' 
+                },
+                { role: 'user', content: explanationPrompt }
+              ],
+              temperature: 0.3
+            })
+          });
+
+          const explanationData = await explanationResponse.json();
+          const explanation = explanationData.choices[0].message.content;
+          
+          return res.json({
+            code: generatedCode,
+            explanation: explanation,
+            language: language,
+            framework: framework
+          });
+        }
+      } catch (error) {
+        console.error('OpenAI build failed:', error);
+      }
+      
+      // Fallback code
+      const fallbackCode = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${projectName}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: #2563eb; color: white; padding: 20px 0; text-align: center; }
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 40px 0; }
+        .feature-card { background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .feature-card h3 { color: #1e40af; margin-bottom: 10px; }
+        footer { text-align: center; padding: 40px 0; color: #64748b; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>${projectName}</h1>
+        <p>${description}</p>
+    </header>
+    
+    <div class="container">
+        <div class="features">
+            ${roadmap.map((feature: any) => `
+                <div class="feature-card">
+                    <h3>${feature.title}</h3>
+                    <p>${feature.description}</p>
+                </div>
+            `).join('')}
+        </div>
+    </div>
+    
+    <footer>
+        <p>Built with ${framework} • ${language}</p>
+    </footer>
+</body>
+</html>`;
+      
+      res.json({
+        code: fallbackCode,
+        explanation: `This ${framework} application implements the core features for ${projectName}. The code includes responsive design, modern CSS, and structured HTML for all selected features.`,
+        language: language,
+        framework: framework
+      });
+    } catch (error) {
+      console.error('Error building project:', error);
+      res.status(500).json({ error: 'Failed to build project' });
+    }
+  });
+
   // Settings endpoints
   app.get('/api/settings/api-keys/status', async (req, res) => {
     try {

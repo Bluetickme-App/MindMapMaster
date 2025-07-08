@@ -16,6 +16,7 @@ import SettingsPage from "@/pages/settings";
 import WorkspacePage from "@/pages/workspace";
 import TestGenerationPage from "@/pages/test-generation";
 import CreateProjectPage from "@/pages/create-project";
+import ProjectBuilderPage from "@/pages/project-builder";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/workspace" component={WorkspacePage} />
       <Route path="/test-generation" component={TestGenerationPage} />
       <Route path="/create-project" component={CreateProjectPage} />
+      <Route path="/project-builder" component={ProjectBuilderPage} />
       <Route component={NotFound} />
     </Switch>
   );
