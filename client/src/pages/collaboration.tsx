@@ -233,7 +233,15 @@ export default function CollaborationDashboard() {
   };
 
   const sendMessage = () => {
-    if (!newMessage.trim() || !ws || !activeConversation) return;
+    if (!newMessage.trim() || !ws || !activeConversation) {
+      console.log('Cannot send message:', { 
+        hasMessage: !!newMessage.trim(), 
+        hasWs: !!ws, 
+        hasConversation: !!activeConversation,
+        connectionStatus 
+      });
+      return;
+    }
     
     const message: WebSocketMessage = {
       type: 'user_message',
@@ -244,6 +252,7 @@ export default function CollaborationDashboard() {
       timestamp: new Date()
     };
     
+    console.log('Sending message:', message);
     ws.send(JSON.stringify(message));
     setNewMessage('');
   };
@@ -279,6 +288,7 @@ export default function CollaborationDashboard() {
 
   const joinConversation = (conversationId: number) => {
     if (ws) {
+      console.log('Joining conversation:', conversationId);
       ws.send(JSON.stringify({
         type: 'join_conversation',
         conversationId,
@@ -288,6 +298,19 @@ export default function CollaborationDashboard() {
       }));
       setActiveConversation(conversationId);
       setMessages([]);
+      
+      // Load conversation messages
+      queryClient.fetchQuery({
+        queryKey: [`/api/conversations/${conversationId}/messages`],
+      }).then((data: any) => {
+        if (data) {
+          console.log('Loaded messages for conversation:', data);
+          setMessages(data.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          })));
+        }
+      });
     }
   };
 
@@ -626,9 +649,24 @@ export default function CollaborationDashboard() {
                               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                               className="flex-1"
                             />
-                            <Button onClick={sendMessage} disabled={!newMessage.trim()}>
+                            <Button 
+                              onClick={sendMessage} 
+                              disabled={!newMessage.trim() || connectionStatus !== 'connected'}
+                            >
                               <Send className="w-4 h-4" />
                             </Button>
+                          </div>
+                          
+                          {/* Connection Status */}
+                          <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
+                            <span>
+                              Status: <span className={connectionStatus === 'connected' ? 'text-green-500' : 'text-red-500'}>
+                                {connectionStatus}
+                              </span>
+                            </span>
+                            <span>
+                              {typingUsers.size > 0 && `${typingUsers.size} agent(s) typing...`}
+                            </span>
                           </div>
                         </div>
                       ) : (

@@ -105,6 +105,7 @@ export class WebSocketManager {
 
     try {
       const message: WebSocketMessage = JSON.parse(data.toString());
+      console.log(`[WebSocket] Received message type: ${message.type}, from client: ${clientId}, content: "${message.content}"`);
       
       switch (message.type) {
         case 'user_message':
@@ -135,7 +136,12 @@ export class WebSocketManager {
   }
 
   private async handleUserMessage(client: ConnectedClient, message: WebSocketMessage): Promise<void> {
-    if (!message.content || !message.conversationId) return;
+    if (!message.content || !message.conversationId) {
+      console.log(`[WebSocket] Skipping message - content: "${message.content}", conversationId: ${message.conversationId}`);
+      return;
+    }
+
+    console.log(`[WebSocket] Processing user message from user ${client.userId}: "${message.content}" in conversation ${message.conversationId}`);
 
     try {
       // Store the message in database
@@ -147,6 +153,8 @@ export class WebSocketManager {
         messageType: 'text',
         metadata: message.metadata || null
       });
+
+      console.log(`[WebSocket] User message stored with ID: ${storedMessage.id}`);
 
       // Broadcast to all conversation participants
       this.broadcastToConversation(message.conversationId, {
