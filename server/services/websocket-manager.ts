@@ -201,7 +201,12 @@ export class WebSocketManager {
   }
 
   private async triggerAgentResponses(conversation: any, userMessage: any, content: string): Promise<void> {
-    if (!conversation.participants) return;
+    console.log(`[WebSocket] Starting triggerAgentResponses for conversation ${conversation.id}`);
+    
+    if (!conversation.participants) {
+      console.log(`[WebSocket] No participants found in conversation ${conversation.id}`);
+      return;
+    }
 
     // Get agents in the conversation - agents should have IDs in the agents table
     const allAgents = await storage.getAllAgents();
@@ -210,12 +215,20 @@ export class WebSocketManager {
     );
     
     console.log(`[WebSocket] Found ${agentIds.length} agents in conversation ${conversation.id}:`, agentIds);
+    console.log(`[WebSocket] All agents available:`, allAgents.map(a => `${a.id}:${a.name}`));
     
     for (const agentId of agentIds) {
       // Check if agent should respond (not every message needs all agents to respond)
-      if (await this.shouldAgentRespond(agentId, content, conversation)) {
-        console.log(`[WebSocket] Agent ${agentId} will respond to message: "${content}"`);
-        this.queueAgentResponse(conversation.id, userMessage.id, agentId);
+      try {
+        const shouldRespond = await this.shouldAgentRespond(agentId, content, conversation);
+        console.log(`[WebSocket] Agent ${agentId} should respond: ${shouldRespond}`);
+        
+        if (shouldRespond) {
+          console.log(`[WebSocket] Agent ${agentId} will respond to message: "${content}"`);
+          this.queueAgentResponse(conversation.id, userMessage.id, agentId);
+        }
+      } catch (error) {
+        console.error(`[WebSocket] Error checking if agent ${agentId} should respond:`, error);
       }
     }
 
@@ -227,23 +240,33 @@ export class WebSocketManager {
 
   // Public method for triggering agent responses from REST API
   async triggerAgentResponsesFromAPI(conversation: any, userMessage: any, content: string): Promise<void> {
-    console.log(`[REST API] Triggering agent responses for conversation ${conversation.id}`);
-    await this.triggerAgentResponses(conversation, userMessage, content);
+    console.log(`[REST API] Triggering agent responses for conversation ${conversation.id}, participants:`, conversation.participants);
+    
+    try {
+      await this.triggerAgentResponses(conversation, userMessage, content);
+      console.log(`[REST API] Agent response triggering completed for conversation ${conversation.id}`);
+    } catch (error) {
+      console.error(`[REST API] Error triggering agent responses:`, error);
+    }
   }
 
   private async shouldAgentRespond(agentId: number, content: string, conversation: any): Promise<boolean> {
     const agent = await storage.getAgent(agentId);
     if (!agent) return false;
 
-    // For now, make agents respond more frequently to test the system
-    // Later we can make this more sophisticated
+    // Make agents respond more frequently for testing multi-AI providers
     const mentionedByName = content.toLowerCase().includes(agent.name.toLowerCase());
     const mentionedByRole = content.toLowerCase().includes(agent.type.replace('_', ' '));
     const isQuestion = content.includes('?');
     const isGeneralMessage = content.length > 10; // Any substantial message
+    const isTestMessage = content.toLowerCase().includes('test') || content.toLowerCase().includes('provider');
 
-    // Simple logic: respond if mentioned, is a question, or randomly to general messages
-    return mentionedByName || mentionedByRole || isQuestion || (isGeneralMessage && Math.random() > 0.4);
+    // Respond if mentioned, is a question, test message, or frequently to general messages
+    const shouldRespond = mentionedByName || mentionedByRole || isQuestion || isTestMessage || (isGeneralMessage && Math.random() > 0.2);
+    
+    console.log(`[Agent ${agentId}] ${agent.name} shouldRespond: ${shouldRespond} (mentioned: ${mentionedByName}, role: ${mentionedByRole}, question: ${isQuestion}, test: ${isTestMessage})`);
+    
+    return shouldRespond;
   }
 
   private queueAgentResponse(conversationId: number, messageId: number, agentId: number): void {
@@ -255,10 +278,16 @@ export class WebSocketManager {
 
   private async processAgentResponseQueue(conversationId: number): Promise<void> {
     const queue = this.agentResponseQueue.get(conversationId);
-    if (!queue || queue.length === 0) return;
+    console.log(`[Queue] Processing queue for conversation ${conversationId}, queue length: ${queue?.length || 0}`);
+    
+    if (!queue || queue.length === 0) {
+      console.log(`[Queue] No items in queue for conversation ${conversationId}`);
+      return;
+    }
 
     // Process one agent response at a time to avoid overwhelming
     const { messageId, agentId } = queue.shift()!;
+    console.log(`[Queue] Processing response for agent ${agentId}, message ${messageId}`);
     
     try {
       // Get conversation context
@@ -267,11 +296,11 @@ export class WebSocketManager {
       const userMessage = recentMessages.find(m => m.id === messageId);
       
       if (!conversation || !userMessage) {
-        console.error(`No conversation or user message found for agent ${agentId} in conversation ${conversationId}`);
+        console.error(`[Queue] No conversation or user message found for agent ${agentId} in conversation ${conversationId}`);
         return;
       }
 
-      console.log(`Agent ${agentId} is responding to: "${userMessage.content}"`);
+      console.log(`[Queue] Agent ${agentId} is responding to: "${userMessage.content}"`);
 
       // Send typing indicator
       this.broadcastToConversation(conversationId, {
@@ -286,6 +315,7 @@ export class WebSocketManager {
       // Generate agent response with fallback
       let response;
       try {
+        console.log(`[Queue] Calling agent orchestration for agent ${agentId}`);
         response = await agentOrchestrationService.generateAgentResponse(
           agentId,
           userMessage.content,
@@ -294,8 +324,9 @@ export class WebSocketManager {
             recentMessages: recentMessages.slice(-10),
           }
         );
+        console.log(`[Queue] Agent ${agentId} generated response:`, response.content?.substring(0, 100));
       } catch (error) {
-        console.error(`Error generating agent response for agent ${agentId}:`, error);
+        console.error(`[Queue] Error generating agent response for agent ${agentId}:`, error);
         // Fallback response
         const agent = await storage.getAgent(agentId);
         response = {

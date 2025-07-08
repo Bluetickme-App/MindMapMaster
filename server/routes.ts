@@ -281,6 +281,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test multi-AI provider system with proper JSON response
+  app.post('/api/test-multi-provider', async (req, res) => {
+    try {
+      const { message, providers = ['openai', 'claude', 'gemini'] } = req.body;
+      
+      const results = {};
+      const { multiAIService } = await import('./services/multi-ai-provider.js');
+      
+      for (const provider of providers) {
+        try {
+          console.log(`Testing ${provider} provider...`);
+          const response = await multiAIService.generateResponse(
+            provider,
+            message,
+            'You are a helpful AI assistant. Please introduce yourself and mention which AI provider you are using.',
+            provider === 'openai' ? 'gpt-4o' : provider === 'claude' ? 'claude-sonnet-4-20250514' : 'gemini-2.5-flash'
+          );
+          results[provider] = { 
+            success: true, 
+            content: response.content,
+            provider: response.provider,
+            model: response.model,
+            tokenUsage: response.tokenUsage
+          };
+          console.log(`${provider} provider successful:`, response.content.substring(0, 100));
+        } catch (error) {
+          console.error(`${provider} provider failed:`, error);
+          results[provider] = { success: false, error: error.message };
+        }
+      }
+      
+      res.json(results);
+    } catch (error) {
+      console.error('Multi-provider test error:', error);
+      res.status(500).json({ message: 'Failed to test multi-provider system' });
+    }
+  });
+
   // Generate development roadmap
   app.post('/api/generate-roadmap', async (req, res) => {
     try {
@@ -1932,8 +1970,8 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
       const message = await storage.createMessage(validatedData);
       
       // Notify WebSocket clients about the new message
-      if (websocketManager) {
-        websocketManager.broadcastToConversation(conversationId, {
+      if (webSocketManager) {
+        webSocketManager.broadcastToConversation(conversationId, {
           type: 'user_message',
           conversationId,
           senderId: message.senderId,
@@ -1945,14 +1983,21 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
 
         // Trigger agent responses for REST API messages
         try {
+          console.log(`[REST API] WebSocket manager available:`, !!webSocketManager);
           const conversation = await storage.getConversation(conversationId);
-          if (conversation && conversation.participants) {
-            console.log(`[REST API] Triggering agent responses for conversation ${conversationId}`);
-            await websocketManager.triggerAgentResponsesFromAPI(conversation, message, validatedData.content);
+          console.log(`[REST API] Got conversation:`, conversation?.id, 'participants:', conversation?.participants);
+          
+          if (conversation && conversation.participants && conversation.participants.length > 0) {
+            console.log(`[REST API] Triggering agent responses for conversation ${conversationId} with ${conversation.participants.length} participants`);
+            await webSocketManager.triggerAgentResponsesFromAPI(conversation, message, validatedData.content);
+          } else {
+            console.log(`[REST API] No participants found in conversation ${conversationId}, skipping agent responses`);
           }
         } catch (error) {
           console.error('Error triggering agent responses from REST API:', error);
         }
+      } else {
+        console.error('[REST API] WebSocket manager not available - agents cannot respond');
       }
       
       res.json({ success: true, message });
