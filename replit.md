@@ -312,6 +312,13 @@ Changelog:
   - Successfully integrated 8 AI specialists with different providers (OpenAI, Claude, Gemini)
   - Team conversation creation now working with proper API endpoints and responses
   - Users can now select agents, create team chats, and collaborate all within workspace interface
+- July 08, 2025. Fixed team conversation creation and added scroll functionality:
+  - Fixed frontend fetch calls with proper headers and error handling
+  - Added scrollable agent selection dialog for better UX with multiple agents
+  - Verified backend API working correctly (200 responses with conversation data)
+  - Enhanced error messaging and console logging for debugging
+  - Team conversation creation fully functional - users can select agents and create chats
+  - Workspace now provides complete embedded agent collaboration without page navigation
 
 ## User Preferences
 

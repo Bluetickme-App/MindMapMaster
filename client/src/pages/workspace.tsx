@@ -99,17 +99,33 @@ export default function WorkspacePage() {
       if (!selectedProject?.id) {
         throw new Error('No project selected');
       }
-      return apiRequest('/api/projects/' + selectedProject.id + '/team-conversation', {
+      const response = await fetch(`/api/projects/${selectedProject.id}/team-conversation`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ agentIds: data.agentIds }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
+      console.log('Conversation created successfully:', data);
       setConversationId(data.conversationId);
+      
+      // Update selected agents from the response
+      if (data.agents) {
+        setSelectedAgents(data.agents);
+      }
+      
       setMessages([{
         id: Date.now().toString(),
         type: 'success',
-        message: `Team conversation created with ${selectedAgents.length} agents`,
+        message: `Team conversation created with ${data.agents?.length || 0} agents`,
         timestamp: new Date().toLocaleTimeString()
       }]);
       setShowAgentSelection(false);
@@ -118,10 +134,11 @@ export default function WorkspacePage() {
         description: "Team conversation created successfully!",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Failed to create conversation:', error);
       toast({
         title: "Error",
-        description: "Failed to create team conversation",
+        description: error.message || "Failed to create team conversation",
         variant: "destructive",
       });
     },
@@ -230,11 +247,9 @@ export default function WorkspacePage() {
       return;
     }
 
-    const selectedAgentObjects = agentsQuery.data?.filter((agent: Agent) => 
-      selectedAgentIds.includes(agent.id)
-    ) || [];
+    console.log('Creating conversation with agent IDs:', selectedAgentIds);
+    console.log('Selected project:', selectedProject);
     
-    setSelectedAgents(selectedAgentObjects);
     createConversationMutation.mutate({ agentIds: selectedAgentIds });
   };
 
