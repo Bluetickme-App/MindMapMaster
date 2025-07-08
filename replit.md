@@ -453,6 +453,13 @@ Changelog:
   - Database Integration: All memory and collaboration data persists in PostgreSQL
   - Test Results: 8 agents found, memory storage/retrieval working, collaboration sessions functional
   - Agents now have persistent memory capabilities for building cumulative knowledge over time
+- July 08, 2025. Fixed critical OpenAI Project Manager API parameter order issue:
+  - Resolved root cause of agents not remembering job assignments and giving generic responses
+  - Fixed OpenAI SDK parameter order: changed from retrieve(threadId, runId) to retrieve(runId, { thread_id: threadId })
+  - OpenAI Assistant API now correctly processes task assignments and agent role delegation
+  - Project Manager can successfully assign specialized tasks to 8 different AI agents
+  - Agents will now receive proper role-specific instructions and remember their specialized expertise
+  - Task assignment system fully operational with persistent agent memory and role awareness
 
 ## User Preferences
 

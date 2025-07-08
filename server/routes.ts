@@ -9,6 +9,8 @@ import { multiAIService } from "./services/multi-ai-provider";
 import { WebSocketManager, webSocketManager } from "./services/websocket-manager";
 import { debugCode } from "./services/openai";
 import { fileSystemService } from "./services/file-system";
+import { projectManagerService } from "./services/project-manager";
+import { agentMemoryService } from "./services/agent-memory-service";
 import { 
   insertCodeGenerationSchema, insertProjectSchema, insertApiTestSchema,
   insertAgentSchema, insertConversationSchema, insertMessageSchema,
@@ -3110,11 +3112,144 @@ console.log('File: ${filePath}');
     }
   });
 
+  // Project Manager API Routes
+  app.post('/api/project-manager/initialize', async (req, res) => {
+    try {
+      const assistantId = await projectManagerService.initializeProjectManager();
+      res.json({ assistantId, message: 'Project Manager initialized successfully' });
+    } catch (error) {
+      console.error('Error initializing project manager:', error);
+      res.status(500).json({ message: 'Failed to initialize project manager' });
+    }
+  });
+
+  app.post('/api/project-manager/assign-tasks', async (req, res) => {
+    try {
+      const { projectId, objective, requirements } = req.body;
+      
+      if (!projectId || !objective || !requirements) {
+        return res.status(400).json({ message: 'Project ID, objective, and requirements are required' });
+      }
+      
+      const taskAssignments = await projectManagerService.assignTasksToAgents(
+        projectId,
+        objective,
+        requirements
+      );
+      
+      // Ensure all agents remember their roles
+      const agents = await storage.getAllAgents();
+      for (const agent of agents) {
+        await projectManagerService.ensureAgentRoleMemory(agent.id, projectId);
+      }
+      
+      res.json({ 
+        taskAssignments, 
+        message: `Assigned ${taskAssignments.length} tasks to agents`,
+        agentsWithUpdatedMemory: agents.length
+      });
+    } catch (error) {
+      console.error('Error assigning tasks:', error);
+      res.status(500).json({ message: 'Failed to assign tasks to agents' });
+    }
+  });
+
+  app.post('/api/project-manager/update-task-status', async (req, res) => {
+    try {
+      const { taskId, status, notes } = req.body;
+      
+      if (!taskId || !status) {
+        return res.status(400).json({ message: 'Task ID and status are required' });
+      }
+      
+      await projectManagerService.updateTaskStatus(taskId, status, notes);
+      res.json({ message: 'Task status updated successfully' });
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      res.status(500).json({ message: 'Failed to update task status' });
+    }
+  });
+
+  app.post('/api/project-manager/review-task', async (req, res) => {
+    try {
+      const { taskId, agentId, deliverables } = req.body;
+      
+      if (!taskId || !agentId || !deliverables) {
+        return res.status(400).json({ message: 'Task ID, agent ID, and deliverables are required' });
+      }
+      
+      const approved = await projectManagerService.reviewTaskCompletion(taskId, agentId, deliverables);
+      res.json({ approved, message: approved ? 'Task approved' : 'Task needs improvements' });
+    } catch (error) {
+      console.error('Error reviewing task:', error);
+      res.status(500).json({ message: 'Failed to review task' });
+    }
+  });
+
+  app.get('/api/project-manager/project-status/:projectId', async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      
+      if (!projectId) {
+        return res.status(400).json({ message: 'Project ID is required' });
+      }
+      
+      const projectStatus = await projectManagerService.getProjectStatus(parseInt(projectId));
+      res.json(projectStatus);
+    } catch (error) {
+      console.error('Error getting project status:', error);
+      res.status(500).json({ message: 'Failed to get project status' });
+    }
+  });
+
+  app.post('/api/project-manager/ensure-agent-memory', async (req, res) => {
+    try {
+      const { agentId, projectId } = req.body;
+      
+      if (!agentId || !projectId) {
+        return res.status(400).json({ message: 'Agent ID and project ID are required' });
+      }
+      
+      await projectManagerService.ensureAgentRoleMemory(agentId, projectId);
+      res.json({ message: 'Agent role memory updated successfully' });
+    } catch (error) {
+      console.error('Error ensuring agent memory:', error);
+      res.status(500).json({ message: 'Failed to ensure agent memory' });
+    }
+  });
+
+  app.post('/api/project-manager/refresh-all-agents', async (req, res) => {
+    try {
+      const { projectId } = req.body;
+      
+      if (!projectId) {
+        return res.status(400).json({ message: 'Project ID is required' });
+      }
+      
+      const agents = await storage.getAgents();
+      let refreshedCount = 0;
+      
+      for (const agent of agents) {
+        await projectManagerService.ensureAgentRoleMemory(agent.id, projectId);
+        refreshedCount++;
+      }
+      
+      res.json({ 
+        message: `Refreshed memory for ${refreshedCount} agents`,
+        refreshedAgents: refreshedCount
+      });
+    } catch (error) {
+      console.error('Error refreshing all agents:', error);
+      res.status(500).json({ message: 'Failed to refresh agent memories' });
+    }
+  });
+
   console.log('🚀 Multi-Agent Collaboration System is ready!');
   console.log('📡 WebSocket server initialized for real-time communication');
   console.log('🤖 Access collaboration dashboard at /collaboration');
   console.log('🏠 WeLet AI Agent ready for tenant support');
   console.log('📁 File System API ready for real-time code editing');
+  console.log('🎯 Project Manager Assistant ready for task delegation');
   
   return httpServer;
 }
