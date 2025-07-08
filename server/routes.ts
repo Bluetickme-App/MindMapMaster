@@ -1641,12 +1641,16 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
   app.post('/api/projects/:id/team-conversation', async (req, res) => {
     try {
       const { id } = req.params;
-      const { agentIds } = req.body;
+      const { selectedAgentIds, agentIds } = req.body;
       const currentUserId = 1; // TODO: Get from session
+
+      // Support both parameter names for compatibility
+      const agentIdList = selectedAgentIds || agentIds || [];
+      console.log('Creating team conversation with agent IDs:', agentIdList);
 
       const { createTeamConversation, getAllAgents } = await import('./services/team-agents.js');
       const allAgents = await getAllAgents();
-      const selectedAgents = allAgents.filter(agent => agentIds.includes(agent.id));
+      const selectedAgents = allAgents.filter(agent => agentIdList.includes(agent.id));
       
       const conversationId = await createTeamConversation(
         parseInt(id),
