@@ -114,10 +114,12 @@ export default function WorkspacePage() {
   // Save file mutation
   const saveFile = useMutation({
     mutationFn: async ({ path, content }: { path: string; content: string }) => {
-      return await apiRequest(`/api/workspace/files${path}`, {
+      const response = await fetch(`/api/workspace/files${path}`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
       });
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -188,8 +190,9 @@ export default function WorkspacePage() {
     
     if (node.type === 'file') {
       try {
-        const response = await apiRequest(`/api/workspace/files${node.path}`);
-        setFileContent(response.content);
+        const response = await fetch(`/api/workspace/files${node.path}`);
+        const data = await response.json();
+        setFileContent(data.content);
       } catch (error) {
         console.error('Failed to load file:', error);
         setFileContent('// Failed to load file content');

@@ -13,6 +13,8 @@ import DeployPage from "@/pages/deploy";
 import TestingPage from "@/pages/testing";
 import SettingsPage from "@/pages/settings";
 import WorkspacePage from "@/pages/workspace";
+import TestGenerationPage from "@/pages/test-generation";
+import CreateProjectPage from "@/pages/create-project";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -28,6 +30,8 @@ function Router() {
       <Route path="/testing" component={TestingPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/workspace" component={WorkspacePage} />
+      <Route path="/test-generation" component={TestGenerationPage} />
+      <Route path="/create-project" component={CreateProjectPage} />
       <Route component={NotFound} />
     </Switch>
   );

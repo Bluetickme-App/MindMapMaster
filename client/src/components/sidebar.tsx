@@ -12,13 +12,17 @@ import {
   FlaskConical,
   Settings,
   Code,
-  Monitor
+  Monitor,
+  TestTube,
+  Plus
 } from "lucide-react";
 
 const navigationItems = [
   { href: "/", icon: Home, label: "Dashboard" },
+  { href: "/create-project", icon: Plus, label: "Create Project" },
   { href: "/workspace", icon: Monitor, label: "Workspace" },
   { href: "/generate", icon: Wand2, label: "Code Generation" },
+  { href: "/test-generation", icon: TestTube, label: "Test Generation" },
   { href: "/debug", icon: Bug, label: "Debug Assistant" },
   { href: "/github", icon: Github, label: "GitHub Integration" },
   { href: "/docs", icon: Book, label: "Documentation" },

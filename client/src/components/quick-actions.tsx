@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wand2, Bug, Github, Rocket, Users } from "lucide-react";
+import { Wand2, Bug, Github, Rocket, Users, Plus } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function QuickActions() {
@@ -7,10 +7,19 @@ export default function QuickActions() {
 
   const actions = [
     {
+      title: "Create Project",
+      description: "Start a new project with AI",
+      icon: Plus,
+      color: "blue-500",
+      onClick: () => {
+        setLocation('/create-project');
+      },
+    },
+    {
       title: "Multi-Agent Collaboration",
       description: "AI teams working together",
       icon: Users,
-      color: "blue-500",
+      color: "purple-500",
       onClick: () => {
         setLocation('/collaboration');
       },
@@ -21,8 +30,7 @@ export default function QuickActions() {
       icon: Wand2,
       color: "primary",
       onClick: () => {
-        // TODO: Navigate to code generation section
-        document.getElementById('code-generation')?.scrollIntoView({ behavior: 'smooth' });
+        setLocation('/generate');
       },
     },
     {
@@ -31,8 +39,7 @@ export default function QuickActions() {
       icon: Bug,
       color: "accent",
       onClick: () => {
-        // TODO: Navigate to debug section
-        console.log("Debug code clicked");
+        setLocation('/debug');
       },
     },
     {
@@ -41,8 +48,7 @@ export default function QuickActions() {
       icon: Github,
       color: "orange-500",
       onClick: () => {
-        // TODO: Navigate to GitHub section
-        document.getElementById('github-integration')?.scrollIntoView({ behavior: 'smooth' });
+        setLocation('/github');
       },
     },
     {
@@ -51,8 +57,7 @@ export default function QuickActions() {
       icon: Rocket,
       color: "purple-500",
       onClick: () => {
-        // TODO: Navigate to deployment section
-        console.log("Deploy clicked");
+        setLocation('/deploy');
       },
     },
   ];

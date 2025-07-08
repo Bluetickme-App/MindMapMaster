@@ -8,6 +8,7 @@ import ApiTestingConsole from "@/components/api-testing-console";
 import GitHubIntegration from "@/components/github-integration";
 import { Button } from "@/components/ui/button";
 import { Bell, Plus } from "lucide-react";
+import { Link } from 'wouter';
 
 export default function Dashboard() {
   const { data: user } = useQuery({
@@ -27,10 +28,12 @@ export default function Dashboard() {
               <p className="text-sm text-slate-400">Manage your projects and AI-powered development workflow</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Button className="bg-primary hover:bg-primary/90 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                New Project
-              </Button>
+              <Link href="/create-project">
+                <Button className="bg-primary hover:bg-primary/90 text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Project
+                </Button>
+              </Link>
               <Button variant="outline" className="bg-slate-700 hover:bg-slate-600 text-slate-100 border-slate-600">
                 <Bell className="w-4 h-4 mr-2" />
                 <span className="bg-accent text-background text-xs px-2 py-1 rounded-full ml-1">3</span>

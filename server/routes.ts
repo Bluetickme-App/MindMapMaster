@@ -220,9 +220,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User routes
   app.get("/api/user", async (req, res) => {
     try {
-      const user = await storage.getUser(currentUserId);
+      let user = await storage.getUser(currentUserId);
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        // Create user if not exists
+        user = await storage.createUser({
+          username: 'developer',
+          email: 'developer@codecraft.ai',
+          name: 'CodeCraft Developer'
+        });
       }
       res.json(user);
     } catch (error) {
@@ -267,7 +272,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Settings endpoints
   app.get('/api/settings/api-keys/status', async (req, res) => {
     try {
-      const user = await storage.getUser(currentUserId);
+      let user = await storage.getUser(currentUserId);
+      if (!user) {
+        // Create user if not exists
+        user = await storage.createUser({
+          username: 'developer',
+          email: 'developer@codecraft.ai',
+          name: 'CodeCraft Developer'
+        });
+      }
+      
       const apiKeyStatus = [
         {
           provider: 'openai',
@@ -306,12 +320,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { openaiApiKey, anthropicApiKey, geminiApiKey, githubToken } = req.body;
       
-      const user = await storage.getUser(currentUserId);
+      let user = await storage.getUser(currentUserId);
       if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        // Create user if not exists
+        user = await storage.createUser({
+          username: 'developer',
+          email: 'developer@codecraft.ai',
+          name: 'CodeCraft Developer'
+        });
       }
 
-      const updatedUser = await storage.updateUser(currentUserId, {
+      const updatedUser = await storage.updateUser(user.id, {
         openaiApiKey: openaiApiKey || user.openaiApiKey,
         githubToken: githubToken || user.githubToken
       });
@@ -638,6 +657,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating secrets:', error);
       res.status(500).json({ message: 'Failed to update secrets' });
+    }
+  });
+
+  // Project creation and management endpoints
+  app.post('/api/projects/generate', async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ message: 'Prompt is required' });
+      }
+
+      // Mock AI-generated project creation
+      const projectName = prompt.split(' ').slice(0, 3).join(' ') + ' App';
+      const languages = ['javascript', 'typescript', 'python', 'html'];
+      const frameworks = ['react', 'vue', 'angular', 'vanilla'];
+      
+      const project = await storage.createProject({
+        userId: currentUserId,
+        name: projectName,
+        description: `AI-generated project: ${prompt}`,
+        language: languages[Math.floor(Math.random() * languages.length)],
+        framework: frameworks[Math.floor(Math.random() * frameworks.length)],
+        status: 'active',
+        isPublic: false
+      });
+
+      res.json(project);
+    } catch (error) {
+      console.error('Error generating project:', error);
+      res.status(500).json({ message: 'Failed to generate project' });
+    }
+  });
+
+  app.post('/api/projects/import/github', async (req, res) => {
+    try {
+      const { url } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ message: 'GitHub URL is required' });
+      }
+
+      // Extract repo info from GitHub URL
+      const urlParts = url.replace('https://github.com/', '').split('/');
+      if (urlParts.length < 2) {
+        return res.status(400).json({ message: 'Invalid GitHub URL' });
+      }
+
+      const [owner, repo] = urlParts;
+      const repoName = repo.replace('.git', '');
+
+      // Mock GitHub import - in production, this would clone the actual repo
+      const project = await storage.createProject({
+        userId: currentUserId,
+        name: repoName,
+        description: `Imported from GitHub: ${owner}/${repoName}`,
+        language: 'javascript', // Would be detected from repo
+        framework: 'react', // Would be detected from repo
+        status: 'active',
+        isPublic: true,
+        githubUrl: url
+      });
+
+      res.json(project);
+    } catch (error) {
+      console.error('Error importing from GitHub:', error);
+      res.status(500).json({ message: 'Failed to import from GitHub' });
+    }
+  });
+
+  app.get('/api/projects/:id/deploy', async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const project = await storage.getProject(parseInt(id));
+      if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
+
+      // Mock deployment - in production, this would deploy to actual hosting
+      const deployUrl = `https://${project.name.toLowerCase().replace(/\s+/g, '-')}.codecraft.app`;
+      
+      const updatedProject = await storage.updateProject(parseInt(id), {
+        deployUrl,
+        status: 'completed'
+      });
+
+      res.json({ 
+        message: 'Project deployed successfully',
+        deployUrl,
+        project: updatedProject
+      });
+    } catch (error) {
+      console.error('Error deploying project:', error);
+      res.status(500).json({ message: 'Failed to deploy project' });
     }
   });
 
