@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { storage } from "../storage";
 import type { Agent, Message, Conversation, AgentResponse } from "@shared/schema";
+import { agentMemoryService } from "./agent-memory-service";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
@@ -128,7 +129,7 @@ Always respond in JSON format:
     }
   }
 
-  // Core agent response generation
+  // Core agent response generation with memory integration
   async generateAgentResponse(
     agentId: number, 
     userMessage: string, 
@@ -145,6 +146,11 @@ Always respond in JSON format:
     this.agentBusyStatus.set(agentId, true);
     await storage.updateAgentStatus(agentId, "busy");
 
+    // Get agent's memory and project context
+    const projectId = context.conversation.projectId;
+    const agentMemories = await agentMemoryService.retrieveMemories(agentId, projectId);
+    const projectMemory = projectId ? await agentMemoryService.getProjectContext(agentId, projectId) : null;
+
     try {
       // Get agent's knowledge and context
       const agentKnowledge = await storage.getAgentKnowledgeByAgent(agentId);
@@ -152,8 +158,8 @@ Always respond in JSON format:
         .filter(k => this.isRelevantToContext(k.content, userMessage))
         .slice(0, 5);
 
-      // Build context-aware prompt
-      const contextPrompt = this.buildContextPrompt(agent, context, relevantKnowledge);
+      // Build context-aware prompt with memory
+      const contextPrompt = this.buildContextPrompt(agent, context, relevantKnowledge, agentMemories, projectMemory);
       
       const aiProvider = agent.aiProvider || 'openai';
       console.log(`[Agent ${agentId}] Using ${aiProvider} provider for ${agent.name}`);
@@ -217,6 +223,22 @@ RESPOND IN JSON FORMAT:
       // Store agent's learning from this interaction
       try {
         await this.updateAgentKnowledge(agentId, userMessage, result.content, context);
+        
+        // Store conversation memory
+        await agentMemoryService.storeMemory(
+          agentId,
+          'project_context',
+          `Conversation about: ${userMessage.slice(0, 50)}...`,
+          {
+            userMessage,
+            agentResponse: result.content,
+            context: context.projectContext,
+            timestamp: new Date(),
+            confidence: result.confidence
+          },
+          projectId,
+          Math.min(Math.floor(result.confidence * 10), 10)
+        );
       } catch (error) {
         console.error(`[Agent ${agentId}] Failed to update knowledge:`, error);
       }
@@ -260,23 +282,40 @@ RESPOND IN JSON FORMAT:
     return overlap > 0;
   }
 
-  private buildContextPrompt(agent: Agent, context: AgentContext, knowledge: any[]): string {
+  private buildContextPrompt(agent: Agent, context: AgentContext, knowledge: any[], memories?: any[], projectMemory?: any): string {
     const recentMessages = context.recentMessages.slice(-5);
     const conversationHistory = recentMessages.map(msg => 
       `${msg.senderType === 'user' ? 'User' : 'Agent'}: ${msg.content}`
     ).join('\n');
 
     const knowledgeContext = knowledge.map(k => k.content).join('\n');
+    
+    const memoryContext = memories?.map(m => 
+      `${m.memoryType}: ${m.summary}`
+    ).join('\n') || '';
+
+    const projectContext = projectMemory ? `
+Project Memory:
+- Recent Activities: ${projectMemory.recentActivities?.map((a: any) => a.summary).join(', ') || 'None'}
+- Key Decisions: ${projectMemory.keyDecisions?.map((d: any) => d.summary).join(', ') || 'None'}
+- Collaboration History: ${projectMemory.collaborationHistory?.map((c: any) => c.summary).join(', ') || 'None'}
+    `.trim() : '';
 
     return `
 Project Context: ${context.projectContext || 'General development project'}
+${projectContext}
+
 Recent Conversation:
 ${conversationHistory}
 
 Your Knowledge:
 ${knowledgeContext}
 
+Your Memory:
+${memoryContext}
+
 As ${agent.name}, a ${agent.specialization} specialist, provide helpful and accurate responses.
+Remember previous interactions and build on past conversations.
     `.trim();
   }
 

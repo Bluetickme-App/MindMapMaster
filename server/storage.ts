@@ -1,6 +1,6 @@
 import { 
   users, projects, codeGenerations, apiTests, githubRepositories,
-  agents, conversations, messages, agentSessions, agentKnowledge,
+  agents, conversations, messages, agentSessions, agentKnowledge, agentMemory,
   collaborativeDocuments, designAssets, workflowTasks,
   type User, type InsertUser, type Project, type InsertProject,
   type CodeGeneration, type InsertCodeGeneration, type ApiTest, type InsertApiTest,
@@ -87,6 +87,9 @@ export interface IStorage {
   searchAgentKnowledge(query: string, agentId?: number): Promise<AgentKnowledge[]>;
   createAgentKnowledge(knowledge: InsertAgentKnowledge): Promise<AgentKnowledge>;
   updateAgentKnowledge(id: number, knowledge: Partial<InsertAgentKnowledge>): Promise<AgentKnowledge>;
+
+  // Agent Memory operations
+  createAgentMemory(memory: { agentId: number; projectId?: number | null; memoryType: string; summary: string; details: any; importance?: number; }): Promise<any>;
 
   // Collaborative Document operations
   getCollaborativeDocument(id: number): Promise<CollaborativeDocument | undefined>;
@@ -467,6 +470,31 @@ export class DatabaseStorage implements IStorage {
       .where(eq(agentKnowledge.id, id))
       .returning();
     return knowledge;
+  }
+
+  // Agent Memory operations
+  async createAgentMemory(memory: { 
+    agentId: number; 
+    projectId?: number | null; 
+    memoryType: string; 
+    summary: string; 
+    details: any; 
+    importance?: number; 
+  }): Promise<any> {
+    const [memoryRecord] = await db
+      .insert(agentMemory)
+      .values({
+        agentId: memory.agentId,
+        projectId: memory.projectId || null,
+        memoryType: memory.memoryType,
+        summary: memory.summary,
+        details: memory.details,
+        importance: memory.importance || 5,
+        lastAccessed: new Date(),
+        createdAt: new Date(),
+      })
+      .returning();
+    return memoryRecord;
   }
 
   // Collaborative Document operations
@@ -1232,6 +1260,30 @@ Your communication style is detailed, constructive, and educational, always expl
     const updatedKnowledge = { ...knowledge, ...updateData };
     this.agentKnowledge.set(id, updatedKnowledge);
     return updatedKnowledge;
+  }
+
+  // Agent Memory operations
+  async createAgentMemory(memory: { 
+    agentId: number; 
+    projectId?: number | null; 
+    memoryType: string; 
+    summary: string; 
+    details: any; 
+    importance?: number; 
+  }): Promise<any> {
+    // For in-memory storage, we'll just return a mock memory object
+    // In a real implementation, this would be stored in a persistent store
+    return {
+      id: Date.now(),
+      agentId: memory.agentId,
+      projectId: memory.projectId || null,
+      memoryType: memory.memoryType,
+      summary: memory.summary,
+      details: memory.details,
+      importance: memory.importance || 5,
+      lastAccessed: new Date(),
+      createdAt: new Date(),
+    };
   }
 
   // Collaborative Document operations

@@ -109,6 +109,9 @@ export const agents = pgTable("agents", {
   experienceLevel: text("experience_level").notNull().default("senior"), // junior, mid, senior, expert
   languages: text("languages").array().notNull().default([]), // programming languages
   frameworks: text("frameworks").array().notNull().default([]), // frameworks/tools
+  assistantId: text("assistant_id"), // OpenAI Assistant ID for persistent memory
+  threadId: text("thread_id"), // OpenAI Thread ID for this agent's main thread
+  projectMemory: jsonb("project_memory"), // Project-specific memory and context
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -161,6 +164,49 @@ export const agentKnowledge = pgTable("agent_knowledge", {
   embedding: text("embedding"), // for vector search
   relevanceScore: integer("relevance_score").default(0),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Agent Memory System - tracks long-term memory for each agent
+export const agentMemory = pgTable("agent_memory", {
+  id: serial("id").primaryKey(),
+  agentId: integer("agent_id").notNull(),
+  projectId: integer("project_id"), // null for general memory
+  memoryType: text("memory_type").notNull(), // project_context, user_preference, code_pattern, decision_history
+  summary: text("summary").notNull(), // brief description of memory
+  details: jsonb("details").notNull(), // detailed memory content
+  importance: integer("importance").default(5), // 1-10 importance score
+  lastAccessed: timestamp("last_accessed").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Agent Collaboration History - tracks how agents work together
+export const agentCollaborations = pgTable("agent_collaborations", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull(), // unique session identifier
+  projectId: integer("project_id"),
+  participantAgents: integer("participant_agents").array().notNull(), // array of agent IDs
+  objective: text("objective").notNull(), // what they're working on
+  phase: text("phase").notNull().default("planning"), // planning, implementation, review, completed
+  decisions: jsonb("decisions").default('[]'), // array of decisions made
+  outcomes: jsonb("outcomes").default('[]'), // array of outcomes
+  startTime: timestamp("start_time").defaultNow(),
+  endTime: timestamp("end_time"),
+  status: text("status").notNull().default("active"), // active, paused, completed
+});
+
+// Agent Communication Log - tracks agent-to-agent communication
+export const agentCommunications = pgTable("agent_communications", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull(),
+  fromAgentId: integer("from_agent_id").notNull(),
+  toAgentId: integer("to_agent_id"), // null for broadcast messages
+  messageType: text("message_type").notNull(), // suggestion, question, decision, update
+  content: text("content").notNull(),
+  context: jsonb("context"), // additional context data
+  priority: integer("priority").default(5), // 1-10 priority level
+  isProcessed: boolean("is_processed").default(false),
+  responseRequired: boolean("response_required").default(false),
+  timestamp: timestamp("timestamp").defaultNow(),
 });
 
 export const collaborativeDocuments = pgTable("collaborative_documents", {
