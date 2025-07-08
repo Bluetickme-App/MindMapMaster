@@ -329,6 +329,12 @@ Changelog:
     • Sam AI uses OpenAI
   - Collaboration sessions now start successfully with selected agents
   - System significantly reduces OpenAI token usage by routing to Claude/Gemini
+- July 08, 2025. Fixed agent response JSON parsing issue:
+  - Discovered agents were returning responses wrapped in JSON code blocks (```json...```)
+  - Updated agent-orchestration.ts to properly parse JSON responses with code block stripping
+  - Fixed apiRequest function to return JSON data instead of Response objects
+  - Agents now correctly process and respond to messages in WebSocket conversations
+  - Multi-AI provider system verified working with OpenAI, Claude, and Gemini integration
 
 ## User Preferences
 

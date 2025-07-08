@@ -93,8 +93,16 @@ RESPOND IN JSON FORMAT:
 
         let result;
         try {
+          // Check if the response is wrapped in code blocks
+          let cleanContent = aiResponse.content;
+          if (cleanContent.startsWith('```json') && cleanContent.endsWith('```')) {
+            cleanContent = cleanContent.slice(7, -3).trim();
+          } else if (cleanContent.startsWith('```') && cleanContent.endsWith('```')) {
+            cleanContent = cleanContent.slice(3, -3).trim();
+          }
+          
           // Try to parse as JSON first
-          result = JSON.parse(aiResponse.content);
+          result = JSON.parse(cleanContent);
         } catch (e) {
           console.log(`[Agent ${agentId}] Failed to parse JSON, using fallback response`);
           // Fallback: create structured response from raw content
