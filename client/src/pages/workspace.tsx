@@ -413,12 +413,16 @@ export default function WorkspacePage() {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => setShowTeamAgents(!showTeamAgents)}
+              onClick={() => window.location.href = '/team-agents'}
             >
               <Users className="w-4 h-4 mr-2" />
               Team Agents
             </Button>
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.href = '/settings'}
+            >
               <Settings className="w-4 h-4 mr-2" />
               Configure
             </Button>

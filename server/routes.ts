@@ -563,7 +563,7 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
               prompt: `Project Builder: ${projectName} - ${description}`,
               language: language,
               framework: framework,
-              generatedCode: generatedCode,
+              code: generatedCode,
               explanation: explanation,
               createdAt: new Date()
             });
