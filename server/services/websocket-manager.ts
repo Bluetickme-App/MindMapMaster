@@ -195,49 +195,39 @@ export class WebSocketManager {
   private async triggerAgentResponses(conversation: any, userMessage: any, content: string): Promise<void> {
     if (!conversation.participants) return;
 
-    // Get agents in the conversation
-    const agentIds = conversation.participants.filter((id: number) => id > 1000); // Assuming agent IDs > 1000
+    // Get agents in the conversation - agents should have IDs in the agents table
+    const allAgents = await storage.getAllAgents();
+    const agentIds = conversation.participants.filter((id: number) => 
+      allAgents.some(agent => agent.id === id)
+    );
     
     for (const agentId of agentIds) {
       // Check if agent should respond (not every message needs all agents to respond)
       if (await this.shouldAgentRespond(agentId, content, conversation)) {
+        console.log(`Agent ${agentId} will respond to message: "${content}"`);
         this.queueAgentResponse(conversation.id, userMessage.id, agentId);
       }
     }
 
     // Process agent response queue
-    this.processAgentResponseQueue(conversation.id);
+    setTimeout(() => {
+      this.processAgentResponseQueue(conversation.id);
+    }, 500); // Small delay to make it feel more natural
   }
 
   private async shouldAgentRespond(agentId: number, content: string, conversation: any): Promise<boolean> {
     const agent = await storage.getAgent(agentId);
     if (!agent) return false;
 
-    // Simple heuristic: respond if mentioned by name or type, or if it's a question
+    // For now, make agents respond more frequently to test the system
+    // Later we can make this more sophisticated
     const mentionedByName = content.toLowerCase().includes(agent.name.toLowerCase());
     const mentionedByRole = content.toLowerCase().includes(agent.type.replace('_', ' '));
     const isQuestion = content.includes('?');
-    const isCodeRelated = content.toLowerCase().includes('code') || content.toLowerCase().includes('implement');
-    const isDesignRelated = content.toLowerCase().includes('design') || content.toLowerCase().includes('ui');
-    const isDeploymentRelated = content.toLowerCase().includes('deploy') || content.toLowerCase().includes('infrastructure');
+    const isGeneralMessage = content.length > 10; // Any substantial message
 
-    // Agent-specific response logic
-    switch (agent.type) {
-      case 'senior_developer':
-        return mentionedByName || mentionedByRole || isCodeRelated || isQuestion;
-      case 'designer':
-        return mentionedByName || mentionedByRole || isDesignRelated;
-      case 'devops':
-        return mentionedByName || mentionedByRole || isDeploymentRelated;
-      case 'junior_developer':
-        return mentionedByName || (isCodeRelated && Math.random() > 0.7); // 30% chance for junior dev
-      case 'product_manager':
-        return mentionedByName || mentionedByRole || content.toLowerCase().includes('requirement');
-      case 'code_reviewer':
-        return mentionedByName || content.toLowerCase().includes('review');
-      default:
-        return mentionedByName || mentionedByRole;
-    }
+    // Simple logic: respond if mentioned, is a question, or randomly to general messages
+    return mentionedByName || mentionedByRole || isQuestion || (isGeneralMessage && Math.random() > 0.4);
   }
 
   private queueAgentResponse(conversationId: number, messageId: number, agentId: number): void {
@@ -260,7 +250,12 @@ export class WebSocketManager {
       const recentMessages = await storage.getMessagesByConversation(conversationId);
       const userMessage = recentMessages.find(m => m.id === messageId);
       
-      if (!conversation || !userMessage) return;
+      if (!conversation || !userMessage) {
+        console.error(`No conversation or user message found for agent ${agentId} in conversation ${conversationId}`);
+        return;
+      }
+
+      console.log(`Agent ${agentId} is responding to: "${userMessage.content}"`);
 
       // Send typing indicator
       this.broadcastToConversation(conversationId, {
@@ -272,15 +267,40 @@ export class WebSocketManager {
         timestamp: new Date()
       });
 
-      // Generate agent response
-      const response = await agentOrchestrationService.generateAgentResponse(
-        agentId,
-        userMessage.content,
-        {
-          conversation,
-          recentMessages: recentMessages.slice(-10),
-        }
-      );
+      // Generate agent response with fallback
+      let response;
+      try {
+        response = await agentOrchestrationService.generateAgentResponse(
+          agentId,
+          userMessage.content,
+          {
+            conversation,
+            recentMessages: recentMessages.slice(-10),
+          }
+        );
+      } catch (error) {
+        console.error(`Error generating agent response for agent ${agentId}:`, error);
+        // Fallback response
+        const agent = await storage.getAgent(agentId);
+        response = {
+          agentId,
+          content: `Hi! I'm ${agent?.name || 'an AI agent'} and I'm ready to help with your ${agent?.specialization || 'request'}. What would you like to work on?`,
+          messageType: 'text',
+          metadata: {},
+          confidence: 0.7,
+          reasoning: 'Fallback response due to AI service error'
+        };
+      }
+
+      // Stop typing indicator
+      this.broadcastToConversation(conversationId, {
+        type: 'typing_indicator',
+        conversationId,
+        senderId: agentId,
+        senderType: 'agent',
+        content: 'stopped',
+        timestamp: new Date()
+      });
 
       // Store and broadcast agent response
       const storedMessage = await storage.createMessage({
@@ -291,6 +311,8 @@ export class WebSocketManager {
         messageType: response.messageType,
         metadata: response.metadata
       });
+
+      console.log(`Agent ${agentId} responded: "${response.content}"`);
 
       this.broadcastToConversation(conversationId, {
         type: 'agent_message',

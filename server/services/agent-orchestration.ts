@@ -61,7 +61,17 @@ export class AgentOrchestrationService {
       const response = await openai.chat.completions.create({
         model: agent.aiModel || "gpt-4o",
         messages: [
-          { role: "system", content: agent.systemPrompt },
+          { 
+            role: "system", 
+            content: `${agent.systemPrompt}\n\nIMPORTANT: You must respond in JSON format with the following structure:
+            {
+              "content": "your response message here",
+              "messageType": "text",
+              "metadata": {},
+              "confidence": 0.8,
+              "reasoning": "brief explanation of your response"
+            }`
+          },
           { role: "system", content: contextPrompt },
           { role: "user", content: userMessage }
         ],
@@ -69,7 +79,19 @@ export class AgentOrchestrationService {
         temperature: 0.7,
       });
 
-      const result = JSON.parse(response.choices[0].message.content || '{}');
+      let result;
+      try {
+        result = JSON.parse(response.choices[0].message.content || '{}');
+      } catch (e) {
+        // Fallback if JSON parsing fails
+        result = {
+          content: response.choices[0].message.content || "I'm thinking about your request...",
+          messageType: "text",
+          metadata: {},
+          confidence: 0.7,
+          reasoning: "Standard response"
+        };
+      }
       
       // Store agent's learning from this interaction
       await this.updateAgentKnowledge(agentId, userMessage, result.content, context);
@@ -469,10 +491,13 @@ export class AgentOrchestrationService {
     Relevant knowledge: ${knowledge.map(k => k.content).join('; ')}
     
     Respond as ${agent.name} with your expertise in ${agent.capabilities?.join(', ')}.
-    Provide your response in JSON format: 
+    Be helpful, concise, and provide actionable insights related to your specialization.
+    Stay in character and provide value to the conversation.
+    
+    Response format:
     {
       "content": "your response",
-      "messageType": "text|code|image",
+      "messageType": "text",
       "metadata": {},
       "confidence": 0.8,
       "reasoning": "why you provided this response"
