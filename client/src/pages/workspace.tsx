@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, 
   Users, 
@@ -47,13 +52,15 @@ interface ConsoleMessage {
 }
 
 interface Agent {
-  id: string;
+  id: number;
   name: string;
-  role: string;
-  avatar: string;
-  status: 'online' | 'offline' | 'busy';
-  provider: 'openai' | 'anthropic' | 'gemini';
-  level: 'expert' | 'senior' | 'junior';
+  type: string;
+  description: string;
+  specialization: string;
+  capabilities: string[];
+  status: 'active' | 'busy' | 'offline';
+  aiProvider: 'openai' | 'claude' | 'gemini';
+  experienceLevel: 'expert' | 'senior' | 'junior';
 }
 
 export default function WorkspacePage() {
@@ -65,6 +72,11 @@ export default function WorkspacePage() {
   const [messages, setMessages] = useState<ConsoleMessage[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['src', 'components']));
+  const [conversationId, setConversationId] = useState<number | null>(null);
+  const [agentCheckboxes, setAgentCheckboxes] = useState<Record<number, boolean>>({});
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const projectsQuery = useQuery({
     queryKey: ['/api/projects'],
@@ -79,6 +91,39 @@ export default function WorkspacePage() {
     queryFn: async () => {
       const response = await fetch('/api/agents');
       return response.json();
+    },
+  });
+
+  const createConversationMutation = useMutation({
+    mutationFn: async (data: { agentIds: number[] }) => {
+      if (!selectedProject?.id) {
+        throw new Error('No project selected');
+      }
+      return apiRequest('/api/projects/' + selectedProject.id + '/team-conversation', {
+        method: 'POST',
+        body: JSON.stringify({ agentIds: data.agentIds }),
+      });
+    },
+    onSuccess: (data) => {
+      setConversationId(data.conversationId);
+      setMessages([{
+        id: Date.now().toString(),
+        type: 'success',
+        message: `Team conversation created with ${selectedAgents.length} agents`,
+        timestamp: new Date().toLocaleTimeString()
+      }]);
+      setShowAgentSelection(false);
+      toast({
+        title: "Success",
+        description: "Team conversation created successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create team conversation",
+        variant: "destructive",
+      });
     },
   });
 
@@ -160,6 +205,37 @@ export default function WorkspacePage() {
       }
       return newSet;
     });
+  };
+
+
+
+  const handleAgentToggle = (agentId: number, checked: boolean) => {
+    setAgentCheckboxes(prev => ({
+      ...prev,
+      [agentId]: checked
+    }));
+  };
+
+  const handleCreateTeamConversation = () => {
+    const selectedAgentIds = Object.entries(agentCheckboxes)
+      .filter(([_, checked]) => checked)
+      .map(([id]) => parseInt(id));
+    
+    if (selectedAgentIds.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one agent",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedAgentObjects = agentsQuery.data?.filter((agent: Agent) => 
+      selectedAgentIds.includes(agent.id)
+    ) || [];
+    
+    setSelectedAgents(selectedAgentObjects);
+    createConversationMutation.mutate({ agentIds: selectedAgentIds });
   };
 
   const getFileIcon = (node: FileNode) => {
@@ -319,14 +395,83 @@ export default function WorkspacePage() {
                   <Badge variant="outline" className="text-xs">
                     {selectedAgents.length} agents
                   </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setLocation('/team-agents')}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Select Agents
-                  </Button>
+                  <Dialog open={showAgentSelection} onOpenChange={setShowAgentSelection}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Select Agents
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Select AI Agents for Team Chat</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        {agentsQuery.data?.map((agent: Agent) => (
+                          <div
+                            key={agent.id}
+                            className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/50"
+                          >
+                            <Checkbox
+                              id={`agent-${agent.id}`}
+                              checked={agentCheckboxes[agent.id] || false}
+                              onCheckedChange={(checked) => handleAgentToggle(agent.id, checked as boolean)}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <Avatar className="w-8 h-8">
+                                  <AvatarFallback className="bg-primary/10">
+                                    {agent.name.charAt(0)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium">{agent.name}</p>
+                                  <div className="flex items-center space-x-2">
+                                    <Badge variant="outline" className="text-xs">
+                                      {agent.specialization}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs">
+                                      {agent.aiProvider}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs">
+                                      {agent.experienceLevel}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                {agent.description || `${agent.specialization} specialist`}
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {agent.capabilities?.map((capability, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {capability}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowAgentSelection(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleCreateTeamConversation}
+                          disabled={createConversationMutation.isPending}
+                        >
+                          {createConversationMutation.isPending ? 'Creating...' : 'Create Team Chat'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </CardHeader>

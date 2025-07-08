@@ -304,6 +304,14 @@ Changelog:
   - Integrated agent selection and multi-agent conversation capabilities
   - Added live preview iframe, terminal console, and browser tabs
   - Fixed JSX compilation errors and component structure issues
+- July 08, 2025. Implemented embedded agent selection in workspace:
+  - Fixed agent selection to stay within workspace (no more unwanted page redirects)
+  - Created embedded agent selection dialog with checkboxes and full agent profiles
+  - Added direct team conversation creation without leaving workspace
+  - Fixed collaboration session database overflow errors (PostgreSQL integer range)
+  - Successfully integrated 8 AI specialists with different providers (OpenAI, Claude, Gemini)
+  - Team conversation creation now working with proper API endpoints and responses
+  - Users can now select agents, create team chats, and collaborate all within workspace interface
 
 ## User Preferences
 
