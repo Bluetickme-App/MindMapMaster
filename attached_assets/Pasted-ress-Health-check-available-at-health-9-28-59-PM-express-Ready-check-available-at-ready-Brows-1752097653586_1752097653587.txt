@@ -1,0 +1,37 @@
+ress] Health check available at /health
+9:28:59 PM [express] Ready check available at /ready
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+9:29:11 PM [express] GET /api/team-agents 200 in 621ms :: [{"id":4,"type":"ai_specialist","name":"Sa…
+9:29:11 PM [express] GET /api/team-agents 304 in 2539ms :: [{"id":4,"type":"ai_specialist","name":"S…
+9:40:35 PM [express] POST /api/projects 200 in 563ms :: {"id":19,"userId":1,"name":"calculaotr app\n…
+[Replit AI] Generating roadmap for: calculaotr app
+
+Error generating roadmap: SyntaxError: Unexpected token '`', "```json
+[
+"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at <anonymous> (/home/runner/workspace/server/api/replit-ai-enhanced.ts:215:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+9:40:50 PM [express] POST /api/replit-ai/roadmap/generate 500 in 14691ms :: {"message":"Failed to ge…
+9:41:27 PM [express] POST /api/projects 200 in 1275ms :: {"id":20,"userId":1,"name":"calculaotr app\…
+[Replit AI] Generating roadmap for: calculaotr app
+
+Error generating roadmap: SyntaxError: Unexpected token '`', "```json
+[
+"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at <anonymous> (/home/runner/workspace/server/api/replit-ai-enhanced.ts:215:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+9:41:39 PM [express] POST /api/replit-ai/roadmap/generate 500 in 11612ms :: {"message":"Failed to ge…
+9:46:30 PM [express] POST /api/projects 200 in 575ms :: {"id":21,"userId":1,"name":"calculaotr app\n…
+[Replit AI] Generating roadmap for: calculaotr app
+
+Error generating roadmap: SyntaxError: Unexpected token '`', "```json
+[
+"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at <anonymous> (/home/runner/workspace/server/api/replit-ai-enhanced.ts:215:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+9:46:41 PM [express] POST /api/replit-ai/roadmap/generate 500 in 10571ms :: {"message":"Failed to ge…

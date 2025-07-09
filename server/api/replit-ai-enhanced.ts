@@ -212,7 +212,19 @@ router.post('/roadmap/generate', async (req, res) => {
       'openai'
     );
     
-    const roadmap = JSON.parse(response.content);
+    // Clean the response content to handle markdown code blocks
+    let cleanContent = response.content.trim();
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.substring(7); // Remove ```json
+    }
+    if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.substring(3); // Remove ```
+    }
+    if (cleanContent.endsWith('```')) {
+      cleanContent = cleanContent.substring(0, cleanContent.length - 3); // Remove trailing ```
+    }
+    
+    const roadmap = JSON.parse(cleanContent.trim());
     
     res.json({ 
       success: true, 
