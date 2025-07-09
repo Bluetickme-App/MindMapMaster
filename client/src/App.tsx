@@ -54,7 +54,7 @@ function Router() {
       <Route path="/extensions" component={ExtensionsPage} />
       <Route path="/replit-ai-enhanced" component={ReplitAIEnhanced} />
       <Route path="/replit-simple" component={ReplitSimple} />
-      <Route path="/agent-roadmap" component={AgentRoadmapFlow} />
+      <Route path="/agent-roadmap-flow" component={AgentRoadmapFlow} />
       <Route component={NotFound} />
     </Switch>
   );
