@@ -590,7 +590,7 @@ export default function ReplitClone() {
                         onClick={() => setShowToolsPanel(!showToolsPanel)}
                         title="Extensions & Tools"
                       >
-                        <Package className="h-4 w-4" />
+                        <Package2 className="h-4 w-4" />
                       </Button>
                       
                       {showToolsPanel && (
