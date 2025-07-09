@@ -20,6 +20,7 @@ import TestGenerationPage from "@/pages/test-generation";
 import CreateProjectPage from "@/pages/create-project";
 import ProjectBuilderPage from "@/pages/project-builder";
 import WeletLandingPage from "@/pages/welet-landing";
+import WeLet from "@/pages/WeLet";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/create-project" component={CreateProjectPage} />
       <Route path="/project-builder" component={ProjectBuilderPage} />
       <Route path="/welet" component={WeletLandingPage} />
+      <Route path="/welet-properties" component={WeLet} />
       <Route component={NotFound} />
     </Switch>
   );

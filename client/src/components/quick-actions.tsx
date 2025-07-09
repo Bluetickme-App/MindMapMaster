@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare } from "lucide-react";
+import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function QuickActions() {
@@ -76,6 +76,15 @@ export default function QuickActions() {
       color: "cyan-500",
       onClick: () => {
         setLocation('/team-discussion');
+      },
+    },
+    {
+      title: "WeLet Properties",
+      description: "Property management platform",
+      icon: Building,
+      color: "emerald-500",
+      onClick: () => {
+        setLocation('/welet-properties');
       },
     },
   ];

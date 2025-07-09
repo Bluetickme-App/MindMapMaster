@@ -1897,6 +1897,22 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     console.error('Failed to load Replit Agent router:', error);
   }
 
+  // WeLet Properties API routes
+  try {
+    const { default: propertiesRouter } = await import('./api/properties.js');
+    app.use('/api/properties', propertiesRouter);
+  } catch (error) {
+    console.error('Failed to load Properties router:', error);
+  }
+
+  // WeLet Properties Seed API routes
+  try {
+    const { default: propertiesSeedRouter } = await import('./api/properties-seed.js');
+    app.use('/api/properties-seed', propertiesSeedRouter);
+  } catch (error) {
+    console.error('Failed to load Properties Seed router:', error);
+  }
+
   // Team agent management endpoints
   
   // Initialize agents in database

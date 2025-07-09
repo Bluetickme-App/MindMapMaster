@@ -256,6 +256,107 @@ export const workflowTasks = pgTable("workflow_tasks", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// WeLet Properties Platform Tables
+export const properties = pgTable("properties", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  price: integer("price").notNull(), // monthly rent in dollars
+  location: text("location").notNull(),
+  bedrooms: integer("bedrooms").notNull(),
+  bathrooms: integer("bathrooms").notNull(),
+  parking: integer("parking").notNull(),
+  size: integer("size").notNull(), // square feet
+  type: text("type").notNull(), // apartment, house, condo, studio
+  status: text("status").notNull().default("available"), // available, occupied, maintenance
+  features: text("features").array().default('{}'), // amenities and features
+  images: text("images").array().default('{}'), // property images
+  virtualTourUrl: text("virtual_tour_url"),
+  landlordId: integer("landlord_id"), // references users table
+  rating: integer("rating").default(5), // 1-5 star rating
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const maintenanceRequests = pgTable("maintenance_requests", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull(),
+  tenantId: integer("tenant_id"), // references users table
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // plumbing, electrical, hvac, appliances, etc.
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  status: text("status").notNull().default("pending"), // pending, in-progress, completed, cancelled
+  assignedTo: text("assigned_to"), // contractor/maintenance person
+  estimatedCost: integer("estimated_cost"),
+  actualCost: integer("actual_cost"),
+  dateCreated: timestamp("date_created").defaultNow(),
+  dateAssigned: timestamp("date_assigned"),
+  dateCompleted: timestamp("date_completed"),
+  images: text("images").array().default('{}'), // photos of the issue
+  notes: text("notes").array().default('{}'), // progress notes
+});
+
+export const propertyTenants = pgTable("property_tenants", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull(),
+  tenantId: integer("tenant_id").notNull(), // references users table
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  monthlyRent: integer("monthly_rent").notNull(),
+  depositAmount: integer("deposit_amount").notNull(),
+  leaseTerms: text("lease_terms"),
+  status: text("status").notNull().default("active"), // active, inactive, terminated
+  emergencyContact: jsonb("emergency_contact"), // emergency contact details
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const propertyApplications = pgTable("property_applications", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull(),
+  applicantId: integer("applicant_id").notNull(), // references users table
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
+  applicationData: jsonb("application_data").notNull(), // application form data
+  creditScore: integer("credit_score"),
+  monthlyIncome: integer("monthly_income"),
+  employmentStatus: text("employment_status"),
+  references: jsonb("references"), // references data
+  notes: text("notes"),
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewedBy: integer("reviewed_by"), // landlord/property manager
+});
+
+export const propertyDocuments = pgTable("property_documents", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull(),
+  tenantId: integer("tenant_id"), // null for property-level documents
+  documentType: text("document_type").notNull(), // lease, inspection, certificate, etc.
+  fileName: text("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  uploadedBy: integer("uploaded_by"), // references users table
+  isActive: boolean("is_active").default(true),
+  expiryDate: timestamp("expiry_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const propertyPayments = pgTable("property_payments", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull(),
+  tenantId: integer("tenant_id").notNull(),
+  amount: integer("amount").notNull(), // amount in cents
+  paymentType: text("payment_type").notNull(), // rent, deposit, fee, etc.
+  paymentMethod: text("payment_method").notNull(), // credit_card, bank_transfer, cash, etc.
+  status: text("status").notNull().default("pending"), // pending, completed, failed, refunded
+  dueDate: timestamp("due_date").notNull(),
+  paidDate: timestamp("paid_date"),
+  transactionId: text("transaction_id"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -327,6 +428,38 @@ export const insertWorkflowTaskSchema = createInsertSchema(workflowTasks).omit({
   createdAt: true,
 });
 
+// WeLet Properties Insert Schemas
+export const insertPropertySchema = createInsertSchema(properties).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMaintenanceRequestSchema = createInsertSchema(maintenanceRequests).omit({
+  id: true,
+  dateCreated: true,
+});
+
+export const insertPropertyTenantSchema = createInsertSchema(propertyTenants).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPropertyApplicationSchema = createInsertSchema(propertyApplications).omit({
+  id: true,
+  submittedAt: true,
+});
+
+export const insertPropertyDocumentSchema = createInsertSchema(propertyDocuments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPropertyPaymentSchema = createInsertSchema(propertyPayments).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -367,6 +500,25 @@ export type InsertDesignAsset = z.infer<typeof insertDesignAssetSchema>;
 
 export type WorkflowTask = typeof workflowTasks.$inferSelect;
 export type InsertWorkflowTask = z.infer<typeof insertWorkflowTaskSchema>;
+
+// WeLet Properties Types
+export type Property = typeof properties.$inferSelect;
+export type InsertProperty = z.infer<typeof insertPropertySchema>;
+
+export type MaintenanceRequest = typeof maintenanceRequests.$inferSelect;
+export type InsertMaintenanceRequest = z.infer<typeof insertMaintenanceRequestSchema>;
+
+export type PropertyTenant = typeof propertyTenants.$inferSelect;
+export type InsertPropertyTenant = z.infer<typeof insertPropertyTenantSchema>;
+
+export type PropertyApplication = typeof propertyApplications.$inferSelect;
+export type InsertPropertyApplication = z.infer<typeof insertPropertyApplicationSchema>;
+
+export type PropertyDocument = typeof propertyDocuments.$inferSelect;
+export type InsertPropertyDocument = z.infer<typeof insertPropertyDocumentSchema>;
+
+export type PropertyPayment = typeof propertyPayments.$inferSelect;
+export type InsertPropertyPayment = z.infer<typeof insertPropertyPaymentSchema>;
 
 // Message Types for Real-time Communication
 export interface WebSocketMessage {
