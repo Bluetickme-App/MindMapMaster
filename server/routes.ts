@@ -3157,7 +3157,7 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
             const codeGenerations = await storage.getCodeGenerationsByProject(project.id);
             if (codeGenerations.length > 0) {
               const latestCode = codeGenerations[0];
-              const language = fileSystemService.getLanguageFromFileName(filePath);
+              const language = fileSystemService.getFileLanguage(filePath);
               return res.json({
                 content: latestCode.code || '',
                 language,
@@ -3336,7 +3336,7 @@ console.log('File: ${filePath}');
       
       // Default behavior - load from filesystem
       const content = await fileSystemService.readFile(filePath);
-      const language = fileSystemService.getLanguageFromFileName(filePath);
+      const language = fileSystemService.getFileLanguage(filePath);
       
       res.json({
         content,
