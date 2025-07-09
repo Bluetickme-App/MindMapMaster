@@ -24,6 +24,7 @@ import WeLet from "@/pages/WeLet";
 import ReplitClone from "@/pages/replit-clone";
 import ExtensionsPage from "@/pages/extensions";
 import ReplitAIEnhanced from "@/pages/replit-ai-enhanced";
+import ReplitSimple from "@/pages/replit-simple";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -51,6 +52,7 @@ function Router() {
       <Route path="/replit-clone" component={ReplitClone} />
       <Route path="/extensions" component={ExtensionsPage} />
       <Route path="/replit-ai-enhanced" component={ReplitAIEnhanced} />
+      <Route path="/replit-simple" component={ReplitSimple} />
       <Route component={NotFound} />
     </Switch>
   );

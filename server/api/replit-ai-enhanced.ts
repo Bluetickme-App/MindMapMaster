@@ -7,7 +7,7 @@ const router = express.Router();
 // Create app from natural language description (Agent)
 router.post('/agent/create-app', async (req, res) => {
   try {
-    const { description, userId = 1 } = req.body;
+    const { description, userId = 1, enhancement = 'ai' } = req.body;
     
     if (!description) {
       return res.status(400).json({ message: 'App description is required' });

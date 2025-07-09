@@ -105,6 +105,15 @@ export default function QuickActions() {
         setLocation('/replit-ai-enhanced');
       },
     },
+    {
+      title: "Create New Repl",
+      description: "Simple project creation",
+      icon: Plus,
+      color: "green-500",
+      onClick: () => {
+        setLocation('/replit-simple');
+      },
+    },
   ];
 
   return (
