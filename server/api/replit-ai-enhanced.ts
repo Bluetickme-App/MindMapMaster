@@ -163,4 +163,99 @@ router.get('/capabilities', async (req, res) => {
   });
 });
 
+// Roadmap generation endpoint
+router.post('/roadmap/generate', async (req, res) => {
+  try {
+    const { description, projectId } = req.body;
+    
+    if (!description) {
+      return res.status(400).json({ message: 'Project description is required' });
+    }
+
+    console.log('[Replit AI] Generating roadmap for:', description);
+    
+    // Generate roadmap with suggested agents
+    const roadmapPrompt = `
+    Create a detailed development roadmap for: "${description}"
+    
+    Generate 5-8 actionable steps that cover:
+    1. Project setup and architecture
+    2. UI/UX design and layout
+    3. Core functionality implementation
+    4. Database and API integration
+    5. Testing and optimization
+    6. Deployment preparation
+    
+    For each step, suggest which type of specialist should work on it from:
+    - Developer (frontend/backend)
+    - Designer (UI/UX)
+    - Database specialist
+    - DevOps engineer
+    - QA/Testing specialist
+    - AI/ML specialist
+    
+    Return as JSON array with this structure:
+    [{
+      "id": "unique-id",
+      "title": "Step Title",
+      "description": "Detailed description of what needs to be done",
+      "suggestedAgents": ["developer", "designer"], // agent types
+      "estimatedTime": "2-3 hours",
+      "status": "pending",
+      "progress": 0
+    }]`;
+
+    const response = await multiAIService.generateResponseWithFallback(
+      roadmapPrompt,
+      'You are an expert project manager creating actionable development roadmaps.',
+      'openai'
+    );
+    
+    const roadmap = JSON.parse(response.content);
+    
+    res.json({ 
+      success: true, 
+      roadmap,
+      projectId 
+    });
+  } catch (error) {
+    console.error('Error generating roadmap:', error);
+    res.status(500).json({ 
+      message: 'Failed to generate roadmap', 
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Execute roadmap with agents
+router.post('/roadmap/execute', async (req, res) => {
+  try {
+    const { projectId, roadmap, assignedAgents } = req.body;
+    
+    console.log('[Replit AI] Starting roadmap execution for project:', projectId);
+    
+    // Start a collaboration session for the project
+    const collaborationSession = await storage.createCollaborationSession({
+      projectId,
+      sessionType: 'roadmap-execution',
+      objective: 'Execute development roadmap',
+      phase: 'planning',
+      participants: Object.values(assignedAgents).flat().map((agent: any) => agent.id),
+      decisions: JSON.stringify({ roadmap, assignedAgents })
+    });
+    
+    res.json({ 
+      success: true,
+      sessionId: collaborationSession.id,
+      message: 'Roadmap execution started'
+    });
+  } catch (error) {
+    console.error('Error executing roadmap:', error);
+    res.status(500).json({ 
+      message: 'Failed to start execution',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;

@@ -25,6 +25,7 @@ import ReplitClone from "@/pages/replit-clone";
 import ExtensionsPage from "@/pages/extensions";
 import ReplitAIEnhanced from "@/pages/replit-ai-enhanced";
 import ReplitSimple from "@/pages/replit-simple";
+import AgentRoadmapFlow from "@/pages/agent-roadmap-flow";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -53,6 +54,7 @@ function Router() {
       <Route path="/extensions" component={ExtensionsPage} />
       <Route path="/replit-ai-enhanced" component={ReplitAIEnhanced} />
       <Route path="/replit-simple" component={ReplitSimple} />
+      <Route path="/agent-roadmap" component={AgentRoadmapFlow} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code, Sparkles } from "lucide-react";
+import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code, Sparkles, Map } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function QuickActions() {
@@ -112,6 +112,15 @@ export default function QuickActions() {
       color: "green-500",
       onClick: () => {
         setLocation('/replit-simple');
+      },
+    },
+    {
+      title: "AI Development Roadmap",
+      description: "AI-powered roadmap & workspace",
+      icon: Map,
+      color: "teal-500",
+      onClick: () => {
+        setLocation('/agent-roadmap-flow');
       },
     },
   ];
