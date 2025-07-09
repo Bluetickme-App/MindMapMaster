@@ -20,7 +20,10 @@ import {
   Save,
   X,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Users,
+  Send,
+  Bot
 } from 'lucide-react';
 import { Editor } from '@monaco-editor/react';
 
@@ -52,8 +55,20 @@ export default function ReplitClone() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [isRunning, setIsRunning] = useState(false);
+  const [selectedAgents, setSelectedAgents] = useState<any[]>([]);
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
   
   const queryClient = useQueryClient();
+
+  // Fetch AI agents
+  const agentsQuery = useQuery({
+    queryKey: ['/api/agents'],
+    queryFn: async () => {
+      const response = await fetch('/api/agents');
+      return response.json();
+    }
+  });
 
   // Fetch file system tree
   const fileSystemQuery = useQuery({
@@ -349,7 +364,7 @@ export default function ReplitClone() {
         <PanelGroup direction="horizontal">
           {/* File Explorer */}
           <Panel defaultSize={25} minSize={20}>
-            <div className="h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+            <div className="h-full bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700">
               <div className="p-3 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-medium text-gray-900 dark:text-white">Files</h2>
@@ -359,6 +374,14 @@ export default function ReplitClone() {
                     </Button>
                     <Button size="sm" variant="ghost" onClick={handleCreateFolder}>
                       <Folder className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => setActiveTab('agents')}
+                      title="Ask AI agents about this code"
+                    >
+                      <Bot className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -380,7 +403,7 @@ export default function ReplitClone() {
 
           {/* Editor Area */}
           <Panel defaultSize={50} minSize={30}>
-            <div className="h-full bg-white dark:bg-gray-800 flex flex-col">
+            <div className="h-full bg-gray-50 dark:bg-gray-900 flex flex-col">
               {/* File Tabs */}
               <div className="flex bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 overflow-x-auto">
                 {openFiles.map((file) => (
@@ -440,9 +463,9 @@ export default function ReplitClone() {
 
           {/* Right Panel */}
           <Panel defaultSize={25} minSize={20}>
-            <div className="h-full bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700">
+            <div className="h-full bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-                <TabsList className="grid w-full grid-cols-3 shrink-0">
+                <TabsList className="grid w-full grid-cols-4 shrink-0">
                   <TabsTrigger value="preview">
                     <Eye className="h-4 w-4 mr-1" />
                     Preview
@@ -454,6 +477,10 @@ export default function ReplitClone() {
                   <TabsTrigger value="browser">
                     <Globe className="h-4 w-4 mr-1" />
                     Browser
+                  </TabsTrigger>
+                  <TabsTrigger value="agents">
+                    <Users className="h-4 w-4 mr-1" />
+                    AI Agents
                   </TabsTrigger>
                 </TabsList>
 
@@ -604,6 +631,160 @@ export default function ReplitClone() {
                         </div>
                       </div>
                     )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="agents" className="flex-1 m-0 p-0 flex flex-col">
+                  <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">AI Development Team</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">
+                          {selectedAgents.length} selected
+                        </span>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => setSelectedAgents([])}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Agent Selection */}
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-600">
+                    <div className="text-sm font-medium mb-2">Select AI Agents:</div>
+                    <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
+                      {agentsQuery.data?.map((agent: any) => (
+                        <div 
+                          key={agent.id} 
+                          className={`p-2 rounded border cursor-pointer transition-colors ${
+                            selectedAgents.some(a => a.id === agent.id)
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                              : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                          }`}
+                          onClick={() => {
+                            if (selectedAgents.some(a => a.id === agent.id)) {
+                              setSelectedAgents(selectedAgents.filter(a => a.id !== agent.id));
+                            } else {
+                              setSelectedAgents([...selectedAgents, agent]);
+                            }
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Bot className="h-4 w-4 text-blue-500" />
+                            <div className="flex-1">
+                              <div className="font-medium text-sm">{agent.name}</div>
+                              <div className="text-xs text-gray-500">{agent.role}</div>
+                            </div>
+                            <div className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
+                              {agent.provider}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Chat Area */}
+                  <div className="flex-1 flex flex-col">
+                    <div className="flex-1 p-4 overflow-y-auto">
+                      {chatMessages.length === 0 ? (
+                        <div className="text-center text-gray-500 py-8">
+                          <Bot className="h-12 w-12 mx-auto mb-2" />
+                          <p>Select AI agents and start coding together!</p>
+                          <p className="text-sm mt-1">
+                            Ask questions about your code or request help with development
+                          </p>
+                        </div>
+                      ) : (
+                        chatMessages.map((msg: any, index: number) => (
+                          <div key={index} className="mb-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                                {msg.sender_type === 'user' ? 
+                                  <span className="text-white text-xs">U</span> : 
+                                  <Bot className="h-3 w-3 text-white" />
+                                }
+                              </div>
+                              <span className="text-sm font-medium">
+                                {msg.sender_type === 'user' ? 'You' : msg.sender_name}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(msg.timestamp).toLocaleTimeString()}
+                              </span>
+                            </div>
+                            <div className="ml-8 text-sm bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                              {msg.content}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    
+                    {/* Message Input */}
+                    <div className="border-t border-gray-200 dark:border-gray-600 p-3">
+                      <div className="flex gap-2">
+                        <Input
+                          value={chatMessage}
+                          onChange={(e) => setChatMessage(e.target.value)}
+                          placeholder="Ask your AI team about the code..."
+                          className="flex-1"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              if (chatMessage.trim() && selectedAgents.length > 0) {
+                                // Add user message
+                                setChatMessages([...chatMessages, {
+                                  content: chatMessage,
+                                  sender_type: 'user',
+                                  timestamp: new Date().toISOString()
+                                }]);
+                                setChatMessage('');
+                                
+                                // Simulate AI response
+                                setTimeout(() => {
+                                  const randomAgent = selectedAgents[Math.floor(Math.random() * selectedAgents.length)];
+                                  setChatMessages(prev => [...prev, {
+                                    content: `I can help you with that! Let me analyze your code and provide suggestions.`,
+                                    sender_type: 'agent',
+                                    sender_name: randomAgent.name,
+                                    timestamp: new Date().toISOString()
+                                  }]);
+                                }, 1000);
+                              }
+                            }
+                          }}
+                        />
+                        <Button 
+                          onClick={() => {
+                            if (chatMessage.trim() && selectedAgents.length > 0) {
+                              setChatMessages([...chatMessages, {
+                                content: chatMessage,
+                                sender_type: 'user',
+                                timestamp: new Date().toISOString()
+                              }]);
+                              setChatMessage('');
+                              
+                              setTimeout(() => {
+                                const randomAgent = selectedAgents[Math.floor(Math.random() * selectedAgents.length)];
+                                setChatMessages(prev => [...prev, {
+                                  content: `I can help you with that! Let me analyze your code and provide suggestions.`,
+                                  sender_type: 'agent',
+                                  sender_name: randomAgent.name,
+                                  timestamp: new Date().toISOString()
+                                }]);
+                              }, 1000);
+                            }
+                          }}
+                          disabled={!chatMessage.trim() || selectedAgents.length === 0}
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>
