@@ -173,8 +173,13 @@ export default function ReplitClone() {
   useEffect(() => {
     if (fileContentQuery.data) {
       setFileContent(fileContentQuery.data.content);
+      
+      // Auto-refresh preview for HTML files
+      if (selectedFile?.path.endsWith('.html')) {
+        setActiveTab('preview');
+      }
     }
-  }, [fileContentQuery.data]);
+  }, [fileContentQuery.data, selectedFile]);
 
   const toggleFolder = (path: string) => {
     setExpandedFolders(prev => {
@@ -233,8 +238,17 @@ export default function ReplitClone() {
 
   const handleRunProject = () => {
     setIsRunning(true);
-    executeCommandMutation.mutate('npm run dev');
-    setPreviewUrl('http://localhost:5000');
+    
+    // Detect project type and run appropriate command
+    if (selectedFile?.path.endsWith('.html')) {
+      // For HTML files, show direct preview
+      setPreviewUrl(`data:text/html;charset=utf-8,${encodeURIComponent(fileContent)}`);
+    } else {
+      // For full projects, run the development server
+      executeCommandMutation.mutate('npm run dev');
+      setPreviewUrl('http://localhost:5000');
+    }
+    
     setTimeout(() => setIsRunning(false), 2000);
   };
 
@@ -427,8 +441,8 @@ export default function ReplitClone() {
           {/* Right Panel */}
           <Panel defaultSize={25} minSize={20}>
             <div className="h-full bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-                <TabsList className="grid w-full grid-cols-3">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+                <TabsList className="grid w-full grid-cols-3 shrink-0">
                   <TabsTrigger value="preview">
                     <Eye className="h-4 w-4 mr-1" />
                     Preview
@@ -443,14 +457,26 @@ export default function ReplitClone() {
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="preview" className="flex-1 m-0">
-                  <div className="h-full p-4">
+                <TabsContent value="preview" className="flex-1 m-0 p-0">
+                  <div className="h-full flex flex-col">
                     {selectedFile?.path.endsWith('.html') && fileContent ? (
-                      <iframe
-                        srcDoc={fileContent}
-                        className="w-full h-full border border-gray-300 dark:border-gray-600 rounded"
-                        title="Preview"
-                      />
+                      <div className="flex-1 flex flex-col">
+                        <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Live Preview</span>
+                            <Button size="sm" onClick={() => setPreviewUrl(`data:text/html;charset=utf-8,${encodeURIComponent(fileContent)}`)}>
+                              <Eye className="h-4 w-4 mr-1" />
+                              Refresh
+                            </Button>
+                          </div>
+                        </div>
+                        <iframe
+                          srcDoc={fileContent}
+                          className="flex-1 border-none"
+                          title="Live Preview"
+                          style={{ height: 'calc(100% - 60px)' }}
+                        />
+                      </div>
                     ) : (
                       <div className="flex items-center justify-center h-full text-gray-500">
                         <div className="text-center">
@@ -463,8 +489,21 @@ export default function ReplitClone() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="terminal" className="flex-1 m-0 flex flex-col">
+                <TabsContent value="terminal" className="flex-1 m-0 p-0 flex flex-col">
+                  <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Terminal</span>
+                      <Button size="sm" variant="outline" onClick={() => setTerminalOutput([])}>
+                        Clear
+                      </Button>
+                    </div>
+                  </div>
                   <div className="flex-1 bg-black text-green-400 p-4 overflow-y-auto font-mono text-sm">
+                    {terminalOutput.length === 0 && (
+                      <div className="text-gray-500">
+                        Welcome to the integrated terminal. Type commands below.
+                      </div>
+                    )}
                     {terminalOutput.map((output, index) => (
                       <div key={index} className={`whitespace-pre-wrap ${
                         output.type === 'stderr' ? 'text-red-400' : 'text-green-400'
@@ -474,33 +513,94 @@ export default function ReplitClone() {
                     ))}
                   </div>
                   <div className="border-t border-gray-600 p-2">
-                    <Input
-                      value={terminalCommand}
-                      onChange={(e) => setTerminalCommand(e.target.value)}
-                      onKeyDown={handleTerminalCommand}
-                      placeholder="Enter command..."
-                      className="bg-black text-green-400 border-gray-600 font-mono"
-                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-400 font-mono">$</span>
+                      <Input
+                        value={terminalCommand}
+                        onChange={(e) => setTerminalCommand(e.target.value)}
+                        onKeyDown={handleTerminalCommand}
+                        placeholder="Enter command..."
+                        className="bg-black text-green-400 border-gray-600 font-mono flex-1"
+                      />
+                    </div>
                   </div>
                 </TabsContent>
 
-                <TabsContent value="browser" className="flex-1 m-0">
-                  <div className="h-full">
+                <TabsContent value="browser" className="flex-1 m-0 p-0">
+                  <div className="h-full flex flex-col">
                     {previewUrl ? (
-                      <iframe
-                        src={previewUrl}
-                        className="w-full h-full border-none"
-                        title="Browser Preview"
-                      />
+                      <div className="flex-1 flex flex-col">
+                        <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Globe className="h-4 w-4" />
+                              <span className="text-sm font-medium">Application Running</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button size="sm" variant="outline" onClick={() => setPreviewUrl('')}>
+                                Stop
+                              </Button>
+                              <Button size="sm" onClick={() => window.open(previewUrl, '_blank')}>
+                                Open in New Tab
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                        <iframe
+                          src={previewUrl}
+                          className="flex-1 border-none"
+                          title="Application Preview"
+                          style={{ height: 'calc(100% - 60px)' }}
+                        />
+                      </div>
                     ) : (
-                      <div className="flex items-center justify-center h-full text-gray-500">
-                        <div className="text-center">
+                      <div className="flex items-center justify-center h-full text-gray-500 p-4">
+                        <div className="text-center max-w-sm">
                           <Globe className="h-12 w-12 mx-auto mb-2" />
-                          <p>Run your project to see it here</p>
-                          <Button onClick={handleRunProject} className="mt-2">
-                            <Play className="h-4 w-4 mr-1" />
-                            Run Project
-                          </Button>
+                          <p className="mb-4">Run your project to see it here</p>
+                          <div className="space-y-3">
+                            <Button onClick={handleRunProject} className="w-full">
+                              <Play className="h-4 w-4 mr-1" />
+                              Run Project
+                            </Button>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              Or open an existing app:
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button 
+                                onClick={() => setPreviewUrl('/welet-properties')} 
+                                variant="outline" 
+                                size="sm"
+                                className="text-xs"
+                              >
+                                WeLet Properties
+                              </Button>
+                              <Button 
+                                onClick={() => setPreviewUrl('/showcase')} 
+                                variant="outline" 
+                                size="sm"
+                                className="text-xs"
+                              >
+                                Showcase Site
+                              </Button>
+                              <Button 
+                                onClick={() => setPreviewUrl('/workspace')} 
+                                variant="outline" 
+                                size="sm"
+                                className="text-xs"
+                              >
+                                Workspace
+                              </Button>
+                              <Button 
+                                onClick={() => setPreviewUrl('/collaboration')} 
+                                variant="outline" 
+                                size="sm"
+                                className="text-xs"
+                              >
+                                Collaboration
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
