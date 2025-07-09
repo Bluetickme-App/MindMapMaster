@@ -1973,6 +1973,15 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     console.error('Failed to load Replit Agent router:', error);
   }
 
+  // Enhanced Replit AI System routes (Agent + Assistant)
+  try {
+    const { default: replitAIEnhancedRouter } = await import('./api/replit-ai-enhanced.js');
+    app.use('/api/replit-ai', replitAIEnhancedRouter);
+    console.log('✨ Enhanced Replit AI System loaded (Agent + Assistant capabilities)');
+  } catch (error) {
+    console.error('Failed to load Enhanced Replit AI router:', error);
+  }
+
   // WeLet Properties API routes
   try {
     const { default: propertiesRouter } = await import('./api/properties.js');
