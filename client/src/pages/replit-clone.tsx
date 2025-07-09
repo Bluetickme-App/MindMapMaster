@@ -72,6 +72,7 @@ export default function ReplitClone() {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [fileHistory, setFileHistory] = useState<{[key: string]: string[]}>({});
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState<{[key: string]: number}>({});
+  const [showToolsPanel, setShowToolsPanel] = useState(false);
   
   const queryClient = useQueryClient();
 
@@ -83,6 +84,40 @@ export default function ReplitClone() {
       return response.json();
     }
   });
+
+  // Fetch extensions/tools
+  const extensionsQuery = useQuery({
+    queryKey: ['/api/extensions'],
+    queryFn: async () => {
+      const response = await fetch('/api/extensions');
+      return response.json();
+    }
+  });
+
+  // Fetch projects
+  const projectsQuery = useQuery({
+    queryKey: ['/api/projects'],
+    queryFn: async () => {
+      const response = await fetch('/api/projects');
+      return response.json();
+    }
+  });
+
+  // Fetch chat history
+  const chatHistoryQuery = useQuery({
+    queryKey: ['/api/messages', 'replit-chat'],
+    queryFn: async () => {
+      const response = await fetch('/api/messages?conversationId=replit-chat');
+      return response.json();
+    }
+  });
+
+  // Load chat history on mount
+  useEffect(() => {
+    if (chatHistoryQuery.data) {
+      setChatMessages(chatHistoryQuery.data);
+    }
+  }, [chatHistoryQuery.data]);
 
   // Fetch file system tree
   const fileSystemQuery = useQuery({
@@ -209,6 +244,18 @@ export default function ReplitClone() {
       }
     }
   }, [fileContentQuery.data, selectedFile]);
+
+  // Close tools panel when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showToolsPanel && !(event.target as Element).closest('.tools-panel')) {
+        setShowToolsPanel(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showToolsPanel]);
 
   const toggleFolder = (path: string) => {
     setExpandedFolders(prev => {
@@ -403,10 +450,41 @@ export default function ReplitClone() {
       {/* Header */}
       <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold text-foreground">
-            Replit Clone
-          </h1>
           <div className="flex items-center gap-2">
+            <h1 className="text-lg font-semibold text-foreground">
+              Replit Clone
+            </h1>
+            <div className="text-sm text-muted-foreground">
+              {new Date().toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <select 
+              className="text-sm bg-background border border-border rounded px-2 py-1"
+              onChange={(e) => {
+                if (e.target.value) {
+                  fetch(`/api/projects/${e.target.value}/switch`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                      toast({ title: data.message });
+                      queryClient.invalidateQueries({ queryKey: ['/api/filesystem'] });
+                    });
+                }
+              }}
+            >
+              <option value="">Switch Project</option>
+              {projectsQuery.data?.map((project: any) => (
+                <option key={project.id} value={project.id}>
+                  {project.name} ({project.language})
+                </option>
+              ))}
+            </select>
             <Button
               size="sm"
               onClick={handleRunProject}
@@ -474,14 +552,78 @@ export default function ReplitClone() {
                     >
                       <Bot className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      size="sm" 
-                      variant="ghost"
-                      onClick={() => window.open('/extensions', '_blank')}
-                      title="Manage Extensions"
-                    >
-                      <Package className="h-4 w-4" />
-                    </Button>
+                    <div className="relative tools-panel">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => setShowToolsPanel(!showToolsPanel)}
+                        title="Extensions & Tools"
+                      >
+                        <Package className="h-4 w-4" />
+                      </Button>
+                      
+                      {showToolsPanel && (
+                        <div className="absolute top-full right-0 mt-1 w-80 bg-background border border-border rounded-lg shadow-lg z-50 max-h-[70vh] overflow-hidden">
+                          <div className="p-3 border-b border-border">
+                            <div className="flex items-center justify-between">
+                              <h3 className="font-medium text-sm">Extensions & Tools</h3>
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => setShowToolsPanel(false)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="overflow-y-auto" style={{ maxHeight: 'calc(70vh - 120px)' }}>
+                            {extensionsQuery.data?.data?.map((extension: any) => (
+                              <div key={extension.id} className="border-b border-border last:border-b-0">
+                                <div className="p-3">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-sm">{extension.icon}</span>
+                                    <span className="font-medium text-sm">{extension.name}</span>
+                                    <span className="text-xs bg-muted px-2 py-1 rounded">{extension.category}</span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mb-2">{extension.description}</p>
+                                  
+                                  {extension.tools && extension.tools.length > 0 && (
+                                    <div className="space-y-1">
+                                      {extension.tools.slice(0, 3).map((tool: any, idx: number) => (
+                                        <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
+                                          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                          <span>{tool.name}</span>
+                                        </div>
+                                      ))}
+                                      {extension.tools.length > 3 && (
+                                        <div className="text-xs text-muted-foreground">
+                                          +{extension.tools.length - 3} more tools
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <div className="p-3 border-t border-border">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="w-full"
+                              onClick={() => {
+                                window.open('/extensions', '_blank');
+                                setShowToolsPanel(false);
+                              }}
+                            >
+                              Manage All Extensions
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -879,12 +1021,27 @@ export default function ReplitClone() {
                               e.preventDefault();
                               if (chatMessage.trim() && selectedAgents.length > 0) {
                                 // Add user message
-                                setChatMessages([...chatMessages, {
+                                const userMessage = {
                                   content: chatMessage,
                                   sender_type: 'user',
                                   timestamp: new Date().toISOString()
-                                }]);
+                                };
+                                setChatMessages([...chatMessages, userMessage]);
                                 setChatMessage('');
+                                
+                                // Save to database
+                                fetch('/api/messages', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    conversationId: 'replit-chat',
+                                    senderId: 1,
+                                    senderType: 'user',
+                                    content: chatMessage,
+                                    messageType: 'text',
+                                    metadata: { fileContext: selectedFile?.name }
+                                  })
+                                });
                                 
                                 // Simulate AI response with file context
                                 setTimeout(() => {
@@ -892,12 +1049,27 @@ export default function ReplitClone() {
                                   const contextMessage = selectedFile 
                                     ? `Looking at ${selectedFile.name} - I can help you with that! Let me analyze your code and provide suggestions.` 
                                     : `I can help you with that! Let me analyze your code and provide suggestions.`;
-                                  setChatMessages(prev => [...prev, {
+                                  const agentMessage = {
                                     content: contextMessage,
                                     sender_type: 'agent',
                                     sender_name: randomAgent.name,
                                     timestamp: new Date().toISOString()
-                                  }]);
+                                  };
+                                  setChatMessages(prev => [...prev, agentMessage]);
+                                  
+                                  // Save agent response to database
+                                  fetch('/api/messages', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      conversationId: 'replit-chat',
+                                      senderId: randomAgent.id,
+                                      senderType: 'agent',
+                                      content: contextMessage,
+                                      messageType: 'text',
+                                      metadata: { agentName: randomAgent.name }
+                                    })
+                                  });
                                 }, 1000);
                               }
                             }
@@ -906,24 +1078,57 @@ export default function ReplitClone() {
                         <Button 
                           onClick={() => {
                             if (chatMessage.trim() && selectedAgents.length > 0) {
-                              setChatMessages([...chatMessages, {
+                              // Add user message
+                              const userMessage = {
                                 content: chatMessage,
                                 sender_type: 'user',
                                 timestamp: new Date().toISOString()
-                              }]);
+                              };
+                              setChatMessages([...chatMessages, userMessage]);
+                              const currentMessage = chatMessage;
                               setChatMessage('');
                               
+                              // Save to database
+                              fetch('/api/messages', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  conversationId: 'replit-chat',
+                                  senderId: 1,
+                                  senderType: 'user',
+                                  content: currentMessage,
+                                  messageType: 'text',
+                                  metadata: { fileContext: selectedFile?.name }
+                                })
+                              });
+                              
+                              // Simulate AI response with file context
                               setTimeout(() => {
                                 const randomAgent = selectedAgents[Math.floor(Math.random() * selectedAgents.length)];
                                 const contextMessage = selectedFile 
                                   ? `Looking at ${selectedFile.name} - I can help you with that! Let me analyze your code and provide suggestions.` 
                                   : `I can help you with that! Let me analyze your code and provide suggestions.`;
-                                setChatMessages(prev => [...prev, {
+                                const agentMessage = {
                                   content: contextMessage,
                                   sender_type: 'agent',
                                   sender_name: randomAgent.name,
                                   timestamp: new Date().toISOString()
-                                }]);
+                                };
+                                setChatMessages(prev => [...prev, agentMessage]);
+                                
+                                // Save agent response to database
+                                fetch('/api/messages', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    conversationId: 'replit-chat',
+                                    senderId: randomAgent.id,
+                                    senderType: 'agent',
+                                    content: contextMessage,
+                                    messageType: 'text',
+                                    metadata: { agentName: randomAgent.name }
+                                  })
+                                });
                               }, 1000);
                             }
                           }}

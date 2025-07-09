@@ -65,11 +65,26 @@ export class AgentOrchestrationService {
         const assistant = await openai.beta.assistants.create({
           name: agent.name,
           instructions: `You are ${agent.name}, a ${agent.specialization} specialist. ${agent.systemPrompt}
-          
+
+CURRENT DATE: ${new Date().toLocaleDateString('en-US', { 
+  weekday: 'long', 
+  year: 'numeric', 
+  month: 'long', 
+  day: 'numeric' 
+})}
+
+CURRENT TIME: ${new Date().toLocaleTimeString('en-US', { 
+  hour: '2-digit', 
+  minute: '2-digit',
+  timeZoneName: 'short'
+})}
+
 Your expertise includes:
 ${agent.capabilities?.join(', ') || 'General software development'}
 
 You are part of a multi-agent collaboration system. Provide helpful, expert responses in your area of specialization.
+
+IMPORTANT: Always be aware of the current date and time. Reference it when relevant to your responses.
 
 Always respond in JSON format:
 {
@@ -95,10 +110,14 @@ Always respond in JSON format:
         console.log(`[Agent ${agent.id}] Created new OpenAI Assistant: ${assistant.id}`);
       }
 
-      // Add user message to thread
+      // Add user message to thread with current context
       await openai.beta.threads.messages.create(assistantInfo.threadId, {
         role: "user",
-        content: userMessage
+        content: `[${new Date().toISOString()}] ${userMessage}
+        
+Context: ${JSON.stringify(context, null, 2)}
+Current Project: ${context.projectContext?.name || 'Not specified'}
+Recent conversation: ${context.recentMessages?.slice(-3).map(m => `${m.senderType}: ${m.content}`).join('\n') || 'No recent messages'}`
       });
 
       // Run the assistant
