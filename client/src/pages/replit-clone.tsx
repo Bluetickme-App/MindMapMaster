@@ -33,7 +33,8 @@ import {
   RotateCcw,
   GitBranch,
   Link,
-  History
+  History,
+  Package
 } from 'lucide-react';
 import { Editor } from '@monaco-editor/react';
 
