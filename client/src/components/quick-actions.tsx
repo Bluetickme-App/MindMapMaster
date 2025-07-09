@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building } from "lucide-react";
+import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function QuickActions() {
@@ -13,6 +13,15 @@ export default function QuickActions() {
       color: "blue-500",
       onClick: () => {
         setLocation('/create-project');
+      },
+    },
+    {
+      title: "Replit Clone",
+      description: "Full development environment",
+      icon: Code,
+      color: "blue-600",
+      onClick: () => {
+        setLocation('/replit');
       },
     },
     {

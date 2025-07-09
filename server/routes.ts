@@ -1913,6 +1913,149 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     console.error('Failed to load Properties Seed router:', error);
   }
 
+  // Real File System API Routes
+  app.get('/api/filesystem', async (req, res) => {
+    try {
+      const { fileSystemService } = await import('./services/file-system.js');
+      const fileTree = await fileSystemService.getFileTree();
+      res.json(fileTree);
+    } catch (error) {
+      console.error('Error getting filesystem:', error);
+      res.status(500).json({ message: 'Failed to get filesystem' });
+    }
+  });
+
+  app.get('/api/filesystem/content', async (req, res) => {
+    try {
+      const { path: filePath } = req.query;
+      if (!filePath) {
+        return res.status(400).json({ message: 'File path is required' });
+      }
+      
+      const { fileSystemService } = await import('./services/file-system.js');
+      const content = await fileSystemService.readFile(filePath as string);
+      const language = fileSystemService.getFileLanguage(filePath as string);
+      res.json({ content, language });
+    } catch (error) {
+      console.error('Error getting file content:', error);
+      res.status(500).json({ message: 'Failed to get file content' });
+    }
+  });
+
+  app.post('/api/filesystem/content', async (req, res) => {
+    try {
+      const { path: filePath, content } = req.body;
+      if (!filePath || content === undefined) {
+        return res.status(400).json({ message: 'File path and content are required' });
+      }
+      
+      const { fileSystemService } = await import('./services/file-system.js');
+      await fileSystemService.writeFile(filePath, content);
+      res.json({ message: 'File saved successfully' });
+    } catch (error) {
+      console.error('Error saving file content:', error);
+      res.status(500).json({ message: 'Failed to save file content' });
+    }
+  });
+
+  app.post('/api/filesystem/create', async (req, res) => {
+    try {
+      const { path: filePath, content = '', type = 'file' } = req.body;
+      if (!filePath) {
+        return res.status(400).json({ message: 'File path is required' });
+      }
+      
+      const { fileSystemService } = await import('./services/file-system.js');
+      if (type === 'folder') {
+        await fileSystemService.createFolder(filePath);
+      } else {
+        await fileSystemService.createFile(filePath, content);
+      }
+      res.json({ message: `${type} created successfully` });
+    } catch (error) {
+      console.error('Error creating file/folder:', error);
+      res.status(500).json({ message: 'Failed to create file/folder' });
+    }
+  });
+
+  app.delete('/api/filesystem', async (req, res) => {
+    try {
+      const { path: filePath } = req.query;
+      if (!filePath) {
+        return res.status(400).json({ message: 'File path is required' });
+      }
+      
+      const { fileSystemService } = await import('./services/file-system.js');
+      await fileSystemService.deleteFile(filePath as string);
+      res.json({ message: 'File deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      res.status(500).json({ message: 'Failed to delete file' });
+    }
+  });
+
+  app.post('/api/filesystem/rename', async (req, res) => {
+    try {
+      const { oldPath, newPath } = req.body;
+      if (!oldPath || !newPath) {
+        return res.status(400).json({ message: 'Old path and new path are required' });
+      }
+      
+      const { fileSystemService } = await import('./services/file-system.js');
+      await fileSystemService.renameFile(oldPath, newPath);
+      res.json({ message: 'File renamed successfully' });
+    } catch (error) {
+      console.error('Error renaming file:', error);
+      res.status(500).json({ message: 'Failed to rename file' });
+    }
+  });
+
+  app.get('/api/filesystem/search', async (req, res) => {
+    try {
+      const { query, extensions } = req.query;
+      if (!query) {
+        return res.status(400).json({ message: 'Search query is required' });
+      }
+      
+      const { fileSystemService } = await import('./services/file-system.js');
+      const extList = extensions ? (extensions as string).split(',') : [];
+      const results = await fileSystemService.searchFiles(query as string, extList);
+      res.json(results);
+    } catch (error) {
+      console.error('Error searching files:', error);
+      res.status(500).json({ message: 'Failed to search files' });
+    }
+  });
+
+  // Terminal API Routes
+  app.post('/api/terminal/execute', async (req, res) => {
+    try {
+      const { command, sessionId = 'default' } = req.body;
+      if (!command) {
+        return res.status(400).json({ message: 'Command is required' });
+      }
+      
+      const { terminalService } = await import('./services/terminal.js');
+      await terminalService.executeCommand(command, sessionId);
+      res.json({ message: 'Command executed' });
+    } catch (error) {
+      console.error('Error executing terminal command:', error);
+      res.status(500).json({ message: 'Failed to execute command' });
+    }
+  });
+
+  app.post('/api/terminal/kill', async (req, res) => {
+    try {
+      const { sessionId = 'default' } = req.body;
+      const { terminalService } = await import('./services/terminal.js');
+      terminalService.killProcess(sessionId);
+      res.json({ message: 'Process killed' });
+    } catch (error) {
+      console.error('Error killing terminal process:', error);
+      res.status(500).json({ message: 'Failed to kill process' });
+    }
+  });
+
   // Team agent management endpoints
   
   // Initialize agents in database

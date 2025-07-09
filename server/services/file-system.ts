@@ -1,81 +1,64 @@
-import fs from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
-import { generateCode, debugCode, explainCode } from './openai';
-import { multiAIService } from './multi-ai-provider';
+import { promisify } from 'util';
 
-export interface FileNode {
+const readdir = promisify(fs.readdir);
+const stat = promisify(fs.stat);
+const readFile = promisify(fs.readFile);
+const writeFile = promisify(fs.writeFile);
+const mkdir = promisify(fs.mkdir);
+const unlink = promisify(fs.unlink);
+const rmdir = promisify(fs.rmdir);
+
+export interface FileSystemNode {
   name: string;
   type: 'file' | 'folder';
   path: string;
   size?: number;
   modified?: string;
-  children?: FileNode[];
+  children?: FileSystemNode[];
 }
 
 export class FileSystemService {
-  private rootPath: string;
+  private projectRoot: string;
 
-  constructor(rootPath: string = process.cwd()) {
-    this.rootPath = rootPath;
+  constructor(projectRoot: string = process.cwd()) {
+    this.projectRoot = projectRoot;
   }
 
-  async readFile(filePath: string): Promise<string> {
+  async getFileTree(targetPath: string = ''): Promise<FileSystemNode[]> {
+    const fullPath = path.join(this.projectRoot, targetPath);
+    
     try {
-      const fullPath = path.join(this.rootPath, filePath);
-      const content = await fs.readFile(fullPath, 'utf-8');
-      return content;
-    } catch (error) {
-      console.error('Error reading file:', error);
-      throw new Error(`Failed to read file: ${filePath}`);
-    }
-  }
+      const items = await readdir(fullPath);
+      const nodes: FileSystemNode[] = [];
 
-  async writeFile(filePath: string, content: string): Promise<void> {
-    try {
-      const fullPath = path.join(this.rootPath, filePath);
-      await fs.writeFile(fullPath, content, 'utf-8');
-    } catch (error) {
-      console.error('Error writing file:', error);
-      throw new Error(`Failed to write file: ${filePath}`);
-    }
-  }
-
-  async getFileTree(dirPath: string = ''): Promise<FileNode[]> {
-    try {
-      const fullPath = path.join(this.rootPath, dirPath);
-      const entries = await fs.readdir(fullPath, { withFileTypes: true });
-      
-      const nodes: FileNode[] = [];
-      
-      for (const entry of entries) {
+      for (const item of items) {
         // Skip hidden files and node_modules
-        if (entry.name.startsWith('.') || entry.name === 'node_modules') {
+        if (item.startsWith('.') || item === 'node_modules') {
           continue;
         }
-        
-        const entryPath = path.join(dirPath, entry.name);
-        const fullEntryPath = path.join(fullPath, entry.name);
-        
-        if (entry.isDirectory()) {
-          const children = await this.getFileTree(entryPath);
-          nodes.push({
-            name: entry.name,
-            type: 'folder',
-            path: entryPath,
-            children
-          });
-        } else {
-          const stats = await fs.stat(fullEntryPath);
-          nodes.push({
-            name: entry.name,
-            type: 'file',
-            path: entryPath,
-            size: stats.size,
-            modified: stats.mtime.toISOString()
-          });
+
+        const itemPath = path.join(fullPath, item);
+        const relativePath = path.relative(this.projectRoot, itemPath);
+        const stats = await stat(itemPath);
+
+        const node: FileSystemNode = {
+          name: item,
+          type: stats.isDirectory() ? 'folder' : 'file',
+          path: '/' + relativePath.replace(/\\/g, '/'),
+          size: stats.isFile() ? stats.size : undefined,
+          modified: stats.mtime.toISOString(),
+        };
+
+        if (stats.isDirectory()) {
+          // Recursively get children for folders
+          node.children = await this.getFileTree(relativePath);
         }
+
+        nodes.push(node);
       }
-      
+
       return nodes.sort((a, b) => {
         // Folders first, then files
         if (a.type !== b.type) {
@@ -89,123 +72,140 @@ export class FileSystemService {
     }
   }
 
-  async formatCodeWithAI(content: string, language: string, provider: 'openai' | 'claude' | 'gemini' = 'openai'): Promise<{
-    formattedCode: string;
-    suggestions: string[];
-    explanation: string;
-  }> {
+  async readFile(filePath: string): Promise<string> {
+    const fullPath = path.join(this.projectRoot, filePath);
+    
     try {
-      const prompt = `Format and improve this ${language} code. Return JSON with:
-- formattedCode: The properly formatted and improved code
-- suggestions: Array of improvement suggestions
-- explanation: Brief explanation of changes made
+      const content = await readFile(fullPath, 'utf-8');
+      return content;
+    } catch (error) {
+      console.error('Error reading file:', error);
+      throw new Error(`Failed to read file: ${filePath}`);
+    }
+  }
 
-Code to format:
-\`\`\`${language}
-${content}
-\`\`\``;
+  async writeFile(filePath: string, content: string): Promise<void> {
+    const fullPath = path.join(this.projectRoot, filePath);
+    
+    try {
+      // Ensure directory exists
+      const dir = path.dirname(fullPath);
+      await mkdir(dir, { recursive: true });
+      
+      await writeFile(fullPath, content, 'utf-8');
+    } catch (error) {
+      console.error('Error writing file:', error);
+      throw new Error(`Failed to write file: ${filePath}`);
+    }
+  }
 
-      let result;
+  async createFile(filePath: string, content: string = ''): Promise<void> {
+    return this.writeFile(filePath, content);
+  }
+
+  async createFolder(folderPath: string): Promise<void> {
+    const fullPath = path.join(this.projectRoot, folderPath);
+    
+    try {
+      await mkdir(fullPath, { recursive: true });
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      throw new Error(`Failed to create folder: ${folderPath}`);
+    }
+  }
+
+  async deleteFile(filePath: string): Promise<void> {
+    const fullPath = path.join(this.projectRoot, filePath);
+    
+    try {
+      const stats = await stat(fullPath);
       
-      switch (provider) {
-        case 'claude':
-          result = await multiAIService.generateResponse('claude', prompt, `You are a code formatting expert. Format and improve ${language} code with best practices.`);
-          break;
-        case 'gemini':
-          result = await multiAIService.generateResponse('gemini', prompt, `You are a code formatting expert. Format and improve ${language} code with best practices.`);
-          break;
-        default:
-          result = await generateCode(prompt, language);
-          break;
-      }
-      
-      // Parse the result based on provider type
-      if (provider === 'claude' || provider === 'gemini') {
-        // Multi-AI provider returns AIResponse object
-        try {
-          const parsed = JSON.parse(result.content);
-          return {
-            formattedCode: parsed.formattedCode || parsed.code || content,
-            suggestions: parsed.suggestions || [],
-            explanation: parsed.explanation || 'Code formatted successfully'
-          };
-        } catch {
-          // If not JSON, treat as formatted code
-          return {
-            formattedCode: result.content || content,
-            suggestions: [],
-            explanation: 'Code formatted successfully'
-          };
-        }
+      if (stats.isDirectory()) {
+        await rmdir(fullPath, { recursive: true });
       } else {
-        // OpenAI provider returns structured result
-        return {
-          formattedCode: result.code || content,
-          suggestions: result.suggestions || [],
-          explanation: result.explanation || 'Code formatted successfully'
-        };
+        await unlink(fullPath);
       }
     } catch (error) {
-      console.error('Error formatting code with AI:', error);
-      throw new Error('Failed to format code with AI');
+      console.error('Error deleting file:', error);
+      throw new Error(`Failed to delete: ${filePath}`);
     }
   }
 
-  async debugCodeWithAI(content: string, language: string, error?: string): Promise<{
-    fixedCode: string;
-    issues: string[];
-    explanation: string;
-  }> {
+  async renameFile(oldPath: string, newPath: string): Promise<void> {
+    const fullOldPath = path.join(this.projectRoot, oldPath);
+    const fullNewPath = path.join(this.projectRoot, newPath);
+    
     try {
-      return await debugCode(content, error, language);
+      await fs.promises.rename(fullOldPath, fullNewPath);
     } catch (error) {
-      console.error('Error debugging code with AI:', error);
-      throw new Error('Failed to debug code with AI');
+      console.error('Error renaming file:', error);
+      throw new Error(`Failed to rename: ${oldPath} to ${newPath}`);
     }
   }
 
-  async explainCodeWithAI(content: string, language: string): Promise<{
-    explanation: string;
-    keyFeatures: string[];
-    complexity: string;
-    suggestions: string[];
-  }> {
-    try {
-      return await explainCode(content, language);
-    } catch (error) {
-      console.error('Error explaining code with AI:', error);
-      throw new Error('Failed to explain code with AI');
-    }
-  }
-
-  getLanguageFromFileName(fileName: string): string {
-    const extension = fileName.split('.').pop()?.toLowerCase() || '';
-    const languageMap: Record<string, string> = {
-      'js': 'javascript',
-      'jsx': 'javascript',
-      'ts': 'typescript',
-      'tsx': 'typescript',
-      'css': 'css',
-      'scss': 'scss',
-      'html': 'html',
-      'json': 'json',
-      'md': 'markdown',
-      'py': 'python',
-      'java': 'java',
-      'cpp': 'cpp',
-      'c': 'c',
-      'cs': 'csharp',
-      'php': 'php',
-      'rb': 'ruby',
-      'go': 'go',
-      'rs': 'rust',
-      'sh': 'shell',
-      'yaml': 'yaml',
-      'yml': 'yaml',
-      'xml': 'xml',
-      'sql': 'sql',
+  async searchFiles(query: string, extensions: string[] = []): Promise<FileSystemNode[]> {
+    const results: FileSystemNode[] = [];
+    
+    const searchRecursive = async (dirPath: string) => {
+      const items = await this.getFileTree(dirPath);
+      
+      for (const item of items) {
+        const matchesQuery = item.name.toLowerCase().includes(query.toLowerCase());
+        const matchesExtension = extensions.length === 0 || 
+          extensions.some(ext => item.name.endsWith(ext));
+        
+        if (matchesQuery && matchesExtension) {
+          results.push(item);
+        }
+        
+        if (item.type === 'folder' && item.children) {
+          await searchRecursive(item.path);
+        }
+      }
     };
-    return languageMap[extension] || 'plaintext';
+    
+    await searchRecursive('');
+    return results;
+  }
+
+  getFileExtension(filePath: string): string {
+    return path.extname(filePath).toLowerCase();
+  }
+
+  getFileLanguage(filePath: string): string {
+    const ext = this.getFileExtension(filePath);
+    const languageMap: { [key: string]: string } = {
+      '.js': 'javascript',
+      '.ts': 'typescript',
+      '.tsx': 'typescript',
+      '.jsx': 'javascript',
+      '.py': 'python',
+      '.html': 'html',
+      '.css': 'css',
+      '.scss': 'scss',
+      '.json': 'json',
+      '.md': 'markdown',
+      '.yml': 'yaml',
+      '.yaml': 'yaml',
+      '.xml': 'xml',
+      '.sql': 'sql',
+      '.sh': 'shell',
+      '.bash': 'shell',
+      '.php': 'php',
+      '.java': 'java',
+      '.cpp': 'cpp',
+      '.c': 'c',
+      '.go': 'go',
+      '.rs': 'rust',
+      '.rb': 'ruby',
+      '.swift': 'swift',
+      '.kt': 'kotlin',
+      '.dart': 'dart',
+      '.vue': 'vue',
+      '.svelte': 'svelte',
+    };
+    
+    return languageMap[ext] || 'plaintext';
   }
 }
 

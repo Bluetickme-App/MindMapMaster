@@ -21,6 +21,7 @@ import CreateProjectPage from "@/pages/create-project";
 import ProjectBuilderPage from "@/pages/project-builder";
 import WeletLandingPage from "@/pages/welet-landing";
 import WeLet from "@/pages/WeLet";
+import ReplitClone from "@/pages/replit-clone";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/project-builder" component={ProjectBuilderPage} />
       <Route path="/welet" component={WeletLandingPage} />
       <Route path="/welet-properties" component={WeLet} />
+      <Route path="/replit" component={ReplitClone} />
       <Route component={NotFound} />
     </Switch>
   );
