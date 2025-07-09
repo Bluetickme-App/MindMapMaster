@@ -473,6 +473,14 @@ export default function ReplitClone() {
                     >
                       <Bot className="h-4 w-4" />
                     </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => window.open('/extensions', '_blank')}
+                      title="Manage Extensions"
+                    >
+                      <Package className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </div>
