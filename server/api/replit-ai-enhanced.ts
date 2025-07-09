@@ -1,6 +1,7 @@
 import express from 'express';
 import { replitAIEnhanced } from '../services/replit-ai-enhanced';
 import { storage } from '../storage';
+import { multiAIService } from '../services/multi-ai-provider';
 
 const router = express.Router();
 
