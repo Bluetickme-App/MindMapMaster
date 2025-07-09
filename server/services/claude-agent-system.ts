@@ -2,6 +2,8 @@ import { Anthropic } from '@anthropic-ai/sdk';
 import type { Agent, Message, Conversation, AgentContext } from "@shared/schema";
 import { agentMemoryService } from "./agent-memory-service";
 import { storage } from "../storage";
+import { agentFileSystem } from "./agent-file-system";
+import { agentToolIntegration } from "./agent-tool-integration";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || 'default_key'
@@ -381,6 +383,20 @@ ${agent.systemPrompt}
 5. **Safe Operations**: Prioritize security and best practices in all recommendations
 6. **Continuous Learning**: Build upon previous interactions and project context
 7. **Collaborative Spirit**: Work effectively with other AI agents and human team members
+8. **Tool Usage**: Use available tools to create, modify, and manage files when needed
+
+## Available Tools
+${agentToolIntegration.getToolsDescription()}
+
+## File System Access
+You have access to the project workspace and can:
+- Read and write files in the project directory
+- Create new components, pages, and API endpoints
+- Modify existing code files
+- Search through the codebase
+- Create directories and organize files
+
+When users ask you to create or modify files, use the appropriate tools to actually implement the changes.
 
 ## Response Format
 Provide responses that are:

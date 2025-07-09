@@ -1889,6 +1889,14 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     }
   });
 
+  // Replit Agent System routes
+  try {
+    const { default: replitAgentRouter } = await import('./api/replit-agent.js');
+    app.use('/api/replit-agent', replitAgentRouter);
+  } catch (error) {
+    console.error('Failed to load Replit Agent router:', error);
+  }
+
   // Team agent management endpoints
   
   // Initialize agents in database

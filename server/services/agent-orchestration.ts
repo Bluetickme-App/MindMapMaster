@@ -3,6 +3,8 @@ import { storage } from "../storage";
 import type { Agent, Message, Conversation, AgentResponse } from "@shared/schema";
 import { agentMemoryService } from "./agent-memory-service";
 import { claudeAgentSystem } from "./claude-agent-system";
+import { replitAgentSystem } from "./replit-agent-system";
+import { agentToolIntegration } from "./agent-tool-integration";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
@@ -35,6 +37,18 @@ export class AgentOrchestrationService {
   private activeCollaborations: Map<number, CollaborationSession> = new Map();
   private agentBusyStatus: Map<number, boolean> = new Map();
   private agentAssistants: Map<number, { assistantId: string; threadId: string }> = new Map();
+  
+  // Optimal model routing based on research
+  private modelRouting = {
+    'design_specialist': 'claude',      // UI/UX Design excellence
+    'css_specialist': 'claude',         // CSS mastery
+    'react_senior': 'claude',           // Component architecture
+    'ai_specialist': 'openai',          // API development
+    'roadmap_specialist': 'openai',     // System architecture
+    'backend_specialist': 'openai',     // Backend development
+    'vite_specialist': 'gemini',        // Build optimization
+    'devops_specialist': 'gemini'       // DevOps excellence
+  };
 
   // Generate OpenAI Assistant API response
   async generateOpenAIAssistantResponse(
