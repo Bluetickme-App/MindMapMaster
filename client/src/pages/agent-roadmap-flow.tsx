@@ -625,14 +625,23 @@ export default function AgentRoadmapFlow() {
             <Button
               onClick={() => generateRoadmapMutation.mutate(projectDescription)}
               disabled={!projectDescription.trim() || generateRoadmapMutation.isPending}
-              className="w-full"
+              className={`w-full transition-all duration-300 ${
+                generateRoadmapMutation.isPending 
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse' 
+                  : ''
+              }`}
               size="lg"
             >
               {generateRoadmapMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Roadmap...
-                </>
+                <div className="flex items-center justify-center">
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <span className="animate-pulse">Generating Roadmap...</span>
+                  <div className="ml-2 flex space-x-1">
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                </div>
               ) : (
                 <>
                   <Map className="mr-2 h-4 w-4" />
@@ -640,6 +649,25 @@ export default function AgentRoadmapFlow() {
                 </>
               )}
             </Button>
+            
+            {generateRoadmapMutation.isPending && (
+              <div className="mt-4 p-4 bg-muted rounded-lg animate-fadeIn">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-yellow-500 animate-pulse" />
+                    <p className="text-sm text-muted-foreground">AI is analyzing your project requirements...</p>
+                  </div>
+                  <div className="flex items-center gap-2 animate-fadeIn" style={{ animationDelay: '1s' }}>
+                    <Code2 className="h-4 w-4 text-blue-500 animate-pulse" />
+                    <p className="text-sm text-muted-foreground">Creating development phases and milestones...</p>
+                  </div>
+                  <div className="flex items-center gap-2 animate-fadeIn" style={{ animationDelay: '2s' }}>
+                    <Users className="h-4 w-4 text-green-500 animate-pulse" />
+                    <p className="text-sm text-muted-foreground">Selecting the best team for your project...</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
