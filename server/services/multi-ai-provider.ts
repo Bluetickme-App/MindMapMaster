@@ -535,6 +535,37 @@ Respond with a JSON object containing:
     }
   }
 
+  // Analyze errors and provide solutions
+  async analyzeError(errorMessage: string, command: string): Promise<{ analysis: string; suggestions: string[]; fixes: string[] }> {
+    const systemPrompt = `You are an expert debugging assistant. Analyze the error message and command to provide helpful solutions.
+    
+    Current date: ${new Date().toISOString()}
+    
+    Return your response in this exact JSON format:
+    {
+      "analysis": "brief explanation of what went wrong",
+      "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
+      "fixes": ["fix command 1", "fix command 2"]
+    }`;
+
+    const prompt = `Command: ${command}
+Error: ${errorMessage}
+
+Please analyze this error and provide actionable solutions.`;
+
+    try {
+      const response = await this.generateResponse('openai', prompt, systemPrompt);
+      return JSON.parse(response.content);
+    } catch (error) {
+      console.error('Error analysis failed:', error);
+      return {
+        analysis: 'Error analysis failed. Please check the error message manually.',
+        suggestions: ['Check the command syntax', 'Verify required dependencies are installed', 'Try running the command with different parameters'],
+        fixes: ['npm install', 'check file permissions', 'verify working directory']
+      };
+    }
+  }
+
   private getDefaultModel(provider: string): string {
     switch (provider) {
       case "openai": return DEFAULT_OPENAI_MODEL;

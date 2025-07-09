@@ -210,6 +210,28 @@ export default function ReplitClone() {
     }
   });
 
+  // Setup real-time terminal output
+  useEffect(() => {
+    const eventSource = new EventSource('/api/terminal/output?sessionId=replit-clone');
+    
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'clear') {
+        setTerminalOutput([]);
+      } else {
+        setTerminalOutput(prev => [...prev, data]);
+      }
+    };
+    
+    eventSource.onerror = (error) => {
+      console.error('Terminal output stream error:', error);
+    };
+    
+    return () => {
+      eventSource.close();
+    };
+  }, []);
+
   // Execute terminal command
   const executeCommandMutation = useMutation({
     mutationFn: async (command: string) => {
@@ -222,13 +244,6 @@ export default function ReplitClone() {
       return response.json();
     },
     onSuccess: () => {
-      // Add command to terminal output
-      setTerminalOutput(prev => [...prev, {
-        id: Date.now().toString(),
-        type: 'stdout',
-        content: `$ ${terminalCommand}\n`,
-        timestamp: new Date().toISOString()
-      }]);
       setTerminalCommand('');
     }
   });
@@ -348,10 +363,17 @@ export default function ReplitClone() {
     if (selectedFile?.path.endsWith('.html')) {
       // For HTML files, show direct preview
       setPreviewUrl(`data:text/html;charset=utf-8,${encodeURIComponent(fileContent)}`);
+      setActiveTab('preview');
+    } else if (selectedFile?.path.endsWith('.py')) {
+      // For Python files, run with python
+      executeCommandMutation.mutate(`python ${selectedFile.path}`);
+    } else if (selectedFile?.path.endsWith('.js')) {
+      // For JavaScript files, run with node
+      executeCommandMutation.mutate(`node ${selectedFile.path}`);
     } else {
-      // For full projects, run the development server
+      // For full projects, try to run the development server
       executeCommandMutation.mutate('npm run dev');
-      setPreviewUrl('http://localhost:5000');
+      setPreviewUrl('http://localhost:3000');
     }
     
     setTimeout(() => setIsRunning(false), 2000);
@@ -473,7 +495,16 @@ export default function ReplitClone() {
                     .then(res => res.json())
                     .then(data => {
                       toast({ title: data.message });
+                      // Force refresh file system and clear selections
                       queryClient.invalidateQueries({ queryKey: ['/api/filesystem'] });
+                      setSelectedFile(null);
+                      setFileContent('');
+                      setPreviewUrl('');
+                      setTerminalOutput([]);
+                    })
+                    .catch(error => {
+                      console.error('Project switch error:', error);
+                      toast({ title: 'Failed to switch project', variant: 'destructive' });
                     });
                 }
               }}

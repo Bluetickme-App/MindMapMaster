@@ -51,11 +51,34 @@ export class TerminalService extends EventEmitter {
         return;
       }
 
+      if (cmd === 'ls' || cmd === 'dir') {
+        try {
+          const fs = await import('fs');
+          const files = fs.readdirSync(this.currentDirectory);
+          const fileList = files.join('  ');
+          this.emit('output', {
+            id: sessionId,
+            type: 'stdout',
+            content: `${fileList}\n`,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (error) {
+          this.emit('output', {
+            id: sessionId,
+            type: 'stderr',
+            content: `Error listing directory: ${error}\n`,
+            timestamp: new Date().toISOString(),
+          });
+        }
+        return;
+      }
+
       // Execute command
       const childProcess = spawn(cmd, args, {
         cwd: this.currentDirectory,
         shell: true,
-        stdio: ['pipe', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: { ...process.env, FORCE_COLOR: '1' }
       });
 
       this.processes.set(sessionId, childProcess);

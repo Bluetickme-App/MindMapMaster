@@ -26,6 +26,14 @@ export class FileSystemService {
     this.projectRoot = projectRoot;
   }
 
+  setWorkingDirectory(newRoot: string): void {
+    this.projectRoot = newRoot;
+  }
+
+  getCurrentDirectory(): string {
+    return this.projectRoot;
+  }
+
   async getFileTree(targetPath: string = ''): Promise<FileSystemNode[]> {
     const fullPath = path.join(this.projectRoot, targetPath);
     

@@ -144,6 +144,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Project switching endpoint
+  app.post("/api/projects/:id/switch", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const project = await storage.getProject(id);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      // Change working directory to project directory
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      // Create project directory if it doesn't exist
+      const projectDir = path.join(process.cwd(), 'projects', project.name.toLowerCase().replace(/\s+/g, '-'));
+      
+      if (!fs.existsSync(projectDir)) {
+        fs.mkdirSync(projectDir, { recursive: true });
+        
+        // Initialize project with basic structure
+        const packageJson = {
+          name: project.name.toLowerCase().replace(/\s+/g, '-'),
+          version: "1.0.0",
+          description: project.description || "",
+          main: "index.js",
+          scripts: {
+            start: "node index.js",
+            dev: "node index.js"
+          },
+          dependencies: {}
+        };
+        
+        fs.writeFileSync(path.join(projectDir, 'package.json'), JSON.stringify(packageJson, null, 2));
+        
+        // Create basic index file based on language
+        let indexContent = '';
+        if (project.language === 'JavaScript') {
+          indexContent = `// ${project.name}\n// ${project.description || ''}\n\nconsole.log('Hello from ${project.name}!');\n`;
+          fs.writeFileSync(path.join(projectDir, 'index.js'), indexContent);
+        } else if (project.language === 'Python') {
+          indexContent = `# ${project.name}\n# ${project.description || ''}\n\nprint("Hello from ${project.name}!")\n`;
+          fs.writeFileSync(path.join(projectDir, 'main.py'), indexContent);
+        } else if (project.language === 'TypeScript') {
+          indexContent = `// ${project.name}\n// ${project.description || ''}\n\nconsole.log('Hello from ${project.name}!');\n`;
+          fs.writeFileSync(path.join(projectDir, 'index.ts'), indexContent);
+        } else if (project.language === 'HTML') {
+          indexContent = `<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>${project.name}</title>\n</head>\n<body>\n    <h1>${project.name}</h1>\n    <p>${project.description || ''}</p>\n</body>\n</html>`;
+          fs.writeFileSync(path.join(projectDir, 'index.html'), indexContent);
+        }
+        
+        // Create README
+        const readmeContent = `# ${project.name}\n\n${project.description || ''}\n\n## Getting Started\n\nThis project was created with CodeCraft.\n`;
+        fs.writeFileSync(path.join(projectDir, 'README.md'), readmeContent);
+      }
+      
+      // Update terminal service to use new directory
+      const { terminalService } = await import('./services/terminal.js');
+      terminalService.setCurrentDirectory(projectDir);
+      
+      // Update file system service to use new directory
+      const { fileSystemService } = await import('./services/file-system.js');
+      fileSystemService.setWorkingDirectory(projectDir);
+      
+      res.json({ 
+        message: `Switched to project: ${project.name}`,
+        project: project,
+        directory: projectDir
+      });
+    } catch (error) {
+      console.error("Switch project error:", error);
+      res.status(500).json({ message: "Failed to switch project" });
+    }
+  });
+
   app.delete("/api/projects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -2028,7 +2103,7 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     }
   });
 
-  // Terminal API Routes
+  // Terminal API Routes with real-time error handling
   app.post('/api/terminal/execute', async (req, res) => {
     try {
       const { command, sessionId = 'default' } = req.body;
@@ -2037,12 +2112,96 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
       }
       
       const { terminalService } = await import('./services/terminal.js');
+      
+      // Store terminal output for error analysis
+      const outputs: any[] = [];
+      const errorHandler = (output: any) => {
+        outputs.push(output);
+        // If there's an error, send it to agents for analysis
+        if (output.type === 'stderr' && output.content.trim()) {
+          setTimeout(async () => {
+            try {
+              const errorAnalysis = await multiAIService.analyzeError(output.content, command);
+              // Send error analysis to WebSocket clients
+              if (webSocketManager) {
+                webSocketManager.broadcastToSession(sessionId, {
+                  type: 'error_analysis',
+                  error: output.content,
+                  analysis: errorAnalysis,
+                  command: command,
+                  timestamp: new Date().toISOString()
+                });
+              }
+            } catch (error) {
+              console.error('Error analyzing command error:', error);
+            }
+          }, 1000);
+        }
+      };
+      
+      terminalService.on('output', errorHandler);
       await terminalService.executeCommand(command, sessionId);
-      res.json({ message: 'Command executed' });
+      
+      // Clean up listener after 30 seconds
+      setTimeout(() => {
+        terminalService.removeListener('output', errorHandler);
+      }, 30000);
+      
+      res.json({ 
+        message: 'Command executed',
+        sessionId: sessionId,
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
       console.error('Error executing terminal command:', error);
       res.status(500).json({ message: 'Failed to execute command' });
     }
+  });
+
+  // Terminal output streaming with WebSocket integration
+  app.get('/api/terminal/output', async (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    const { sessionId = 'default' } = req.query;
+    const { terminalService } = await import('./services/terminal.js');
+    
+    const outputHandler = (output: any) => {
+      res.write(`data: ${JSON.stringify(output)}\n\n`);
+      
+      // Also broadcast to WebSocket clients
+      if (webSocketManager) {
+        webSocketManager.broadcastToSession(sessionId as string, {
+          type: 'terminal_output',
+          output: output
+        });
+      }
+    };
+    
+    const clearHandler = (id: string) => {
+      if (id === sessionId) {
+        const clearData = { type: 'clear' };
+        res.write(`data: ${JSON.stringify(clearData)}\n\n`);
+        
+        // Also broadcast to WebSocket clients
+        if (webSocketManager) {
+          webSocketManager.broadcastToSession(sessionId as string, {
+            type: 'terminal_clear',
+            sessionId: id
+          });
+        }
+      }
+    };
+    
+    terminalService.on('output', outputHandler);
+    terminalService.on('clear', clearHandler);
+    
+    req.on('close', () => {
+      terminalService.removeListener('output', outputHandler);
+      terminalService.removeListener('clear', clearHandler);
+    });
   });
 
   app.post('/api/terminal/kill', async (req, res) => {
