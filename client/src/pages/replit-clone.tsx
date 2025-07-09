@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { toast } from '@/hooks/use-toast';
+import { useTheme } from 'next-themes';
 import { 
   File, 
   Folder, 
@@ -23,7 +24,16 @@ import {
   ChevronDown,
   Users,
   Send,
-  Bot
+  Bot,
+  Moon,
+  Sun,
+  Upload,
+  Mic,
+  Image,
+  RotateCcw,
+  GitBranch,
+  Link,
+  History
 } from 'lucide-react';
 import { Editor } from '@monaco-editor/react';
 
@@ -45,6 +55,7 @@ interface TerminalOutput {
 }
 
 export default function ReplitClone() {
+  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('dark');
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [selectedFile, setSelectedFile] = useState<FileSystemNode | null>(null);
   const [openFiles, setOpenFiles] = useState<FileSystemNode[]>([]);
@@ -58,6 +69,8 @@ export default function ReplitClone() {
   const [selectedAgents, setSelectedAgents] = useState<any[]>([]);
   const [chatMessage, setChatMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [fileHistory, setFileHistory] = useState<{[key: string]: string[]}>({});
+  const [currentHistoryIndex, setCurrentHistoryIndex] = useState<{[key: string]: number}>({});
   
   const queryClient = useQueryClient();
 
@@ -223,10 +236,39 @@ export default function ReplitClone() {
 
   const handleFileSave = () => {
     if (selectedFile) {
+      // Save to history for rollback
+      const history = fileHistory[selectedFile.path] || [];
+      const newHistory = [...history, fileContent];
+      setFileHistory(prev => ({
+        ...prev,
+        [selectedFile.path]: newHistory
+      }));
+      setCurrentHistoryIndex(prev => ({
+        ...prev,
+        [selectedFile.path]: newHistory.length - 1
+      }));
+      
       saveFileMutation.mutate({
         path: selectedFile.path,
         content: fileContent
       });
+    }
+  };
+
+  const handleRollback = () => {
+    if (selectedFile) {
+      const history = fileHistory[selectedFile.path] || [];
+      const currentIndex = currentHistoryIndex[selectedFile.path] || 0;
+      
+      if (currentIndex > 0) {
+        const previousContent = history[currentIndex - 1];
+        setFileContent(previousContent);
+        setCurrentHistoryIndex(prev => ({
+          ...prev,
+          [selectedFile.path]: currentIndex - 1
+        }));
+        toast({ title: "Rolled back to previous version" });
+      }
     }
   };
 
@@ -306,7 +348,7 @@ export default function ReplitClone() {
     return nodes.map((node) => (
       <div key={node.path} className="select-none">
         <div
-          className={`flex items-center gap-2 px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer ${
+          className={`flex items-center gap-2 px-2 py-1 hover:bg-muted cursor-pointer ${
             selectedFile?.path === node.path ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : ''
           }`}
           style={{ paddingLeft: `${level * 16 + 8}px` }}
@@ -327,14 +369,14 @@ export default function ReplitClone() {
             <>
               <span className="w-4" />
               <span className="text-sm mr-1">{getFileIcon(node.name)}</span>
-              <File className="h-3 w-3 text-gray-500" />
+              <File className="h-3 w-3 text-muted-foreground" />
             </>
           )}
-          <span className="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">
+          <span className="text-sm font-medium text-foreground truncate flex-1">
             {node.name}
           </span>
           {node.type === 'file' && node.size && (
-            <span className="text-xs text-gray-500 ml-auto">
+            <span className="text-xs text-muted-foreground ml-auto">
               {(node.size / 1024).toFixed(1)}KB
             </span>
           )}
@@ -356,11 +398,11 @@ export default function ReplitClone() {
   };
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="h-screen bg-background text-foreground flex flex-col">
       {/* Header */}
-      <div className="h-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4">
+      <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h1 className="text-lg font-semibold text-foreground">
             Replit Clone
           </h1>
           <div className="flex items-center gap-2">
@@ -368,7 +410,7 @@ export default function ReplitClone() {
               size="sm"
               onClick={handleRunProject}
               disabled={isRunning}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
               <Play className="h-4 w-4 mr-1" />
               {isRunning ? 'Running...' : 'Run'}
@@ -377,12 +419,16 @@ export default function ReplitClone() {
               <Save className="h-4 w-4 mr-1" />
               Save
             </Button>
+            <Button size="sm" variant="outline" onClick={handleRollback} disabled={!selectedFile}>
+              <RotateCcw className="h-4 w-4 mr-1" />
+              Rollback
+            </Button>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search files..."
               value={searchQuery}
@@ -390,6 +436,13 @@ export default function ReplitClone() {
               className="pl-10 w-64"
             />
           </div>
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => setCurrentTheme(currentTheme === 'dark' ? 'light' : 'dark')}
+          >
+            {currentTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
           <Button size="sm" variant="outline">
             <Settings className="h-4 w-4" />
           </Button>
@@ -401,10 +454,10 @@ export default function ReplitClone() {
         <PanelGroup direction="horizontal">
           {/* File Explorer */}
           <Panel defaultSize={25} minSize={20}>
-            <div className="h-full bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700">
-              <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+            <div className="h-full bg-background border-r border-border">
+              <div className="p-3 border-b border-border">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-medium text-gray-900 dark:text-white">Files</h2>
+                  <h2 className="text-sm font-medium text-foreground">Files</h2>
                   <div className="flex gap-1">
                     <Button size="sm" variant="ghost" onClick={handleCreateFile}>
                       <Plus className="h-4 w-4" />
@@ -426,7 +479,7 @@ export default function ReplitClone() {
               
               <div className="overflow-y-auto h-full">
                 {fileSystemQuery.isLoading ? (
-                  <div className="p-4 text-center text-gray-500">Loading...</div>
+                  <div className="p-4 text-center text-muted-foreground">Loading...</div>
                 ) : (
                   <div className="py-2">
                     {fileSystemQuery.data && renderFileTree(fileSystemQuery.data)}
@@ -440,27 +493,30 @@ export default function ReplitClone() {
 
           {/* Editor Area */}
           <Panel defaultSize={50} minSize={30}>
-            <div className="h-full bg-gray-50 dark:bg-gray-900 flex flex-col">
+            <div className="h-full bg-background flex flex-col">
               {/* File Tabs */}
-              <div className="flex bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 overflow-x-auto">
+              <div className="flex bg-muted border-b border-border overflow-x-auto">
                 {openFiles.map((file) => (
                   <div
                     key={file.path}
-                    className={`flex items-center gap-2 px-3 py-2 border-r border-gray-200 dark:border-gray-600 cursor-pointer min-w-0 ${
+                    className={`flex items-center gap-2 px-3 py-2 border-r border-border cursor-pointer min-w-0 ${
                       selectedFile?.path === file.path
-                        ? 'bg-white dark:bg-gray-800 text-blue-600'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        ? 'bg-background text-blue-600 font-medium'
+                        : 'text-muted-foreground hover:bg-background/50'
                     }`}
                     onClick={() => setSelectedFile(file)}
                   >
                     <File className="h-4 w-4 flex-shrink-0" />
                     <span className="text-sm truncate">{file.name}</span>
+                    {fileHistory[file.path] && fileHistory[file.path].length > 0 && (
+                      <GitBranch className="h-3 w-3 text-orange-500" title="Has history" />
+                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         closeTab(file);
                       }}
-                      className="hover:bg-gray-300 dark:hover:bg-gray-500 rounded p-1"
+                      className="hover:bg-muted-foreground/20 rounded p-1"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -476,7 +532,7 @@ export default function ReplitClone() {
                     language={fileContentQuery.data?.language || 'plaintext'}
                     value={fileContent}
                     onChange={(value) => setFileContent(value || '')}
-                    theme="vs-dark"
+                    theme={currentTheme === 'dark' ? 'vs-dark' : 'vs'}
                     options={{
                       minimap: { enabled: false },
                       fontSize: 14,
@@ -485,7 +541,7 @@ export default function ReplitClone() {
                     }}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
                     <div className="text-center">
                       <Code className="h-12 w-12 mx-auto mb-2" />
                       <p>Select a file to start editing</p>
@@ -500,7 +556,7 @@ export default function ReplitClone() {
 
           {/* Right Panel */}
           <Panel defaultSize={25} minSize={20}>
-            <div className="h-full bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700">
+            <div className="h-full bg-background border-l border-border">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
                 <TabsList className="grid w-full grid-cols-4 shrink-0">
                   <TabsTrigger value="preview">
@@ -672,12 +728,12 @@ export default function ReplitClone() {
                 </TabsContent>
 
                 <TabsContent value="agents" className="flex-1 m-0 p-0 flex flex-col">
-                  <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                  <div className="bg-muted px-4 py-2 border-b border-border">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">AI Development Team</span>
+                      <span className="text-sm font-medium">🤖 AI Development Team</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">
-                          {selectedAgents.length} selected
+                        <span className="text-xs text-muted-foreground">
+                          {selectedAgents.length} active
                         </span>
                         <Button 
                           size="sm" 
@@ -691,16 +747,16 @@ export default function ReplitClone() {
                   </div>
                   
                   {/* Agent Selection */}
-                  <div className="p-4 border-b border-gray-200 dark:border-gray-600">
-                    <div className="text-sm font-medium mb-2">Select AI Agents:</div>
+                  <div className="p-4 border-b border-border">
+                    <div className="text-sm font-medium mb-2">Select AI Specialists:</div>
                     <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
                       {agentsQuery.data?.map((agent: any) => (
                         <div 
                           key={agent.id} 
-                          className={`p-2 rounded border cursor-pointer transition-colors ${
+                          className={`p-3 rounded-lg border cursor-pointer transition-all ${
                             selectedAgents.some(a => a.id === agent.id)
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                              : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
+                              : 'border-border hover:border-muted-foreground hover:bg-muted/50'
                           }`}
                           onClick={() => {
                             if (selectedAgents.some(a => a.id === agent.id)) {
@@ -710,13 +766,16 @@ export default function ReplitClone() {
                             }
                           }}
                         >
-                          <div className="flex items-center gap-2">
-                            <Bot className="h-4 w-4 text-blue-500" />
-                            <div className="flex-1">
-                              <div className="font-medium text-sm">{agent.name}</div>
-                              <div className="text-xs text-gray-500">{agent.role}</div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                              <Bot className="h-4 w-4 text-white" />
                             </div>
-                            <div className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
+                            <div className="flex-1">
+                              <div className="font-semibold text-sm text-foreground">{agent.name}</div>
+                              <div className="text-xs text-muted-foreground">{agent.role}</div>
+                              <div className="text-xs text-blue-600 dark:text-blue-400">{agent.specialization}</div>
+                            </div>
+                            <div className="text-xs px-2 py-1 bg-muted rounded-full font-medium">
                               {agent.provider}
                             </div>
                           </div>
@@ -729,9 +788,9 @@ export default function ReplitClone() {
                   <div className="flex-1 flex flex-col">
                     <div className="flex-1 p-4 overflow-y-auto">
                       {chatMessages.length === 0 ? (
-                        <div className="text-center text-gray-500 py-8">
+                        <div className="text-center text-muted-foreground py-8">
                           <Bot className="h-12 w-12 mx-auto mb-2" />
-                          <p>Select AI agents and start coding together!</p>
+                          <p className="font-medium">Select AI agents and start coding together!</p>
                           <p className="text-sm mt-1">
                             Ask questions about your code or request help with development
                           </p>
@@ -740,20 +799,27 @@ export default function ReplitClone() {
                         chatMessages.map((msg: any, index: number) => (
                           <div key={index} className="mb-4">
                             <div className="flex items-center gap-2 mb-1">
-                              <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                                msg.sender_type === 'user' 
+                                  ? 'bg-green-500' 
+                                  : 'bg-gradient-to-br from-blue-500 to-purple-600'
+                              }`}>
                                 {msg.sender_type === 'user' ? 
-                                  <span className="text-white text-xs">U</span> : 
+                                  <span className="text-white text-xs font-bold">U</span> : 
                                   <Bot className="h-3 w-3 text-white" />
                                 }
                               </div>
-                              <span className="text-sm font-medium">
+                              <span className="text-sm font-bold text-foreground">
                                 {msg.sender_type === 'user' ? 'You' : msg.sender_name}
                               </span>
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-muted-foreground">
                                 {new Date(msg.timestamp).toLocaleTimeString()}
                               </span>
+                              {selectedFile && (
+                                <Link className="h-3 w-3 text-blue-500" title={`Context: ${selectedFile.name}`} />
+                              )}
                             </div>
-                            <div className="ml-8 text-sm bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                            <div className="ml-8 text-sm bg-muted p-3 rounded-lg">
                               {msg.content}
                             </div>
                           </div>
@@ -762,12 +828,42 @@ export default function ReplitClone() {
                     </div>
                     
                     {/* Message Input */}
-                    <div className="border-t border-gray-200 dark:border-gray-600 p-3">
+                    <div className="border-t border-border p-3">
+                      <div className="flex gap-2 mb-2">
+                        <input
+                          type="file"
+                          accept="image/*,audio/*,.pdf,.txt,.js,.ts,.jsx,.tsx,.html,.css,.json,.md"
+                          className="hidden"
+                          id="file-upload"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setChatMessage(`📎 Attached: ${file.name}`);
+                            }
+                          }}
+                        />
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => document.getElementById('file-upload')?.click()}
+                        >
+                          <Upload className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Image className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Mic className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <History className="h-4 w-4" />
+                        </Button>
+                      </div>
                       <div className="flex gap-2">
                         <Input
                           value={chatMessage}
                           onChange={(e) => setChatMessage(e.target.value)}
-                          placeholder="Ask your AI team about the code..."
+                          placeholder={`Ask your AI team about ${selectedFile?.name || 'the code'}...`}
                           className="flex-1"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
@@ -781,11 +877,14 @@ export default function ReplitClone() {
                                 }]);
                                 setChatMessage('');
                                 
-                                // Simulate AI response
+                                // Simulate AI response with file context
                                 setTimeout(() => {
                                   const randomAgent = selectedAgents[Math.floor(Math.random() * selectedAgents.length)];
+                                  const contextMessage = selectedFile 
+                                    ? `Looking at ${selectedFile.name} - I can help you with that! Let me analyze your code and provide suggestions.` 
+                                    : `I can help you with that! Let me analyze your code and provide suggestions.`;
                                   setChatMessages(prev => [...prev, {
-                                    content: `I can help you with that! Let me analyze your code and provide suggestions.`,
+                                    content: contextMessage,
                                     sender_type: 'agent',
                                     sender_name: randomAgent.name,
                                     timestamp: new Date().toISOString()
@@ -807,8 +906,11 @@ export default function ReplitClone() {
                               
                               setTimeout(() => {
                                 const randomAgent = selectedAgents[Math.floor(Math.random() * selectedAgents.length)];
+                                const contextMessage = selectedFile 
+                                  ? `Looking at ${selectedFile.name} - I can help you with that! Let me analyze your code and provide suggestions.` 
+                                  : `I can help you with that! Let me analyze your code and provide suggestions.`;
                                 setChatMessages(prev => [...prev, {
-                                  content: `I can help you with that! Let me analyze your code and provide suggestions.`,
+                                  content: contextMessage,
                                   sender_type: 'agent',
                                   sender_name: randomAgent.name,
                                   timestamp: new Date().toISOString()
@@ -820,6 +922,9 @@ export default function ReplitClone() {
                         >
                           <Send className="h-4 w-4" />
                         </Button>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {selectedFile && `Context: ${selectedFile.name}`} • {selectedAgents.length} agents selected
                       </div>
                     </div>
                   </div>
