@@ -52,10 +52,7 @@ export default function ReplitAIEnhanced() {
   const createAppMutation = useMutation({
     mutationFn: async (description: string) => {
       setIsCreatingApp(true);
-      return apiRequest('/api/replit-ai/agent/create-app', {
-        method: 'POST',
-        body: JSON.stringify({ description })
-      });
+      return apiRequest('POST', '/api/replit-ai/agent/create-app', { description });
     },
     onSuccess: (data) => {
       setIsCreatingApp(false);
@@ -81,10 +78,7 @@ export default function ReplitAIEnhanced() {
   // Assistant mutations
   const explainCodeMutation = useMutation({
     mutationFn: async (params: { code: string; language: string }) => {
-      return apiRequest('/api/replit-ai/assistant/explain', {
-        method: 'POST',
-        body: JSON.stringify(params)
-      });
+      return apiRequest('POST', '/api/replit-ai/assistant/explain', params);
     },
     onSuccess: (data) => {
       toast({
@@ -96,10 +90,7 @@ export default function ReplitAIEnhanced() {
 
   const fixCodeMutation = useMutation({
     mutationFn: async (params: { code: string; language: string; mode: string }) => {
-      return apiRequest('/api/replit-ai/assistant/fix', {
-        method: 'POST',
-        body: JSON.stringify(params)
-      });
+      return apiRequest('POST', '/api/replit-ai/assistant/fix', params);
     },
     onSuccess: (data) => {
       if (data.mode === 'advanced') {
@@ -113,10 +104,7 @@ export default function ReplitAIEnhanced() {
 
   const addFeatureMutation = useMutation({
     mutationFn: async (params: { code: string; language: string; featureDescription: string; mode: string }) => {
-      return apiRequest('/api/replit-ai/assistant/add-feature', {
-        method: 'POST',
-        body: JSON.stringify(params)
-      });
+      return apiRequest('POST', '/api/replit-ai/assistant/add-feature', params);
     },
     onSuccess: (data) => {
       if (data.mode === 'advanced') {
