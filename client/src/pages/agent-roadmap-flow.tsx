@@ -138,28 +138,63 @@ const FileTree = ({ projectId }: { projectId: number | null }) => {
 };
 
 const AgentActivity = ({ stepId, agents }: { stepId: string; agents: TeamAgent[] }) => {
-  const [activities, setActivities] = useState<string[]>([]);
+  const [activities, setActivities] = useState<{
+    id: string;
+    agent: string;
+    action: string;
+    status: 'working' | 'considering' | 'coding';
+    timestamp: string;
+  }[]>([]);
 
   useEffect(() => {
-    // Simulate agent activities
+    // Simulate agent activities with more detailed status
     const interval = setInterval(() => {
       const agent = agents[Math.floor(Math.random() * agents.length)];
-      const actions = [
-        `${agent.name} is analyzing requirements...`,
-        `${agent.name} is generating code...`,
-        `${agent.name} is reviewing implementation...`,
-        `${agent.name} is optimizing performance...`
+      const actionTypes = [
+        { action: 'analyzing requirements', status: 'considering' as const },
+        { action: 'considering options', status: 'considering' as const },
+        { action: 'scanning code structure', status: 'working' as const },
+        { action: 'generating code', status: 'coding' as const },
+        { action: 'reviewing implementation', status: 'working' as const },
+        { action: 'optimizing performance', status: 'coding' as const },
+        { action: 'writing tests', status: 'coding' as const },
+        { action: 'debugging issues', status: 'working' as const }
       ];
-      setActivities(prev => [...prev.slice(-2), actions[Math.floor(Math.random() * actions.length)]]);
-    }, 3000);
+      
+      const selected = actionTypes[Math.floor(Math.random() * actionTypes.length)];
+      
+      setActivities(prev => [
+        ...prev.slice(-4),
+        {
+          id: Math.random().toString(36),
+          agent: agent.name,
+          action: selected.action,
+          status: selected.status,
+          timestamp: new Date().toISOString()
+        }
+      ]);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [agents]);
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'considering': return '🤔';
+      case 'coding': return '⚡';
+      case 'working': return '🔧';
+      default: return '💭';
+    }
+  };
+
   return (
-    <div className="space-y-1">
-      {activities.map((activity, i) => (
-        <p key={i} className="text-xs text-muted-foreground">{activity}</p>
+    <div className="space-y-2">
+      {activities.map((activity) => (
+        <div key={activity.id} className="flex items-center gap-2 text-xs animate-fadeIn">
+          <span className="text-lg">{getStatusIcon(activity.status)}</span>
+          <span className="font-medium">{activity.agent}</span>
+          <span className="text-muted-foreground">is {activity.action}...</span>
+        </div>
       ))}
     </div>
   );
@@ -298,32 +333,102 @@ const Console = ({ projectId, onError }: {
   projectId: number | null;
   onError: (error: string) => void;
 }) => {
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<{
+    id: string;
+    timestamp: string;
+    type: 'system' | 'agent' | 'error' | 'warning' | 'success';
+    agent?: string;
+    message: string;
+  }[]>([]);
 
   useEffect(() => {
     if (projectId) {
-      // Simulate console output
-      const messages = [
-        '> Starting development server...',
-        '> Installing dependencies...',
-        '> Building project...',
-        '✓ Server running on http://localhost:3000'
+      // Initial messages
+      const initMessages = [
+        { type: 'system' as const, message: '> Starting development server...' },
+        { type: 'system' as const, message: '> Installing dependencies...' },
+        { type: 'system' as const, message: '> Building project...' },
+        { type: 'success' as const, message: '✓ Server running on http://localhost:3000' }
       ];
       
-      messages.forEach((msg, i) => {
+      initMessages.forEach((msg, i) => {
         setTimeout(() => {
-          setLogs(prev => [...prev, msg]);
-        }, i * 1000);
+          setLogs(prev => [...prev, {
+            id: Math.random().toString(36),
+            timestamp: new Date().toLocaleTimeString(),
+            type: msg.type,
+            message: msg.message
+          }]);
+        }, i * 500);
       });
+
+      // Simulate live agent logs
+      const interval = setInterval(() => {
+        const agents = ['Alex Roadmap', 'Sam AI', 'Maya Designer', 'Jordan CSS', 'Morgan Vite'];
+        const agent = agents[Math.floor(Math.random() * agents.length)];
+        
+        const agentLogs = [
+          { type: 'agent' as const, message: `[${agent}] Scanning project structure...` },
+          { type: 'agent' as const, message: `[${agent}] Found ${Math.floor(Math.random() * 20 + 5)} components to analyze` },
+          { type: 'agent' as const, message: `[${agent}] Generating optimized code...` },
+          { type: 'agent' as const, message: `[${agent}] Running performance checks...` },
+          { type: 'agent' as const, message: `[${agent}] Writing unit tests...` },
+          { type: 'agent' as const, message: `[${agent}] Applying best practices...` },
+          { type: 'warning' as const, message: `⚠ [${agent}] Large bundle size detected in chunk-3` },
+          { type: 'agent' as const, message: `[${agent}] Optimizing imports...` },
+          { type: 'success' as const, message: `✓ [${agent}] Component created successfully` },
+          { type: 'agent' as const, message: `[${agent}] Checking accessibility compliance...` }
+        ];
+
+        const selected = agentLogs[Math.floor(Math.random() * agentLogs.length)];
+        
+        setLogs(prev => [...prev, {
+          id: Math.random().toString(36),
+          timestamp: new Date().toLocaleTimeString(),
+          type: selected.type,
+          agent: selected.type === 'agent' ? agent : undefined,
+          message: selected.message
+        }].slice(-50));
+
+        // Occasionally add errors
+        if (Math.random() > 0.92) {
+          const error = `✗ Error: Failed to compile module at line ${Math.floor(Math.random() * 100)}`;
+          setLogs(prev => [...prev, {
+            id: Math.random().toString(36),
+            timestamp: new Date().toLocaleTimeString(),
+            type: 'error' as const,
+            message: error
+          }]);
+          onError(error);
+        }
+      }, 1200);
+
+      return () => clearInterval(interval);
     }
-  }, [projectId]);
+  }, [projectId, onError]);
+
+  const getLogColor = (type: string) => {
+    switch (type) {
+      case 'error': return 'text-red-400';
+      case 'warning': return 'text-yellow-400';
+      case 'success': return 'text-green-400';
+      case 'agent': return 'text-blue-400';
+      default: return 'text-gray-400';
+    }
+  };
 
   return (
-    <div className="h-full bg-black text-green-400 font-mono text-sm p-4 overflow-auto">
-      {logs.map((log, i) => (
-        <div key={i}>{log}</div>
+    <div className="h-full bg-black text-gray-400 font-mono text-xs p-4 overflow-auto">
+      {logs.map((log) => (
+        <div key={log.id} className={`${getLogColor(log.type)} mb-1 animate-fadeIn`}>
+          <span className="text-gray-500">[{log.timestamp}]</span>
+          {log.type === 'agent' && (
+            <span className="text-purple-400 font-bold"> AGENT</span>
+          )}
+          {' '}{log.message}
+        </div>
       ))}
-      <div className="animate-pulse">_</div>
+      <div className="animate-pulse text-green-400 mt-2">_</div>
     </div>
   );
 };
@@ -351,6 +456,170 @@ const QRDisplay = ({ projectId }: { projectId: number | null }) => {
           <p>QR code will appear here</p>
         </div>
       )}
+    </div>
+  );
+};
+
+const AgentStatusPanel = ({ agents }: { agents: TeamAgent[] }) => {
+  const [agentStatuses, setAgentStatuses] = useState<Record<number, {
+    status: 'idle' | 'working' | 'thinking' | 'coding' | 'testing' | 'reviewing';
+    action: string;
+    progress: number;
+    lastUpdate: string;
+  }>>({});
+
+  useEffect(() => {
+    // Initialize agent statuses
+    agents.forEach(agent => {
+      setAgentStatuses(prev => ({
+        ...prev,
+        [agent.id]: {
+          status: 'idle',
+          action: 'Waiting for tasks...',
+          progress: 0,
+          lastUpdate: new Date().toLocaleTimeString()
+        }
+      }));
+    });
+
+    // Simulate live agent activity
+    const interval = setInterval(() => {
+      const agent = agents[Math.floor(Math.random() * agents.length)];
+      if (!agent) return;
+
+      const activities = [
+        { status: 'thinking' as const, action: 'Analyzing project requirements...', progress: 15 },
+        { status: 'thinking' as const, action: 'Considering implementation options...', progress: 25 },
+        { status: 'working' as const, action: 'Scanning code structure...', progress: 35 },
+        { status: 'coding' as const, action: 'Writing component code...', progress: 50 },
+        { status: 'coding' as const, action: 'Implementing features...', progress: 65 },
+        { status: 'testing' as const, action: 'Running unit tests...', progress: 75 },
+        { status: 'reviewing' as const, action: 'Reviewing code quality...', progress: 85 },
+        { status: 'working' as const, action: 'Optimizing performance...', progress: 90 },
+        { status: 'idle' as const, action: 'Task completed successfully!', progress: 100 }
+      ];
+
+      const activity = activities[Math.floor(Math.random() * activities.length)];
+      
+      setAgentStatuses(prev => ({
+        ...prev,
+        [agent.id]: {
+          status: activity.status,
+          action: activity.action,
+          progress: activity.progress,
+          lastUpdate: new Date().toLocaleTimeString()
+        }
+      }));
+
+      // Reset to idle after completion
+      if (activity.progress === 100) {
+        setTimeout(() => {
+          setAgentStatuses(prev => ({
+            ...prev,
+            [agent.id]: {
+              status: 'idle',
+              action: 'Waiting for tasks...',
+              progress: 0,
+              lastUpdate: new Date().toLocaleTimeString()
+            }
+          }));
+        }, 3000);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [agents]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'thinking': return 'bg-blue-500';
+      case 'coding': return 'bg-green-500';
+      case 'testing': return 'bg-orange-500';
+      case 'reviewing': return 'bg-purple-500';
+      case 'working': return 'bg-yellow-500';
+      default: return 'bg-gray-400';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'thinking': return '🤔';
+      case 'coding': return '⚡';
+      case 'testing': return '🧪';
+      case 'reviewing': return '👀';
+      case 'working': return '🔧';
+      default: return '💭';
+    }
+  };
+
+  return (
+    <div className="h-full overflow-auto p-4">
+      <div className="space-y-4">
+        {agents.map(agent => {
+          const status = agentStatuses[agent.id] || {
+            status: 'idle',
+            action: 'Initializing...',
+            progress: 0,
+            lastUpdate: '-'
+          };
+
+          return (
+            <Card key={agent.id} className="p-4">
+              <div className="flex items-start gap-4">
+                {/* Agent Avatar */}
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <Bot className="w-6 h-6 text-white" />
+                  </div>
+                  {status.status !== 'idle' && (
+                    <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full ${getStatusColor(status.status)} animate-pulse`} />
+                  )}
+                </div>
+
+                {/* Agent Info */}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-semibold">{agent.name}</h4>
+                    <Badge variant="outline" className="text-xs">
+                      {agent.specialization}
+                    </Badge>
+                    <span className="text-2xl ml-auto">{getStatusIcon(status.status)}</span>
+                  </div>
+
+                  {/* Status and Action */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Status:</span>
+                      <span className={`font-medium ${
+                        status.status === 'idle' ? 'text-gray-500' : 'text-foreground'
+                      }`}>
+                        {status.status.charAt(0).toUpperCase() + status.status.slice(1)}
+                      </span>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        Last update: {status.lastUpdate}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-muted-foreground">{status.action}</p>
+
+                    {/* Progress Bar */}
+                    {status.status !== 'idle' && (
+                      <div className="relative w-full bg-muted rounded-full h-2 overflow-hidden">
+                        <div 
+                          className={`h-full ${getStatusColor(status.status)} transition-all duration-500 relative`}
+                          style={{ width: `${status.progress}%` }}
+                        >
+                          <div className="absolute inset-0 bg-white/20 animate-shimmer" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -865,15 +1134,19 @@ export default function AgentRoadmapFlow() {
           {/* Right Panel: Preview/Console */}
           <ResizablePanel defaultSize={40}>
             <div className="h-full bg-background">
-              <Tabs defaultValue="preview" className="h-full">
+              <Tabs defaultValue="console" className="h-full">
                 <TabsList className="w-full justify-start rounded-none border-b">
-                  <TabsTrigger value="preview">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Preview
-                  </TabsTrigger>
                   <TabsTrigger value="console">
                     <Terminal className="mr-2 h-4 w-4" />
                     Console
+                  </TabsTrigger>
+                  <TabsTrigger value="status">
+                    <Bot className="mr-2 h-4 w-4" />
+                    Agent Status
+                  </TabsTrigger>
+                  <TabsTrigger value="preview">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
                   </TabsTrigger>
                   <TabsTrigger value="qr">
                     <QrCode className="mr-2 h-4 w-4" />
@@ -885,15 +1158,19 @@ export default function AgentRoadmapFlow() {
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="preview" className="h-[calc(100%-3rem)] p-0">
-                  <LivePreview projectId={projectId} />
-                </TabsContent>
-
                 <TabsContent value="console" className="h-[calc(100%-3rem)] p-0">
                   <Console 
                     projectId={projectId} 
                     onError={(error) => handleConsoleError(error)}
                   />
+                </TabsContent>
+
+                <TabsContent value="status" className="h-[calc(100%-3rem)] p-0">
+                  <AgentStatusPanel agents={Object.values(assignedAgents).flat()} />
+                </TabsContent>
+
+                <TabsContent value="preview" className="h-[calc(100%-3rem)] p-0">
+                  <LivePreview projectId={projectId} />
                 </TabsContent>
 
                 <TabsContent value="qr" className="h-[calc(100%-3rem)] p-4">
