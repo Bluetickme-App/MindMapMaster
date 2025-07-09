@@ -34,7 +34,7 @@ import {
   GitBranch,
   Link,
   History,
-  Package
+  Package2
 } from 'lucide-react';
 import { Editor } from '@monaco-editor/react';
 

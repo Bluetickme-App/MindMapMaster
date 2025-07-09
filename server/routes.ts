@@ -3325,7 +3325,7 @@ console.log('File: ${filePath}');
 `;
           }
           
-          const language = fileSystemService.getLanguageFromFileName(filePath);
+          const language = fileSystemService.getFileLanguage(filePath);
           return res.json({
             content: templateContent,
             language,
