@@ -46,6 +46,7 @@ function Router() {
       <Route path="/welet" component={WeletLandingPage} />
       <Route path="/welet-properties" component={WeLet} />
       <Route path="/replit" component={ReplitClone} />
+      <Route path="/replit-clone" component={ReplitClone} />
       <Route component={NotFound} />
     </Switch>
   );

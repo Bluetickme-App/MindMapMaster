@@ -273,12 +273,41 @@ export default function ReplitClone() {
     }
   };
 
+  const getFileIcon = (fileName: string) => {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'js':
+      case 'jsx':
+        return '📄';
+      case 'ts':
+      case 'tsx':
+        return '🔷';
+      case 'html':
+        return '🌐';
+      case 'css':
+        return '🎨';
+      case 'json':
+        return '⚙️';
+      case 'md':
+        return '📝';
+      case 'png':
+      case 'jpg':
+      case 'jpeg':
+      case 'gif':
+        return '🖼️';
+      default:
+        return '📄';
+    }
+  };
+
   const renderFileTree = (nodes: FileSystemNode[], level = 0) => {
+    if (!nodes) return null;
+    
     return nodes.map((node) => (
       <div key={node.path} className="select-none">
         <div
           className={`flex items-center gap-2 px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer ${
-            selectedFile?.path === node.path ? 'bg-blue-100 dark:bg-blue-900' : ''
+            selectedFile?.path === node.path ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : ''
           }`}
           style={{ paddingLeft: `${level * 16 + 8}px` }}
           onClick={() => handleFileSelect(node)}
@@ -297,10 +326,18 @@ export default function ReplitClone() {
           ) : (
             <>
               <span className="w-4" />
-              <File className="h-4 w-4 text-gray-500" />
+              <span className="text-sm mr-1">{getFileIcon(node.name)}</span>
+              <File className="h-3 w-3 text-gray-500" />
             </>
           )}
-          <span className="text-sm">{node.name}</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-white truncate flex-1">
+            {node.name}
+          </span>
+          {node.type === 'file' && node.size && (
+            <span className="text-xs text-gray-500 ml-auto">
+              {(node.size / 1024).toFixed(1)}KB
+            </span>
+          )}
         </div>
         
         {node.type === 'folder' && expandedFolders.has(node.path) && node.children && (
