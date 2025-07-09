@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { storage } from "../storage";
 import type { Agent, Message, Conversation, AgentResponse } from "@shared/schema";
 import { agentMemoryService } from "./agent-memory-service";
+import { claudeAgentSystem } from "./claude-agent-system";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
@@ -91,12 +92,12 @@ Always respond in JSON format:
         assistant_id: assistantInfo.assistantId
       });
 
-      // Wait for completion
-      let runStatus = await openai.beta.threads.runs.retrieve(assistantInfo.threadId, run.id);
+      // Wait for completion (fixed parameter order)
+      let runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: assistantInfo.threadId });
       
       while (runStatus.status === 'queued' || runStatus.status === 'in_progress') {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        runStatus = await openai.beta.threads.runs.retrieve(assistantInfo.threadId, run.id);
+        runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: assistantInfo.threadId });
       }
 
       if (runStatus.status === 'completed') {
@@ -169,6 +170,18 @@ Always respond in JSON format:
       if (aiProvider === 'openai') {
         // Use OpenAI Assistant API for OpenAI agents
         aiResponse = await this.generateOpenAIAssistantResponse(agent, userMessage, context);
+      } else if (aiProvider === 'claude') {
+        // Use Claude 4.0 Sonnet-level capabilities
+        const claudeResponse = await claudeAgentSystem.generateClaudeResponse(agent, userMessage, context);
+        aiResponse = {
+          content: JSON.stringify({
+            content: claudeResponse.content,
+            messageType: "text",
+            metadata: claudeResponse.metadata,
+            confidence: claudeResponse.metadata?.confidence || 0.8,
+            reasoning: claudeResponse.metadata?.reasoning || "Claude 4.0 Sonnet analysis"
+          })
+        };
       } else {
         // Use multi-AI provider system for other providers
         const { multiAIService } = await import('./multi-ai-provider.js');
