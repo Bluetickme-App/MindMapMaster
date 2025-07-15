@@ -8,11 +8,11 @@ export default function QuickActions() {
   const actions = [
     {
       title: "Create Project",
-      description: "Start a new project with AI",
+      description: "Single agent or team collaboration",
       icon: Plus,
       color: "blue-500",
       onClick: () => {
-        setLocation('/create-project');
+        setLocation('/create-streamlined');
       },
     },
     {

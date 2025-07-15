@@ -28,10 +28,10 @@ export default function Dashboard() {
               <p className="text-sm text-slate-400">Manage your projects and AI-powered development workflow</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="/create-project">
-                <Button className="bg-primary hover:bg-primary/90 text-white">
+              <Link href="/create-streamlined">
+                <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg">
                   <Plus className="w-4 h-4 mr-2" />
-                  New Project
+                  Create Project
                 </Button>
               </Link>
               <Button variant="outline" className="bg-slate-700 hover:bg-slate-600 text-slate-100 border-slate-600">

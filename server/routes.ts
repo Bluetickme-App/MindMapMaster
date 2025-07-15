@@ -12,6 +12,7 @@ import { fileSystemService } from "./services/file-system";
 import { projectManagerService } from "./services/project-manager";
 import { agentMemoryService } from "./services/agent-memory-service";
 import { extensionManager } from "./services/extension-manager";
+import { initializeDevTeamAgents } from "./services/team-agents";
 import { 
   insertCodeGenerationSchema, insertProjectSchema, insertApiTestSchema,
   insertAgentSchema, insertConversationSchema, insertMessageSchema,
@@ -36,6 +37,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log(`OpenAI API Key configured: ${!!process.env.OPENAI_API_KEY}`);
   console.log(`Google API Key configured: ${!!process.env.GOOGLE_API_KEY}`);
   console.log(`Anthropic API Key configured: ${!!process.env.ANTHROPIC_API_KEY}`);
+  
+  // Initialize team agents in database
+  await initializeDevTeamAgents();
   
   // Add health check endpoints for production deployment
   app.get('/health', (req, res) => {
@@ -115,6 +119,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get projects error:", error);
       res.status(500).json({ message: "Failed to fetch projects" });
+    }
+  });
+
+  // Streamlined project creation endpoint
+  app.post("/api/projects/create-streamlined", async (req, res) => {
+    try {
+      const {
+        name,
+        description,
+        projectType,
+        selectedAgentId,
+        selectedAgentIds,
+        brief,
+        language,
+        framework,
+        complexity
+      } = req.body;
+
+      // Create the project
+      const project = await storage.createProject({
+        userId: currentUserId,
+        name,
+        description,
+        language: language || null,
+        framework: framework || null,
+        status: 'active',
+        repository: null,
+        stars: 0,
+        forks: 0,
+        lastModified: new Date().toISOString()
+      });
+
+      // Create conversation based on project type
+      let conversation;
+      if (projectType === 'single' && selectedAgentId) {
+        // Single agent conversation
+        conversation = await storage.createConversation({
+          projectId: project.id,
+          title: `${name} - Single Agent Development`,
+          participants: [selectedAgentId],
+          status: 'active'
+        });
+      } else if (projectType === 'team' && selectedAgentIds) {
+        // Team conversation
+        const agentIds = typeof selectedAgentIds === 'string' 
+          ? JSON.parse(selectedAgentIds) 
+          : selectedAgentIds;
+        
+        conversation = await storage.createConversation({
+          projectId: project.id,
+          title: `${name} - Team Development`,
+          participants: agentIds,
+          status: 'active'
+        });
+
+        // If brief is provided, create initial message
+        if (brief) {
+          await storage.createMessage({
+            conversationId: conversation.id,
+            agentId: null, // User message
+            content: `Project Brief: ${brief}`,
+            messageType: 'user',
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+
+      res.json({
+        id: project.id,
+        name: project.name,
+        conversationId: conversation?.id,
+        projectType,
+        message: 'Project created successfully'
+      });
+    } catch (error) {
+      console.error("Streamlined project creation error:", error);
+      res.status(500).json({ message: "Failed to create project" });
     }
   });
 
