@@ -12,7 +12,7 @@ export default function QuickActions() {
       icon: Plus,
       color: "blue-500",
       onClick: () => {
-        setLocation('/create-streamlined');
+        setLocation('/create-simple');
       },
     },
     {

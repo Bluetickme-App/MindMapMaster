@@ -27,6 +27,7 @@ import ReplitAIEnhanced from "@/pages/replit-ai-enhanced";
 import ReplitSimple from "@/pages/replit-simple";
 import AgentRoadmapFlow from "@/pages/agent-roadmap-flow";
 import StreamlinedProjectCreation from "@/pages/streamlined-project-creation";
+import SimpleProjectCreation from "@/pages/simple-project-creation";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -57,6 +58,7 @@ function Router() {
       <Route path="/replit-simple" component={ReplitSimple} />
       <Route path="/agent-roadmap-flow" component={AgentRoadmapFlow} />
       <Route path="/create-streamlined" component={StreamlinedProjectCreation} />
+      <Route path="/create-simple" component={SimpleProjectCreation} />
       <Route component={NotFound} />
     </Switch>
   );

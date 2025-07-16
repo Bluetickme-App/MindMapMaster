@@ -137,18 +137,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         complexity
       } = req.body;
 
+      console.log('Creating streamlined project:', {
+        name,
+        projectType,
+        selectedAgentId,
+        selectedAgentIds: selectedAgentIds?.length
+      });
+
       // Create the project
       const project = await storage.createProject({
         userId: currentUserId,
         name,
         description,
-        language: language || null,
+        language: language || 'general',
         framework: framework || null,
         status: 'active',
         repository: null,
         stars: 0,
-        forks: 0,
-        lastModified: new Date().toISOString()
+        forks: 0
       });
 
       // Create conversation based on project type
@@ -158,6 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         conversation = await storage.createConversation({
           projectId: project.id,
           title: `${name} - Single Agent Development`,
+          type: 'project_discussion',
           participants: [selectedAgentId],
           status: 'active'
         });
@@ -170,6 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         conversation = await storage.createConversation({
           projectId: project.id,
           title: `${name} - Team Development`,
+          type: 'project_discussion',
           participants: agentIds,
           status: 'active'
         });
@@ -180,8 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             conversationId: conversation.id,
             agentId: null, // User message
             content: `Project Brief: ${brief}`,
-            messageType: 'user',
-            timestamp: new Date().toISOString()
+            messageType: 'user'
           });
         }
       }
