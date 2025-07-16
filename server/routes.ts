@@ -632,7 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { multiAISDKIntegration } = await import('./services/multi-ai-sdk-integration.js');
-      const agents = await storage.getAgents();
+      const agents = await storage.getAllAgents();
       
       const assignments = await multiAISDKIntegration.assignJobsToAgents(
         agents, 
