@@ -622,6 +622,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Multi-AI SDK Integration endpoints
+  app.post('/api/ai-integration/assign-jobs', async (req, res) => {
+    try {
+      const { projectDescription, complexity = 'moderate' } = req.body;
+      
+      if (!projectDescription) {
+        return res.status(400).json({ message: 'Project description is required' });
+      }
+
+      const { multiAISDKIntegration } = await import('./services/multi-ai-sdk-integration.js');
+      const agents = await storage.getAgents();
+      
+      const assignments = await multiAISDKIntegration.assignJobsToAgents(
+        agents, 
+        projectDescription, 
+        complexity
+      );
+
+      const providerHealth = await multiAISDKIntegration.getProviderHealthStatus();
+
+      res.json({
+        assignments,
+        providerHealth,
+        totalEstimatedCost: assignments.reduce((sum, a) => sum + a.estimatedCost, 0),
+        breakdown: {
+          openai: assignments.filter(a => a.aiProvider === 'openai').length,
+          claude: assignments.filter(a => a.aiProvider === 'claude').length,
+          gemini: assignments.filter(a => a.aiProvider === 'gemini').length
+        }
+      });
+    } catch (error) {
+      console.error('Job assignment error:', error);
+      res.status(500).json({ message: 'Failed to assign jobs' });
+    }
+  });
+
+  app.post('/api/ai-integration/execute-job', async (req, res) => {
+    try {
+      const { assignment, prompt, conversationId } = req.body;
+      
+      if (!assignment || !prompt) {
+        return res.status(400).json({ message: 'Assignment and prompt are required' });
+      }
+
+      const { multiAISDKIntegration } = await import('./services/multi-ai-sdk-integration.js');
+      
+      const context = {
+        conversation: await storage.getConversation(conversationId || 1),
+        recentMessages: [],
+        projectContext: { description: 'AI SDK Integration Demo' }
+      };
+
+      const result = await multiAISDKIntegration.executeJob(assignment, prompt, context);
+      
+      res.json({
+        success: true,
+        result,
+        provider: assignment.aiProvider,
+        jobType: assignment.jobType
+      });
+    } catch (error) {
+      console.error('Job execution error:', error);
+      res.status(500).json({ 
+        message: 'Failed to execute job',
+        error: error.message 
+      });
+    }
+  });
+
+  app.get('/api/ai-integration/provider-health', async (req, res) => {
+    try {
+      const { multiAISDKIntegration } = await import('./services/multi-ai-sdk-integration.js');
+      const health = await multiAISDKIntegration.getProviderHealthStatus();
+      res.json(health);
+    } catch (error) {
+      console.error('Provider health check error:', error);
+      res.status(500).json({ message: 'Failed to check provider health' });
+    }
+  });
+
   // User routes
   app.get("/api/user", async (req, res) => {
     try {

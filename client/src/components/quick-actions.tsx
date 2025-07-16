@@ -123,6 +123,15 @@ export default function QuickActions() {
         setLocation('/agent-roadmap-flow');
       },
     },
+    {
+      title: "Multi-AI SDK Demo",
+      description: "OpenAI, Claude & Gemini integration",
+      icon: Sparkles,
+      color: "pink-500",
+      onClick: () => {
+        setLocation('/multi-ai-sdk-demo');
+      },
+    },
   ];
 
   return (
