@@ -38,7 +38,7 @@ export default function SimpleProjectCreation() {
     enabled: projectType === 'single' || step === 2
   });
 
-  const createProject = async () => {
+  const createProject = () => {
     if (!projectName.trim()) {
       toast({
         title: 'Project Name Required',
@@ -68,31 +68,21 @@ export default function SimpleProjectCreation() {
 
     setIsCreating(true);
     
-    try {
-      // Navigate directly to Replit clone with project data as URL parameters
-      const params = new URLSearchParams({
-        name: projectName,
-        description: projectDescription || '',
-        type: projectType,
-        agents: projectType === 'single' ? selectedAgentId?.toString() || '' : selectedAgentIds.join(','),
-        brief: brief || ''
-      });
-      
-      toast({
-        title: 'Project Created',
-        description: 'Your project has been set up successfully.'
-      });
-      
-      setLocation(`/replit-clone?${params.toString()}`);
-    } catch (error) {
-      toast({
-        title: 'Creation Failed',
-        description: 'Unable to create project. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsCreating(false);
-    }
+    // Navigate directly to Replit clone with project data as URL parameters
+    const params = new URLSearchParams({
+      name: projectName,
+      description: projectDescription || '',
+      type: projectType,
+      agents: projectType === 'single' ? selectedAgentId?.toString() || '' : selectedAgentIds.join(','),
+      brief: brief || ''
+    });
+    
+    toast({
+      title: 'Project Created',
+      description: 'Your project has been set up successfully.'
+    });
+    
+    setLocation(`/replit-clone?${params.toString()}`);
   };
 
   const getSuggestedAgents = () => {

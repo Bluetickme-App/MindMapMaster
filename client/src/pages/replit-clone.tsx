@@ -73,8 +73,42 @@ export default function ReplitClone() {
   const [fileHistory, setFileHistory] = useState<{[key: string]: string[]}>({});
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState<{[key: string]: number}>({});
   const [showToolsPanel, setShowToolsPanel] = useState(false);
+  const [projectInfo, setProjectInfo] = useState<{
+    name: string;
+    description: string;
+    type: 'single' | 'team';
+    agentIds: number[];
+    brief: string;
+  } | null>(null);
   
   const queryClient = useQueryClient();
+
+  // Parse project info from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const name = urlParams.get('name');
+    const description = urlParams.get('description');
+    const type = urlParams.get('type') as 'single' | 'team';
+    const agents = urlParams.get('agents');
+    const brief = urlParams.get('brief');
+
+    if (name && type && agents) {
+      const agentIds = agents.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      setProjectInfo({
+        name,
+        description: description || '',
+        type,
+        agentIds,
+        brief: brief || ''
+      });
+      
+      // Auto-select agents if provided
+      if (agentIds.length > 0) {
+        // We'll set the selected agents once the agents query loads
+        setSelectedAgents(agentIds);
+      }
+    }
+  }, []);
 
   // Fetch AI agents
   const agentsQuery = useQuery({
@@ -474,8 +508,18 @@ export default function ReplitClone() {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-semibold text-foreground">
-              Replit Clone
+              {projectInfo ? projectInfo.name : 'Replit Clone'}
             </h1>
+            {projectInfo && (
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-muted-foreground">
+                  {projectInfo.type === 'single' ? 'Single Agent' : 'Team Project'}
+                </div>
+                <div className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">
+                  {projectInfo.agentIds.length} Agent{projectInfo.agentIds.length > 1 ? 's' : ''}
+                </div>
+              </div>
+            )}
             <div className="text-sm text-muted-foreground">
               {new Date().toLocaleDateString('en-US', { 
                 weekday: 'short', 
