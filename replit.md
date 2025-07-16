@@ -629,6 +629,14 @@ Changelog:
   - Implemented job execution testing with detailed results and cost analysis
   - Added Multi-AI SDK Demo to quick actions for easy access
   - System demonstrates how multiple AI providers work together optimally for different job types
+- July 16, 2025. Enhanced workspace with real project files and drag-and-drop tab functionality:
+  - Fixed workspace to display actual project files instead of mock data structure
+  - Updated API endpoints to read from real projects directory with authentic file content
+  - Workspace now shows real files from created projects (README.md, package.json, source code)
+  - Added drag-and-drop functionality for tab reordering in workspace interface
+  - Users can now drag tabs (Preview, Console, Browser, AI Agents) to preferred positions
+  - Enhanced tab visual design with grip indicators and hover effects
+  - Workspace provides authentic development environment with real project structure
 
 ## User Preferences
 

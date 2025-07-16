@@ -80,6 +80,8 @@ export default function ReplitClone() {
     agentIds: number[];
     brief: string;
   } | null>(null);
+  const [tabOrder, setTabOrder] = useState(['preview', 'terminal', 'browser', 'agents']);
+  const [draggedTab, setDraggedTab] = useState<string | null>(null);
   
   const queryClient = useQueryClient();
 
@@ -504,6 +506,40 @@ export default function ReplitClone() {
     }
   };
 
+  // Drag and drop handlers for tab reordering
+  const handleTabDragStart = (e: React.DragEvent, tabId: string) => {
+    setDraggedTab(tabId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleTabDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleTabDrop = (e: React.DragEvent, targetTabId: string) => {
+    e.preventDefault();
+    
+    if (!draggedTab || draggedTab === targetTabId) {
+      setDraggedTab(null);
+      return;
+    }
+
+    const currentIndex = tabOrder.indexOf(draggedTab);
+    const targetIndex = tabOrder.indexOf(targetTabId);
+    
+    const newTabOrder = [...tabOrder];
+    newTabOrder.splice(currentIndex, 1);
+    newTabOrder.splice(targetIndex, 0, draggedTab);
+    
+    setTabOrder(newTabOrder);
+    setDraggedTab(null);
+  };
+
+  const handleTabDragEnd = () => {
+    setDraggedTab(null);
+  };
+
   return (
     <div className="h-screen bg-background text-foreground flex flex-col">
       {/* Header */}
@@ -787,24 +823,49 @@ export default function ReplitClone() {
           <Panel defaultSize={25} minSize={20}>
             <div className="h-full bg-background border-l border-border">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-                <TabsList className="grid w-full grid-cols-4 shrink-0">
-                  <TabsTrigger value="preview">
-                    <Eye className="h-4 w-4 mr-1" />
-                    Preview
-                  </TabsTrigger>
-                  <TabsTrigger value="terminal">
-                    <Terminal className="h-4 w-4 mr-1" />
-                    Console
-                  </TabsTrigger>
-                  <TabsTrigger value="browser">
-                    <Globe className="h-4 w-4 mr-1" />
-                    Browser
-                  </TabsTrigger>
-                  <TabsTrigger value="agents">
-                    <Users className="h-4 w-4 mr-1" />
-                    AI Agents
-                  </TabsTrigger>
-                </TabsList>
+                <div className="flex w-full shrink-0 bg-muted p-1 rounded-lg">
+                  {tabOrder.map((tabId) => {
+                    const tabConfig = {
+                      preview: { icon: Eye, label: 'Preview' },
+                      terminal: { icon: Terminal, label: 'Console' },
+                      browser: { icon: Globe, label: 'Browser' },
+                      agents: { icon: Users, label: 'AI Agents' }
+                    };
+                    
+                    const config = tabConfig[tabId as keyof typeof tabConfig];
+                    const IconComponent = config.icon;
+                    
+                    return (
+                      <button
+                        key={tabId}
+                        draggable
+                        onDragStart={(e) => handleTabDragStart(e, tabId)}
+                        onDragOver={handleTabDragOver}
+                        onDrop={(e) => handleTabDrop(e, tabId)}
+                        onDragEnd={handleTabDragEnd}
+                        onClick={() => setActiveTab(tabId)}
+                        className={`
+                          flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium
+                          rounded-md transition-all duration-200 cursor-move select-none
+                          border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-700
+                          ${activeTab === tabId 
+                            ? 'bg-background text-foreground shadow-sm border-blue-300 dark:border-blue-600' 
+                            : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                          }
+                          ${draggedTab === tabId ? 'opacity-50 scale-95 rotate-2' : ''}
+                        `}
+                        title="Drag to reorder tabs"
+                      >
+                        <div className="flex items-center gap-1 opacity-30 mr-1">
+                          <div className="w-1 h-1 bg-current rounded-full"></div>
+                          <div className="w-1 h-1 bg-current rounded-full"></div>
+                        </div>
+                        <IconComponent className="h-4 w-4" />
+                        <span className="hidden sm:inline">{config.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
 
                 <TabsContent value="preview" className="flex-1 m-0 p-0">
                   <div className="h-full flex flex-col">
