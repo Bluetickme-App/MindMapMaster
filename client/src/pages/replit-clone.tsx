@@ -155,9 +155,12 @@ export default function ReplitClone() {
 
   // Fetch file system tree
   const fileSystemQuery = useQuery({
-    queryKey: ['/api/filesystem'],
+    queryKey: ['/api/workspace/files', projectInfo?.name],
     queryFn: async () => {
-      const response = await fetch('/api/filesystem');
+      const url = projectInfo?.name 
+        ? `/api/workspace/files?projectName=${encodeURIComponent(projectInfo.name)}`
+        : '/api/workspace/files';
+      const response = await fetch(url);
       return response.json();
     },
     refetchInterval: 5000 // Refresh every 5 seconds
@@ -165,10 +168,10 @@ export default function ReplitClone() {
 
   // Fetch file content
   const fileContentQuery = useQuery({
-    queryKey: ['/api/filesystem/content', selectedFile?.path],
+    queryKey: ['/api/workspace/files', selectedFile?.path],
     queryFn: async () => {
       if (!selectedFile) return null;
-      const response = await fetch(`/api/filesystem/content?path=${encodeURIComponent(selectedFile.path)}`);
+      const response = await fetch(`/api/workspace/files${selectedFile.path}`);
       return response.json();
     },
     enabled: !!selectedFile
@@ -177,10 +180,10 @@ export default function ReplitClone() {
   // Save file mutation
   const saveFileMutation = useMutation({
     mutationFn: async (data: { path: string; content: string }) => {
-      const response = await fetch('/api/filesystem/content', {
+      const response = await fetch(`/api/workspace/files${data.path}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ content: data.content })
       });
       if (!response.ok) throw new Error('Failed to save file');
       return response.json();

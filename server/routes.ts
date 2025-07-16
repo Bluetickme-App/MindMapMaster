@@ -1513,72 +1513,121 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
   // Workspace endpoints
   app.get('/api/workspace/files', async (req, res) => {
     try {
-      // Mock file system structure - in production, this would read from actual filesystem
-      const fileSystem = [
-        {
-          name: 'client',
-          type: 'folder',
-          path: '/client',
-          children: [
-            {
-              name: 'src',
-              type: 'folder',
-              path: '/client/src',
-              children: [
-                { name: 'App.tsx', type: 'file', path: '/client/src/App.tsx', size: 2340, modified: new Date().toISOString() },
-                { name: 'main.tsx', type: 'file', path: '/client/src/main.tsx', size: 890, modified: new Date().toISOString() },
-                { name: 'index.css', type: 'file', path: '/client/src/index.css', size: 1250, modified: new Date().toISOString() }
-              ]
-            },
-            { name: 'package.json', type: 'file', path: '/client/package.json', size: 1450, modified: new Date().toISOString() }
-          ]
-        },
-        {
-          name: 'server',
-          type: 'folder',
-          path: '/server',
-          children: [
-            { name: 'index.ts', type: 'file', path: '/server/index.ts', size: 3200, modified: new Date().toISOString() },
-            { name: 'routes.ts', type: 'file', path: '/server/routes.ts', size: 8900, modified: new Date().toISOString() },
-            { name: 'storage.ts', type: 'file', path: '/server/storage.ts', size: 5600, modified: new Date().toISOString() }
-          ]
-        },
-        { name: 'package.json', type: 'file', path: '/package.json', size: 2100, modified: new Date().toISOString() },
-        { name: 'README.md', type: 'file', path: '/README.md', size: 890, modified: new Date().toISOString() },
-        { name: '.env', type: 'file', path: '/.env', size: 340, modified: new Date().toISOString() }
-      ];
+      const fs = await import('fs');
+      const path = await import('path');
+      const { projectName } = req.query;
       
-      res.json(fileSystem);
+      // If projectName is provided, show that project's files
+      if (projectName) {
+        const projectPath = path.join(process.cwd(), 'projects', projectName as string);
+        
+        if (fs.existsSync(projectPath)) {
+          const fileSystem = await readDirectoryStructure(projectPath, path.basename(projectPath));
+          res.json([fileSystem]);
+        } else {
+          res.status(404).json({ message: 'Project not found' });
+        }
+      } else {
+        // Show all available projects
+        const projectsPath = path.join(process.cwd(), 'projects');
+        
+        if (fs.existsSync(projectsPath)) {
+          const projects = fs.readdirSync(projectsPath, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory())
+            .map(dirent => ({
+              name: dirent.name,
+              type: 'folder' as const,
+              path: `/projects/${dirent.name}`,
+              children: []
+            }));
+          
+          res.json(projects);
+        } else {
+          // Fallback to default structure if no projects exist
+          const defaultStructure = [
+            {
+              name: 'Create a project first',
+              type: 'folder' as const,
+              path: '/placeholder',
+              children: [
+                { name: 'Use the Create Project button', type: 'file' as const, path: '/placeholder/info.txt', size: 0, modified: new Date().toISOString() }
+              ]
+            }
+          ];
+          
+          res.json(defaultStructure);
+        }
+      }
     } catch (error) {
       console.error('Error fetching file system:', error);
       res.status(500).json({ message: 'Failed to fetch file system' });
     }
   });
 
-  app.get('/api/workspace/files/*', async (req, res) => {
-    try {
-      const filePath = req.params[0];
+  // Helper function to read directory structure recursively
+  async function readDirectoryStructure(dirPath: string, name: string): Promise<any> {
+    const fs = await import('fs');
+    const path = await import('path');
+    
+    const stats = fs.statSync(dirPath);
+    
+    if (stats.isDirectory()) {
+      const children = [];
+      const items = fs.readdirSync(dirPath, { withFileTypes: true });
       
-      // Mock file content - in production, this would read from actual files
-      let content = '';
-      
-      if (filePath.endsWith('.tsx') || filePath.endsWith('.ts')) {
-        content = `// ${filePath}\nimport React from 'react';\n\nfunction Component() {\n  return (\n    <div>\n      <h1>Hello from ${filePath}</h1>\n    </div>\n  );\n}\n\nexport default Component;`;
-      } else if (filePath.endsWith('.json')) {
-        content = JSON.stringify({
-          name: "codecraft",
-          version: "1.0.0",
-          description: "AI Development Assistant Platform"
-        }, null, 2);
-      } else if (filePath.endsWith('.md')) {
-        content = `# ${filePath}\n\nThis is a documentation file for the CodeCraft platform.\n\n## Features\n\n- AI-powered development\n- Multi-agent collaboration\n- Real-time workspace\n`;
-      } else if (filePath.endsWith('.env')) {
-        content = `# Environment Variables\nDATABASE_URL=postgresql://localhost:5432/codecraft\nOPENAI_API_KEY=your_openai_key_here\nANTHROPIC_API_KEY=your_anthropic_key_here\nGEMINI_API_KEY=your_gemini_key_here\n`;
-      } else {
-        content = `// File: ${filePath}\n// Content would be loaded from the actual file system`;
+      for (const item of items) {
+        // Skip hidden files and node_modules
+        if (item.name.startsWith('.') || item.name === 'node_modules') {
+          continue;
+        }
+        
+        const itemPath = path.join(dirPath, item.name);
+        const childNode = await readDirectoryStructure(itemPath, item.name);
+        children.push(childNode);
       }
       
-      res.json({ path: filePath, content });
+      return {
+        name,
+        type: 'folder' as const,
+        path: dirPath.replace(process.cwd(), ''),
+        children
+      };
+    } else {
+      return {
+        name,
+        type: 'file' as const,
+        path: dirPath.replace(process.cwd(), ''),
+        size: stats.size,
+        modified: stats.mtime.toISOString()
+      };
+    }
+  }
+
+  app.get('/api/workspace/files/*', async (req, res) => {
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const filePath = req.params[0];
+      
+      // Determine full path - check if it's a project file
+      let fullPath = '';
+      
+      if (filePath.startsWith('/projects/')) {
+        // This is a project file
+        fullPath = path.join(process.cwd(), filePath);
+      } else {
+        // This might be a root project file
+        fullPath = path.join(process.cwd(), 'projects', filePath);
+      }
+      
+      // Check if file exists
+      if (fs.existsSync(fullPath)) {
+        const content = fs.readFileSync(fullPath, 'utf-8');
+        res.json({ path: filePath, content });
+      } else {
+        // File doesn't exist, return empty content for new files
+        res.json({ path: filePath, content: '' });
+      }
     } catch (error) {
       console.error('Error reading file:', error);
       res.status(500).json({ message: 'Failed to read file' });
@@ -1587,17 +1636,36 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
 
   app.post('/api/workspace/files/*', async (req, res) => {
     try {
+      const fs = await import('fs');
+      const path = await import('path');
       const filePath = req.params[0];
       const { content } = req.body;
       
-      // Mock file saving - in production, this would write to actual files
-      console.log(`Saving file ${filePath} with ${content.length} characters`);
+      // Determine full path
+      let fullPath = '';
+      
+      if (filePath.startsWith('/projects/')) {
+        fullPath = path.join(process.cwd(), filePath);
+      } else {
+        fullPath = path.join(process.cwd(), 'projects', filePath);
+      }
+      
+      // Ensure directory exists
+      const dir = path.dirname(fullPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
+      // Write file
+      fs.writeFileSync(fullPath, content || '', 'utf-8');
+      
+      const stats = fs.statSync(fullPath);
       
       res.json({ 
         message: 'File saved successfully',
         path: filePath,
-        size: content.length,
-        modified: new Date().toISOString()
+        size: stats.size,
+        modified: stats.mtime.toISOString()
       });
     } catch (error) {
       console.error('Error saving file:', error);
