@@ -5068,6 +5068,7 @@ Please coordinate with available agents and stream each file change as it happen
   app.post('/api/streamlined-project', async (req, res) => {
     try {
       const { description } = req.body;
+      console.log('Received streamlined project request:', { description });
       
       if (!description || description.trim().length < 10) {
         return res.status(400).json({ 
@@ -5089,8 +5090,10 @@ Please coordinate with available agents and stream each file change as it happen
       const projectName = description
         .split(' ')
         .slice(0, 3)
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ') || 'New Project';
+        
+      console.log('Generated project name:', projectName);
 
       // Auto-select AI team based on project type
       const allAgents = await storage.getAllAgents();
@@ -5129,21 +5132,18 @@ Please coordinate with available agents and stream each file change as it happen
       });
 
       // Create team conversation for the project
-      const conversation = await storage.createConversation({
-        name: `${projectName} Development Team`,
-        description: `AI team collaboration for ${projectName}`,
+      const conversationData = {
+        title: `${projectName} Development Team`,
+        type: 'project_discussion',
         projectId: project.id,
-        isTeamChat: true
-      });
+        participants: autoSelectedTeam.map(agent => agent.id),
+        createdBy: 1
+      };
+      
+      console.log('Creating conversation with data:', conversationData);
+      const conversation = await storage.createConversation(conversationData);
 
-      // Add selected agents to conversation
-      for (const agent of autoSelectedTeam) {
-        await storage.addConversationParticipant({
-          conversationId: conversation.id,
-          agentId: agent.id,
-          role: 'agent'
-        });
-      }
+      // Participants are already added in conversation creation above
 
       // Send initial team message
       await storage.createMessage({
