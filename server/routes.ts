@@ -4272,16 +4272,54 @@ console.log('File: ${filePath}');
 
   app.post('/api/live-editing/start-gym-buddy-demo', async (req, res) => {
     try {
-      // Initialize live editing service with WebSocket manager
-      const { LiveEditingService } = await import('./services/live-editing-service');
-      const liveEditingService = new LiveEditingService(webSocketManager);
+      // Simple mock demo for now
+      console.log('Starting gym buddy demo simulation...');
       
-      // Start the gym buddy transformation demo
-      await liveEditingService.simulateGymBuddyTransformation();
+      // Emit live updates via WebSocket
+      if (webSocketManager && webSocketManager.broadcast) {
+        // Simulate Maya (Designer) working
+        setTimeout(() => {
+          webSocketManager.broadcast('liveUpdate', {
+            sessionId: 'maya-design-session',
+            fileName: 'GymBuddy.html',
+            content: 'Adding modern CSS with gradient backgrounds...',
+            agentName: 'Maya Rodriguez (Designer)',
+            timestamp: new Date().toISOString(),
+            updateType: 'thinking',
+            message: 'Transforming basic HTML into modern responsive design...'
+          });
+        }, 1000);
+
+        // Simulate Sam (Developer) working
+        setTimeout(() => {
+          webSocketManager.broadcast('liveUpdate', {
+            sessionId: 'sam-react-session',
+            fileName: 'components/GymBuddyApp.jsx',
+            content: 'Creating React components with search functionality...',
+            agentName: 'Sam Park (Developer)',
+            timestamp: new Date().toISOString(),
+            updateType: 'partial',
+            message: 'Building interactive user interface with state management...'
+          });
+        }, 3000);
+
+        // Simulate Jordan (CSS) working
+        setTimeout(() => {
+          webSocketManager.broadcast('liveUpdate', {
+            sessionId: 'jordan-profile-session',
+            fileName: 'components/UserProfile.jsx',
+            content: 'Complete user profile component with animations',
+            agentName: 'Jordan Kim (CSS Specialist)',
+            timestamp: new Date().toISOString(),
+            updateType: 'complete',
+            message: '✅ Interactive user profiles with expand/collapse functionality complete!'
+          });
+        }, 5000);
+      }
       
       res.json({ 
         success: true, 
-        message: 'Gym buddy transformation demo started. Check the Live Stream tab to watch agents work!' 
+        message: 'Gym buddy transformation demo started! Check the Live Stream tab to watch agents work!' 
       });
     } catch (error) {
       console.error('Error starting gym buddy demo:', error);
