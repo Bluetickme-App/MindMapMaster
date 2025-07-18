@@ -313,7 +313,7 @@ export class DatabaseStorage implements IStorage {
     // For now, return all conversations and filter in memory (not optimal for production)
     const allConversations = await db.select().from(conversations);
     return allConversations.filter(conv => 
-      conv.participantIds && conv.participantIds.includes(participantId)
+      conv.participants && conv.participants.includes(participantId)
     );
   }
 
@@ -337,10 +337,10 @@ export class DatabaseStorage implements IStorage {
   async addParticipantToConversation(conversationId: number, participantId: number): Promise<void> {
     const conversation = await this.getConversation(conversationId);
     if (conversation) {
-      const updatedParticipants = [...(conversation.participantIds || []), participantId];
+      const updatedParticipants = [...(conversation.participants || []), participantId];
       await db
         .update(conversations)
-        .set({ participantIds: updatedParticipants })
+        .set({ participants: updatedParticipants })
         .where(eq(conversations.id, conversationId));
     }
   }
@@ -706,6 +706,7 @@ export class MemStorage implements IStorage {
       personality: "Analytical and thorough, focuses on best practices and scalable solutions",
       status: "active",
       aiModel: "gpt-4o",
+      specialization: "system_architecture",
       systemPrompt: `You are Alex Chen, a senior developer with 10+ years of experience. You excel at:
 - System architecture and design patterns
 - Code review with constructive feedback  

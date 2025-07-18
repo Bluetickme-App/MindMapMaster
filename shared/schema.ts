@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -269,8 +270,8 @@ export const properties = pgTable("properties", {
   size: integer("size").notNull(), // square feet
   type: text("type").notNull(), // apartment, house, condo, studio
   status: text("status").notNull().default("available"), // available, occupied, maintenance
-  features: text("features").array().default('{}'), // amenities and features
-  images: text("images").array().default('{}'), // property images
+  features: text("features").array().default(sql`'{}'::text[]`), // amenities and features
+  images: text("images").array().default(sql`'{}'::text[]`), // property images
   virtualTourUrl: text("virtual_tour_url"),
   landlordId: integer("landlord_id"), // references users table
   rating: integer("rating").default(5), // 1-5 star rating
@@ -293,8 +294,8 @@ export const maintenanceRequests = pgTable("maintenance_requests", {
   dateCreated: timestamp("date_created").defaultNow(),
   dateAssigned: timestamp("date_assigned"),
   dateCompleted: timestamp("date_completed"),
-  images: text("images").array().default('{}'), // photos of the issue
-  notes: text("notes").array().default('{}'), // progress notes
+  images: text("images").array().default(sql`'{}'::text[]`), // photos of the issue
+  notes: text("notes").array().default(sql`'{}'::text[]`), // progress notes
 });
 
 export const propertyTenants = pgTable("property_tenants", {
