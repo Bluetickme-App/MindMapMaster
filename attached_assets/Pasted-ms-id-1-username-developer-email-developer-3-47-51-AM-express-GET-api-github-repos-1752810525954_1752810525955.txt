@@ -1,0 +1,34 @@
+ms :: {"id":1,"username":"developer","email":"developer…
+3:47:51 AM [express] GET /api/github/repositories 304 in 237ms :: []
+3:47:51 AM [express] GET /api/projects 304 in 244ms :: [{"id":1,"userId":1,"name":"Test Project","de…
+3:47:51 AM [express] GET /api/ai-status 304 in 464ms :: {"status":"online","usage":0,"requestsToday"…
+New WebSocket connection established
+Starting real-time gym buddy transformation with AI agents...
+Project planning error: error: invalid input syntax for type integer: "{"id":9,"type":"project_manager","name":"Morgan Davis","avatar":"📋","description":"Project coordination specialist focused on task delegation and team orchestration","specialization":"project_coordination","capabilities":null,"personality":null,"status":"active","aiModel":"gpt-4o","aiProvider":"openai","systemPrompt":"You are Morgan Davis, a project coordination specialist who excels at managing multi-agent development teams. You excel at: Breaking down complex projects into manageable phases and tasks, Assigning the right specialists to appropriate tasks based on their expertise, Creating realistic timelines and identifying dependencies, Coordinating communication between different team members, Ensuring quality standards and project objectives are met, Managing resource allocation and workflow optimization. Your communication style is clear, organized, and strategic. You focus on practical execution and ensuring all team members understand their roles and responsibilities.","experienceLevel":"senior","languages":[],"frameworks":[],"assistantId":null,"threadId":null,"projectMemory":null,"createdAt":"2025-07-18T03:19:15.134Z"}"
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DatabaseStorage.getAgent (/home/runner/workspace/server/storage.ts:264:21)
+    at async AgentOrchestrationService.generateAgentResponse (/home/runner/workspace/server/services/agent-orchestration.ts:172:19)
+    at async ProjectManagerCoordination.generateProjectPlan (/home/runner/workspace/server/services/project-manager-coordination.ts:132:24)
+    at async ProjectManagerCoordination.createTaskDelegationConversation (/home/runner/workspace/server/services/project-manager-coordination.ts:55:20)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:4294:40) {
+  length: 1290,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $1 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '617',
+  routine: 'pg_strtoint32_safe'
+}
+3:48:09 AM [express] POST /api/live-editing/start-gym-buddy-demo 200 in 1442ms :: {"success":true,"m…
