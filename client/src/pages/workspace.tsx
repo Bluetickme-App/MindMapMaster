@@ -852,7 +852,7 @@ export default function WorkspacePage() {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold text-sm">
+                                <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 px-2 py-1 rounded">
                                   {msg.senderType === 'agent' ? msg.agentName : 'You'}
                                 </span>
                                 {msg.senderType === 'agent' && msg.agentProvider && (
@@ -865,7 +865,7 @@ export default function WorkspacePage() {
                                 </span>
                               </div>
                               <div className="prose prose-sm dark:prose-invert max-w-none">
-                                <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                                <p className="text-sm whitespace-pre-wrap text-gray-800 dark:text-gray-200">{msg.message}</p>
                               </div>
                             </div>
                           </div>
