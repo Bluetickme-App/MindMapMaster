@@ -104,8 +104,44 @@ export default function AdvancedCollaboration() {
     wsRef.current.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log('WebSocket message received:', data);
         
-        if (data.type === 'session_start') {
+        if (data.type === 'liveUpdate') {
+          const update = data.data;
+          
+          // Add live session if not exists
+          setLiveSessions(prev => {
+            const exists = prev.find(s => s.id === update.sessionId);
+            if (!exists) {
+              return [...prev, {
+                id: update.sessionId,
+                agentName: update.agentName,
+                fileName: update.fileName,
+                isActive: true,
+                startedAt: new Date().toLocaleTimeString()
+              }];
+            }
+            return prev;
+          });
+          
+          // Add live update with current timestamp
+          setLiveUpdates(prev => [...prev, {
+            sessionId: update.sessionId,
+            fileName: update.fileName,
+            content: update.content,
+            agentName: update.agentName,
+            timestamp: new Date().toLocaleTimeString(), // Always use current time
+            updateType: update.updateType,
+            message: update.message
+          }]);
+          
+          // Auto-scroll to bottom
+          setTimeout(() => {
+            updatesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }
+        // Legacy support for existing message types
+        else if (data.type === 'session_start') {
           setLiveSessions(prev => [...prev, {
             id: data.data.sessionId,
             agentName: data.data.agentId === 3 ? 'Maya Rodriguez' : data.data.agentId === 2 ? 'Sam Park' : 'AI Agent',

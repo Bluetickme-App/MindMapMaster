@@ -4272,54 +4272,136 @@ console.log('File: ${filePath}');
 
   app.post('/api/live-editing/start-gym-buddy-demo', async (req, res) => {
     try {
-      // Simple mock demo for now
-      console.log('Starting gym buddy demo simulation...');
+      console.log('Starting real-time gym buddy transformation with AI agents...');
       
-      // Emit live updates via WebSocket
+      // Start actual agent coordination through Project Manager
+      const { ProjectManagerCoordination } = await import('./services/project-manager-coordination');
+      const coordination = new ProjectManagerCoordination();
+      
+      // Create task delegation for gym buddy transformation
+      const taskDescription = "Transform basic Gym Buddy Finder HTML into modern web application with interactive user profiles, search functionality, and responsive design";
+      const requiredAgents = ['designer', 'developer', 'css'];
+      
+      // Get project (assuming gym buddy project exists)
+      const projects = await storage.getProjectsByUser(1);
+      const gymBuddyProject = projects.find(p => p.name.toLowerCase().includes('gym')) || projects[0];
+      
+      if (!gymBuddyProject) {
+        throw new Error('No project found for transformation');
+      }
+
+      // Create coordination conversation
+      const { conversationId, plan } = await coordination.createTaskDelegationConversation(
+        gymBuddyProject.id,
+        taskDescription,
+        requiredAgents
+      );
+
+      // Start real agent responses with live streaming
       if (webSocketManager && webSocketManager.broadcast) {
-        // Simulate Maya (Designer) working
-        setTimeout(() => {
-          webSocketManager.broadcast('liveUpdate', {
-            sessionId: 'maya-design-session',
-            fileName: 'GymBuddy.html',
-            content: 'Adding modern CSS with gradient backgrounds...',
-            agentName: 'Maya Rodriguez (Designer)',
-            timestamp: new Date().toISOString(),
-            updateType: 'thinking',
-            message: 'Transforming basic HTML into modern responsive design...'
-          });
-        }, 1000);
+        // Broadcast start of session
+        webSocketManager.broadcast('liveUpdate', {
+          sessionId: `transformation-${conversationId}`,
+          fileName: 'Project Coordination',
+          content: 'Starting multi-agent transformation...',
+          agentName: 'Morgan Davis (Project Manager)',
+          timestamp: new Date().toISOString(),
+          updateType: 'thinking',
+          message: 'Analyzing project requirements and assigning tasks to specialized agents...'
+        });
 
-        // Simulate Sam (Developer) working
-        setTimeout(() => {
-          webSocketManager.broadcast('liveUpdate', {
-            sessionId: 'sam-react-session',
-            fileName: 'components/GymBuddyApp.jsx',
-            content: 'Creating React components with search functionality...',
-            agentName: 'Sam Park (Developer)',
-            timestamp: new Date().toISOString(),
-            updateType: 'partial',
-            message: 'Building interactive user interface with state management...'
-          });
-        }, 3000);
+        // Trigger actual agent responses
+        setTimeout(async () => {
+          try {
+            // Get agents for the task
+            const agents = await storage.getAllAgents();
+            const mayaDesigner = agents.find(a => a.name.includes('Maya'));
+            const samDeveloper = agents.find(a => a.name.includes('Sam'));
+            const jordanCSS = agents.find(a => a.name.includes('Jordan'));
 
-        // Simulate Jordan (CSS) working
-        setTimeout(() => {
-          webSocketManager.broadcast('liveUpdate', {
-            sessionId: 'jordan-profile-session',
-            fileName: 'components/UserProfile.jsx',
-            content: 'Complete user profile component with animations',
-            agentName: 'Jordan Kim (CSS Specialist)',
-            timestamp: new Date().toISOString(),
-            updateType: 'complete',
-            message: '✅ Interactive user profiles with expand/collapse functionality complete!'
-          });
-        }, 5000);
+            // Maya starts working on design
+            if (mayaDesigner) {
+              await agentOrchestrationService.processMessage(
+                conversationId,
+                "Start transforming the basic HTML into modern responsive design with gradient backgrounds, better typography, and mobile-first approach.",
+                mayaDesigner.id
+              );
+              
+              webSocketManager.broadcast('liveUpdate', {
+                sessionId: `maya-${conversationId}`,
+                fileName: 'styles/modern-design.css',
+                content: 'Creating modern CSS architecture...',
+                agentName: mayaDesigner.name,
+                timestamp: new Date().toISOString(),
+                updateType: 'partial',
+                message: 'Implementing modern design system with responsive breakpoints and smooth animations...'
+              });
+            }
+          } catch (error) {
+            console.error('Agent processing error:', error);
+          }
+        }, 2000);
+
+        // Continue with Sam and Jordan
+        setTimeout(async () => {
+          try {
+            const agents = await storage.getAllAgents();
+            const samDeveloper = agents.find(a => a.name.includes('Sam'));
+            
+            if (samDeveloper) {
+              await agentOrchestrationService.processMessage(
+                conversationId,
+                "Build React components for user profiles with search functionality and state management. Include interactive features like favoriting and filtering.",
+                samDeveloper.id
+              );
+              
+              webSocketManager.broadcast('liveUpdate', {
+                sessionId: `sam-${conversationId}`,
+                fileName: 'components/UserProfile.jsx',
+                content: 'Building interactive React components...',
+                agentName: samDeveloper.name,
+                timestamp: new Date().toISOString(),
+                updateType: 'partial',
+                message: 'Creating reusable components with hooks for state management and search functionality...'
+              });
+            }
+          } catch (error) {
+            console.error('Sam agent error:', error);
+          }
+        }, 4000);
+
+        setTimeout(async () => {
+          try {
+            const agents = await storage.getAllAgents();
+            const jordanCSS = agents.find(a => a.name.includes('Jordan'));
+            
+            if (jordanCSS) {
+              await agentOrchestrationService.processMessage(
+                conversationId,
+                "Optimize CSS for performance and create advanced animations for user profile cards. Ensure excellent mobile experience.",
+                jordanCSS.id
+              );
+              
+              webSocketManager.broadcast('liveUpdate', {
+                sessionId: `jordan-${conversationId}`,
+                fileName: 'animations/profile-cards.css',
+                content: 'Implementing advanced CSS animations...',
+                agentName: jordanCSS.name,
+                timestamp: new Date().toISOString(),
+                updateType: 'complete',
+                message: '✅ Performance-optimized animations and mobile-responsive design complete!'
+              });
+            }
+          } catch (error) {
+            console.error('Jordan agent error:', error);
+          }
+        }, 6000);
       }
       
       res.json({ 
         success: true, 
-        message: 'Gym buddy transformation demo started! Check the Live Stream tab to watch agents work!' 
+        message: `Real-time transformation started! Conversation ID: ${conversationId}. Watch agents work in Live Stream tab!`,
+        conversationId
       });
     } catch (error) {
       console.error('Error starting gym buddy demo:', error);
