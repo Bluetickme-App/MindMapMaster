@@ -108,32 +108,42 @@ export default function AdvancedCollaboration() {
         
         if (data.type === 'liveUpdate') {
           const update = data.data;
+          console.log('Live update received:', update);
           
           // Add live session if not exists
           setLiveSessions(prev => {
             const exists = prev.find(s => s.id === update.sessionId);
             if (!exists) {
-              return [...prev, {
+              const newSession = {
                 id: update.sessionId,
                 agentName: update.agentName,
                 fileName: update.fileName,
                 isActive: true,
                 startedAt: new Date().toLocaleTimeString()
-              }];
+              };
+              console.log('Adding new live session:', newSession);
+              return [...prev, newSession];
             }
             return prev;
           });
           
           // Add live update with current timestamp
-          setLiveUpdates(prev => [...prev, {
+          const newUpdate = {
             sessionId: update.sessionId,
             fileName: update.fileName,
             content: update.content,
             agentName: update.agentName,
-            timestamp: new Date().toLocaleTimeString(), // Always use current time
+            timestamp: new Date().toLocaleTimeString(),
             updateType: update.updateType,
             message: update.message
-          }]);
+          };
+          console.log('Adding live update:', newUpdate);
+          
+          setLiveUpdates(prev => {
+            const updated = [...prev, newUpdate];
+            console.log('Total live updates:', updated.length);
+            return updated;
+          });
           
           // Auto-scroll to bottom
           setTimeout(() => {
@@ -195,7 +205,8 @@ export default function AdvancedCollaboration() {
   // Start gym buddy transformation demo
   const startGymBuddyTransformation = async () => {
     setIsStreamingActive(true);
-    setLiveUpdates([]);
+    setLiveUpdates([]); // Clear previous updates
+    setLiveSessions([]); // Clear previous sessions
     
     try {
       const response = await fetch('/api/live-editing/start-gym-buddy-demo', {
@@ -206,8 +217,17 @@ export default function AdvancedCollaboration() {
       if (response.ok) {
         toast({
           title: "🚀 Transformation Started",
-          description: "Agents are now working on transforming the gym buddy project"
+          description: "Watch the Live Stream tab - agents are working now!"
         });
+        
+        // Set streaming active for 10 seconds
+        setTimeout(() => {
+          setIsStreamingActive(false);
+          toast({
+            title: "✅ Transformation Complete",
+            description: "Multi-agent gym buddy transformation finished!"
+          });
+        }, 10000);
       }
     } catch (error) {
       console.error('Error starting transformation:', error);
@@ -215,6 +235,7 @@ export default function AdvancedCollaboration() {
         title: "Error",
         description: "Failed to start transformation"
       });
+      setIsStreamingActive(false);
     }
   };
 
