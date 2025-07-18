@@ -708,10 +708,28 @@ export default function AdvancedCollaboration() {
                               <span className="text-xs">Thinking...</span>
                             </div>
                           ) : update.content && update.fileName !== 'transformation_complete' && (
-                            <div className="bg-slate-800 rounded p-3 mt-2 border border-slate-700">
-                              <pre className="text-xs font-mono text-green-400 whitespace-pre-wrap overflow-auto max-h-24 leading-relaxed">
+                            <div className="bg-slate-900 rounded p-3 mt-2 border border-blue-500/30">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs text-blue-400 font-semibold">{update.fileName}</span>
+                                <div className="flex items-center gap-1">
+                                  <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
+                                  <span className="text-xs text-green-400">LIVE</span>
+                                </div>
+                              </div>
+                              <pre className="text-xs font-mono text-green-400 whitespace-pre-wrap overflow-auto max-h-32 leading-relaxed border-l-2 border-green-500/50 pl-3">
                                 {update.content}
                               </pre>
+                              <div className="flex items-center gap-2 mt-2 text-xs text-slate-400">
+                                <span>👤 {update.agentName}</span>
+                                <span>•</span>
+                                <span>{new Date(update.timestamp).toLocaleTimeString()}</span>
+                                {update.lineCount && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{update.lineCount} lines modified</span>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           )}
                           
