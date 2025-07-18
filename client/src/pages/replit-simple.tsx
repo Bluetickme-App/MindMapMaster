@@ -35,6 +35,9 @@ export default function ReplitSimple() {
     mutationFn: async (data: any) => {
       return apiRequest('/api/replit-simple/create', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(data),
       });
     },
