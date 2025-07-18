@@ -1,11 +1,20 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code, Sparkles, Map } from "lucide-react";
+import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code, Sparkles, Map, Zap } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function QuickActions() {
   const [, setLocation] = useLocation();
 
   const actions = [
+    {
+      title: "Replit Simple",
+      description: "Create, GitHub import, or clone websites",
+      icon: Zap,
+      color: "purple-600",
+      onClick: () => {
+        setLocation('/replit-simple');
+      },
+    },
     {
       title: "Create Project",
       description: "Single agent or team collaboration",

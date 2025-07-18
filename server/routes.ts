@@ -5064,6 +5064,112 @@ Please coordinate with available agents and stream each file change as it happen
     }
   });
 
+  // Replit Simple API - Simplified project creation like real Replit
+  app.post('/api/replit-simple/create', async (req, res) => {
+    try {
+      const { type, description, githubUrl, websiteUrl, brandName, useTeam, selectedAgents } = req.body;
+      
+      if (!type || !['create', 'github', 'clone'].includes(type)) {
+        return res.status(400).json({ message: 'Invalid project type' });
+      }
+
+      let projectName = '';
+      let projectDescription = '';
+
+      if (type === 'create') {
+        if (!description || description.trim().length < 10) {
+          return res.status(400).json({ message: 'Description must be at least 10 characters' });
+        }
+        projectName = description.split(' ').slice(0, 3).join(' ') || 'New Project';
+        projectDescription = description;
+      } else if (type === 'github') {
+        if (!githubUrl || !githubUrl.includes('github.com')) {
+          return res.status(400).json({ message: 'Valid GitHub URL required' });
+        }
+        projectName = githubUrl.split('/').pop() || 'GitHub Import';
+        projectDescription = `Imported from ${githubUrl}`;
+      } else if (type === 'clone') {
+        if (!websiteUrl || !brandName) {
+          return res.status(400).json({ message: 'Website URL and brand name required' });
+        }
+        projectName = `${brandName} Clone`;
+        projectDescription = `Clone of ${websiteUrl} rebranded as ${brandName}`;
+      }
+
+      // Create project
+      const project = await storage.createProject({
+        userId: 1,
+        name: projectName,
+        description: projectDescription,
+        language: 'TypeScript',
+        framework: 'React',
+        status: 'active'
+      });
+
+      let conversationId = null;
+      let teamMembers = [];
+
+      if (useTeam && selectedAgents && selectedAgents.length > 0) {
+        // Create team conversation
+        const conversation = await storage.createConversation({
+          title: `${projectName} Team`,
+          type: 'project_discussion',
+          projectId: project.id,
+          participants: selectedAgents,
+          createdBy: 1
+        });
+        conversationId = conversation.id;
+
+        // Get agent details
+        const allAgents = await storage.getAllAgents();
+        teamMembers = allAgents.filter(agent => selectedAgents.includes(agent.id));
+
+        // Send welcome message
+        await storage.createMessage({
+          conversationId: conversation.id,
+          senderId: 1,
+          senderType: 'user',
+          content: `Welcome to the ${projectName} development team!\n\nProject Type: ${type}\nProject Description: ${projectDescription}\n\nSelected Team:\n${teamMembers.map(agent => `• ${agent.name} (${agent.specialization})`).join('\n')}\n\nLet's start building this project together!`,
+          messageType: 'system'
+        });
+
+        // Trigger agent responses
+        if (global.webSocketManager) {
+          try {
+            await global.webSocketManager.triggerAgentResponsesFromAPI(conversation.id);
+          } catch (error) {
+            console.error('Error triggering agent responses:', error);
+          }
+        }
+      }
+
+      // Log project creation details
+      console.log(`📁 Replit Simple: ${type} project "${projectName}" created successfully`);
+      if (type === 'github' && githubUrl) {
+        console.log(`📥 GitHub Source: ${githubUrl}`);
+      }
+      if (type === 'clone' && websiteUrl && brandName) {
+        console.log(`🌐 Cloning: ${websiteUrl} → ${brandName}`);
+      }
+
+      res.json({
+        success: true,
+        projectId: project.id,
+        projectName,
+        conversationId,
+        teamMembers,
+        message: `${projectName} created successfully${useTeam ? ` with ${teamMembers.length} AI specialists` : ''}`
+      });
+
+    } catch (error) {
+      console.error('Error creating simple project:', error);
+      res.status(500).json({ 
+        message: 'Failed to create project',
+        error: error.message 
+      });
+    }
+  });
+
   // Streamlined Project Creation API - Single flow consolidation
   app.post('/api/streamlined-project', async (req, res) => {
     try {
@@ -5196,6 +5302,8 @@ Let's start building this project together!`,
       });
     }
   });
+
+
 
   console.log('🚀 Multi-Agent Collaboration System is ready!');
   console.log('📡 WebSocket server initialized for real-time communication');
