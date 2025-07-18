@@ -560,31 +560,20 @@ export default function AdvancedCollaboration() {
             </Button>
             
             <Button 
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/live-editing/test-broadcast', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                  });
-                  const result = await response.json();
-                  console.log('Test broadcast result:', result);
+              onClick={() => {
+                const chatMessage = prompt("Send message to working agents:");
+                if (chatMessage) {
                   toast({
-                    title: result.success ? "✅ Test Sent" : "❌ Test Failed",
-                    description: result.message || result.error
-                  });
-                } catch (error) {
-                  console.error('Test error:', error);
-                  toast({
-                    title: "❌ Test Error",
-                    description: "Failed to send test broadcast"
+                    title: "💬 Message Sent",
+                    description: `"${chatMessage}" - Agents will respond during next task`
                   });
                 }
               }}
               variant="outline"
-              className="border-green-500 text-green-600 hover:bg-green-50"
+              className="border-blue-500 text-blue-600 hover:bg-blue-50"
             >
-              <Activity className="w-4 h-4 mr-2" />
-              Test WebSocket
+              <Users className="w-4 h-4 mr-2" />
+              Chat with Agents
             </Button>
           </div>
         </div>
