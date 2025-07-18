@@ -386,7 +386,11 @@ ${agent.systemPrompt}
 8. **Tool Usage**: Use available tools to create, modify, and manage files when needed
 
 ## Available Tools
-${agentToolIntegration.getToolsDescription()}
+You can create, read, and modify files in the project directory:
+- create_file(path, content) - Create new files
+- read_file(path) - Read existing files  
+- update_file(path, content) - Modify files
+- create_directory(path) - Create folders
 
 ## File System Access
 You have access to the project workspace and can:
