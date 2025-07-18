@@ -514,14 +514,44 @@ export default function AdvancedCollaboration() {
             <TabsTrigger value="streaming">Live Stream</TabsTrigger>
             <TabsTrigger value="activity">Activity Log</TabsTrigger>
           </TabsList>
-          <Button 
-            onClick={startGymBuddyTransformation}
-            disabled={isStreamingActive}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-          >
-            <Play className="w-4 h-4 mr-2" />
-            {isStreamingActive ? 'Streaming Live...' : 'Start Gym Buddy Demo'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={startGymBuddyTransformation}
+              disabled={isStreamingActive}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              {isStreamingActive ? 'Streaming Live...' : 'Start Gym Buddy Demo'}
+            </Button>
+            
+            <Button 
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/live-editing/test-broadcast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                  });
+                  const result = await response.json();
+                  console.log('Test broadcast result:', result);
+                  toast({
+                    title: result.success ? "✅ Test Sent" : "❌ Test Failed",
+                    description: result.message || result.error
+                  });
+                } catch (error) {
+                  console.error('Test error:', error);
+                  toast({
+                    title: "❌ Test Error",
+                    description: "Failed to send test broadcast"
+                  });
+                }
+              }}
+              variant="outline"
+              className="border-green-500 text-green-600 hover:bg-green-50"
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              Test WebSocket
+            </Button>
+          </div>
         </div>
         
         <TabsContent value="checkpoints" className="space-y-4">

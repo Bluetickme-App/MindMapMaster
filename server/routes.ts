@@ -4270,6 +4270,32 @@ console.log('File: ${filePath}');
     }
   });
 
+  // Test endpoint for WebSocket broadcasting
+  app.post('/api/live-editing/test-broadcast', async (req, res) => {
+    try {
+      console.log('Testing WebSocket broadcast...');
+      
+      if (webSocketManager && webSocketManager.broadcast) {
+        webSocketManager.broadcast('liveUpdate', {
+          sessionId: 'test-session',
+          fileName: 'test.js',
+          content: 'This is a test broadcast message',
+          agentName: 'Test Agent',
+          timestamp: new Date().toISOString(),
+          updateType: 'complete',
+          message: 'Testing WebSocket broadcasting functionality'
+        });
+        
+        res.json({ success: true, message: 'Test broadcast sent successfully' });
+      } else {
+        res.status(500).json({ success: false, error: 'WebSocket manager not available' });
+      }
+    } catch (error) {
+      console.error('Test broadcast error:', error);
+      res.status(500).json({ success: false, error: 'Test broadcast failed' });
+    }
+  });
+
   app.post('/api/live-editing/start-gym-buddy-demo', async (req, res) => {
     try {
       console.log('Starting real-time gym buddy transformation with AI agents...');
@@ -4280,9 +4306,24 @@ console.log('File: ${filePath}');
       const samDeveloper = agents.find(a => a.name.includes('Sam'));
       const jordanCSS = agents.find(a => a.name.includes('Jordan'));
 
+      // Test immediate broadcast first
+      if (webSocketManager && webSocketManager.broadcast) {
+        console.log('Broadcasting immediate test message...');
+        webSocketManager.broadcast('liveUpdate', {
+          sessionId: 'immediate-test',
+          fileName: 'immediate-test.js',
+          content: 'Immediate broadcast test',
+          agentName: 'System Test',
+          timestamp: new Date().toISOString(),
+          updateType: 'complete',
+          message: 'Testing immediate WebSocket broadcast'
+        });
+      }
+
       // Start real agent responses with live streaming
       if (webSocketManager && webSocketManager.broadcast) {
         // Broadcast start of session
+        console.log('Broadcasting gym buddy start message...');
         webSocketManager.broadcast('liveUpdate', {
           sessionId: 'gym-buddy-transformation',
           fileName: 'Project Coordination',
