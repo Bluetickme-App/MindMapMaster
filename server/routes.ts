@@ -3363,6 +3363,57 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     }
   });
 
+  // Live TripleA luxury website preview
+  app.get('/live-triplea', async (req, res) => {
+    const path = await import('path');
+    const fs = await import('fs');
+    
+    try {
+      const filePath = path.join(process.cwd(), 'projects', 'triplea-clone', 'index.html');
+      let content = fs.readFileSync(filePath, 'utf-8');
+      
+      // Update CSS and JS paths to use absolute URLs
+      content = content.replace('href="style.css"', 'href="/live-triplea-style"');
+      content = content.replace('src="script.js"', 'src="/live-triplea-script"');
+      
+      res.setHeader('Content-Type', 'text/html');
+      res.send(content);
+    } catch (error) {
+      console.error('Error serving live TripleA:', error);
+      res.status(500).send('Error loading luxury website');
+    }
+  });
+
+  app.get('/live-triplea-style', async (req, res) => {
+    const path = await import('path');
+    const fs = await import('fs');
+    
+    try {
+      const filePath = path.join(process.cwd(), 'projects', 'triplea-clone', 'style.css');
+      const content = fs.readFileSync(filePath, 'utf-8');
+      res.setHeader('Content-Type', 'text/css');
+      res.send(content);
+    } catch (error) {
+      console.error('Error serving TripleA styles:', error);
+      res.status(404).send('Styles not found');
+    }
+  });
+
+  app.get('/live-triplea-script', async (req, res) => {
+    const path = await import('path');
+    const fs = await import('fs');
+    
+    try {
+      const filePath = path.join(process.cwd(), 'projects', 'triplea-clone', 'script.js');
+      const content = fs.readFileSync(filePath, 'utf-8');
+      res.setHeader('Content-Type', 'application/javascript');
+      res.send(content);
+    } catch (error) {
+      console.error('Error serving TripleA script:', error);
+      res.status(404).send('Script not found');
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Add error handling for server creation
