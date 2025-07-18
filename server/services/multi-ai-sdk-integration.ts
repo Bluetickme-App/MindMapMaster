@@ -395,10 +395,12 @@ export class MultiAISDKIntegration {
       results['claude'] = { available: false, latency: -1 };
     }
     
-    // Test Gemini (mock implementation)
+    // Test Gemini (real API test)
     try {
       const start = Date.now();
-      // Mock Gemini is always available for demo purposes
+      // Test with real Gemini provider
+      const { multiAIService } = await import('./multi-ai-provider.js');
+      await multiAIService.generateResponse('gemini', 'Health check', 'Respond with "OK"', 'gemini-2.5-flash');
       results['gemini'] = { 
         available: true, 
         latency: Date.now() - start 
