@@ -155,25 +155,22 @@ export default function ReplitClone() {
     }
   }, [chatHistoryQuery.data]);
 
-  // Fetch file system tree
+  // Fetch file system tree - FORCE use TripleA API endpoints
   const fileSystemQuery = useQuery({
-    queryKey: ['/api/workspace/files', projectInfo?.name],
+    queryKey: ['/api/files', 'triplea-files'],
     queryFn: async () => {
-      const url = projectInfo?.name 
-        ? `/api/workspace/files?projectName=${encodeURIComponent(projectInfo.name)}`
-        : '/api/workspace/files';
-      const response = await fetch(url);
+      const response = await fetch('/api/files');
       return response.json();
     },
     refetchInterval: 5000 // Refresh every 5 seconds
   });
 
-  // Fetch file content
+  // Fetch file content - FORCE use TripleA API endpoints
   const fileContentQuery = useQuery({
-    queryKey: ['/api/workspace/files', selectedFile?.path],
+    queryKey: ['/api/files/content', selectedFile?.path],
     queryFn: async () => {
       if (!selectedFile) return null;
-      const response = await fetch(`/api/workspace/files${selectedFile.path}`);
+      const response = await fetch(`/api/files/content?path=${encodeURIComponent(selectedFile.path.replace(/^\//, ''))}`);
       return response.json();
     },
     enabled: !!selectedFile
@@ -451,10 +448,26 @@ export default function ReplitClone() {
     }
   };
 
-  const renderFileTree = (nodes: FileSystemNode[], level = 0) => {
+  // Convert flat TripleA file list to expected tree structure
+  const convertTripleAFilesToTree = (files: any[]) => {
+    if (!files || !Array.isArray(files)) return [];
+    
+    return files.map(file => ({
+      name: file.name,
+      path: file.path,
+      type: file.type as 'file' | 'folder',
+      size: file.size,
+      modified: file.modified,
+      children: undefined
+    }));
+  };
+
+  const renderFileTree = (files: any, level = 0) => {
+    // Handle TripleA flat file list
+    const nodes = Array.isArray(files) ? convertTripleAFilesToTree(files) : files;
     if (!nodes) return null;
     
-    return nodes.map((node) => (
+    return nodes.map((node: FileSystemNode) => (
       <div key={node.path} className="select-none">
         <div
           className={`flex items-center gap-2 px-2 py-1 hover:bg-muted cursor-pointer ${
