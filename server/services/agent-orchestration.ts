@@ -5,6 +5,8 @@ import { agentMemoryService } from "./agent-memory-service";
 import { claudeAgentSystem } from "./claude-agent-system";
 import { replitAgentSystem } from "./replit-agent-system";
 import { agentToolIntegration } from "./agent-tool-integration";
+import { agentServerAccess } from "./agent-server-access";
+import { agentToolIntegrationEnhanced } from "./agent-tool-integration-enhanced";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 

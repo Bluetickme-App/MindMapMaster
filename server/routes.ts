@@ -13,6 +13,7 @@ import { projectManagerService } from "./services/project-manager";
 import { agentMemoryService } from "./services/agent-memory-service";
 import { extensionManager } from "./services/extension-manager";
 import { initializeDevTeamAgents } from "./services/team-agents";
+import { agentServerAccess } from "./services/agent-server-access";
 import { 
   insertCodeGenerationSchema, insertProjectSchema, insertApiTestSchema,
   insertAgentSchema, insertConversationSchema, insertMessageSchema,
@@ -3545,6 +3546,261 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     } catch (error) {
       console.error('Error reading TripleA file:', error);
       res.status(500).json({ message: 'Failed to read TripleA file' });
+    }
+  });
+
+  // ==================== AGENT SERVER ACCESS API ENDPOINTS ====================
+  // NPM Package Management
+  app.post('/api/agent/install-dependency', async (req, res) => {
+    try {
+      const { packageName, isDev } = req.body;
+      
+      if (!packageName) {
+        return res.status(400).json({ message: 'Package name is required' });
+      }
+      
+      const result = await agentServerAccess.installDependency(packageName, isDev);
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error('Error installing dependency:', error);
+      res.status(500).json({ message: 'Failed to install dependency' });
+    }
+  });
+
+  app.post('/api/agent/uninstall-dependency', async (req, res) => {
+    try {
+      const { packageName } = req.body;
+      
+      if (!packageName) {
+        return res.status(400).json({ message: 'Package name is required' });
+      }
+      
+      const result = await agentServerAccess.uninstallDependency(packageName);
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error('Error uninstalling dependency:', error);
+      res.status(500).json({ message: 'Failed to uninstall dependency' });
+    }
+  });
+
+  app.post('/api/agent/update-dependencies', async (req, res) => {
+    try {
+      const result = await agentServerAccess.updateDependencies();
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error('Error updating dependencies:', error);
+      res.status(500).json({ message: 'Failed to update dependencies' });
+    }
+  });
+
+  // Server Configuration Management
+  app.post('/api/agent/update-config', async (req, res) => {
+    try {
+      const { configPath, configData } = req.body;
+      
+      if (!configPath || !configData) {
+        return res.status(400).json({ message: 'Config path and data are required' });
+      }
+      
+      const result = await agentServerAccess.updateServerConfig(configPath, configData);
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error('Error updating config:', error);
+      res.status(500).json({ message: 'Failed to update config' });
+    }
+  });
+
+  app.get('/api/agent/read-config', async (req, res) => {
+    try {
+      const { configPath } = req.query;
+      
+      if (!configPath) {
+        return res.status(400).json({ message: 'Config path is required' });
+      }
+      
+      const result = await agentServerAccess.readServerConfig(configPath as string);
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error('Error reading config:', error);
+      res.status(500).json({ message: 'Failed to read config' });
+    }
+  });
+
+  // Deep Server Debugging & Command Execution
+  app.post('/api/agent/execute-command', async (req, res) => {
+    try {
+      const { command, timeout, cwd } = req.body;
+      
+      if (!command) {
+        return res.status(400).json({ message: 'Command is required' });
+      }
+      
+      const result = await agentServerAccess.executeCommand(command, { timeout, cwd });
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error('Error executing command:', error);
+      res.status(500).json({ message: 'Failed to execute command' });
+    }
+  });
+
+  app.get('/api/agent/server-logs', async (req, res) => {
+    try {
+      const { service = 'all', lines = 100 } = req.query;
+      
+      const result = await agentServerAccess.getServerLogs(service as string, parseInt(lines as string));
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error('Error getting server logs:', error);
+      res.status(500).json({ message: 'Failed to get server logs' });
+    }
+  });
+
+  // Environment Management
+  app.post('/api/agent/update-environment', async (req, res) => {
+    try {
+      const { envVar, value } = req.body;
+      
+      if (!envVar || !value) {
+        return res.status(400).json({ message: 'Environment variable and value are required' });
+      }
+      
+      const result = await agentServerAccess.updateEnvironment(envVar, value);
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error('Error updating environment:', error);
+      res.status(500).json({ message: 'Failed to update environment' });
+    }
+  });
+
+  app.post('/api/agent/restart-server', async (req, res) => {
+    try {
+      const result = await agentServerAccess.restartServer();
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error('Error restarting server:', error);
+      res.status(500).json({ message: 'Failed to restart server' });
+    }
+  });
+
+  // File System Operations
+  app.post('/api/agent/create-file', async (req, res) => {
+    try {
+      const { filePath, content } = req.body;
+      
+      if (!filePath) {
+        return res.status(400).json({ message: 'File path is required' });
+      }
+      
+      const result = await agentServerAccess.createConfigFile(filePath, content || '');
+      
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
+    } catch (error) {
+      console.error('Error creating file:', error);
+      res.status(500).json({ message: 'Failed to create file' });
+    }
+  });
+
+  // Command History and Monitoring
+  app.get('/api/agent/command-history', async (req, res) => {
+    try {
+      const { limit = 50 } = req.query;
+      
+      const history = agentServerAccess.getCommandHistory(parseInt(limit as string));
+      
+      res.json({
+        success: true,
+        history,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error getting command history:', error);
+      res.status(500).json({ message: 'Failed to get command history' });
+    }
+  });
+
+  app.post('/api/agent/clear-history', async (req, res) => {
+    try {
+      agentServerAccess.clearHistory();
+      
+      res.json({
+        success: true,
+        message: 'Command history cleared',
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error clearing history:', error);
+      res.status(500).json({ message: 'Failed to clear history' });
+    }
+  });
+
+  // Advanced System Information
+  app.get('/api/agent/system-info', async (req, res) => {
+    try {
+      const systemInfo = await agentServerAccess.executeCommand('uname -a && node --version && npm --version');
+      const memoryInfo = await agentServerAccess.executeCommand('free -h');
+      const diskInfo = await agentServerAccess.executeCommand('df -h');
+      const processInfo = await agentServerAccess.executeCommand('ps aux | grep node');
+      
+      res.json({
+        success: true,
+        systemInfo: systemInfo.output,
+        memoryInfo: memoryInfo.output,
+        diskInfo: diskInfo.output,
+        processInfo: processInfo.output,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error getting system info:', error);
+      res.status(500).json({ message: 'Failed to get system info' });
     }
   });
 
