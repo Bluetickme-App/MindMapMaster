@@ -43,6 +43,15 @@ export default function QuickActions() {
       },
     },
     {
+      title: "Live Coding View",
+      description: "Watch agents code in real-time",
+      icon: Monitor,
+      color: "green-500",
+      onClick: () => {
+        setLocation('/advanced-collaboration');
+      },
+    },
+    {
       title: "Generate Code",
       description: "AI-powered code generation",
       icon: Wand2,
