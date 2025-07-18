@@ -31,6 +31,7 @@ import SimpleProjectCreation from "@/pages/simple-project-creation";
 import MultiAISDKDemo from "@/pages/multi-ai-sdk-demo";
 import ProjectManagerChat from "@/pages/project-manager-chat";
 import AdvancedCollaboration from "@/pages/advanced-collaboration";
+import CreateStreamlined from "@/pages/create-streamlined";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -60,7 +61,7 @@ function Router() {
       <Route path="/replit-ai-enhanced" component={ReplitAIEnhanced} />
       <Route path="/replit-simple" component={ReplitSimple} />
       <Route path="/agent-roadmap-flow" component={AgentRoadmapFlow} />
-      <Route path="/create-streamlined" component={StreamlinedProjectCreation} />
+      <Route path="/create-streamlined" component={CreateStreamlined} />
       <Route path="/create-simple" component={SimpleProjectCreation} />
       <Route path="/multi-ai-sdk-demo" component={MultiAISDKDemo} />
       <Route path="/project-manager" component={ProjectManagerChat} />

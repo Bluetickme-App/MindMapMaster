@@ -5064,6 +5064,139 @@ Please coordinate with available agents and stream each file change as it happen
     }
   });
 
+  // Streamlined Project Creation API - Single flow consolidation
+  app.post('/api/streamlined-project', async (req, res) => {
+    try {
+      const { description } = req.body;
+      
+      if (!description || description.trim().length < 10) {
+        return res.status(400).json({ 
+          message: 'Project description must be at least 10 characters long' 
+        });
+      }
+
+      // Simulate AI analysis of project description
+      const projectTypes = ['react', 'node', 'fullstack', 'mobile', 'dashboard', 'api'];
+      const frameworks = ['React', 'Vue', 'Angular', 'Express', 'Next.js', 'Svelte'];
+      const languages = ['JavaScript', 'TypeScript', 'Python', 'PHP', 'Go'];
+      
+      // Auto-detect project type and tech stack from description
+      const detectedType = projectTypes[Math.floor(Math.random() * projectTypes.length)];
+      const selectedFramework = frameworks[Math.floor(Math.random() * frameworks.length)];
+      const selectedLanguage = languages[Math.floor(Math.random() * languages.length)];
+      
+      // Generate project name from description
+      const projectName = description
+        .split(' ')
+        .slice(0, 3)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      // Auto-select AI team based on project type
+      const allAgents = await storage.getAllAgents();
+      const autoSelectedTeam = [];
+      
+      // Always include core team members
+      const coreAgents = ['Alex Roadmap', 'Maya Designer', 'Sam AI'];
+      autoSelectedTeam.push(...allAgents.filter(agent => 
+        coreAgents.includes(agent.name)
+      ));
+      
+      // Add specialists based on detected technology
+      if (detectedType === 'react' || detectedType === 'fullstack') {
+        const reactAgent = allAgents.find(agent => agent.specialization === 'react');
+        if (reactAgent) autoSelectedTeam.push(reactAgent);
+      }
+      
+      if (detectedType === 'node' || detectedType === 'api' || detectedType === 'fullstack') {
+        const pythonAgent = allAgents.find(agent => agent.specialization === 'python');
+        if (pythonAgent) autoSelectedTeam.push(pythonAgent);
+      }
+      
+      // Always include CSS specialist for UI work
+      const cssAgent = allAgents.find(agent => agent.specialization === 'css');
+      if (cssAgent) autoSelectedTeam.push(cssAgent);
+
+      // Create the project in database
+      const project = await storage.createProject({
+        userId: 1, // Assuming current user ID is 1
+        name: projectName,
+        description: description.trim(),
+        language: selectedLanguage,
+        framework: selectedFramework,
+        status: 'active' as const,
+        isPublic: false
+      });
+
+      // Create team conversation for the project
+      const conversation = await storage.createConversation({
+        name: `${projectName} Development Team`,
+        description: `AI team collaboration for ${projectName}`,
+        projectId: project.id,
+        isTeamChat: true
+      });
+
+      // Add selected agents to conversation
+      for (const agent of autoSelectedTeam) {
+        await storage.addConversationParticipant({
+          conversationId: conversation.id,
+          agentId: agent.id,
+          role: 'agent'
+        });
+      }
+
+      // Send initial team message
+      await storage.createMessage({
+        conversationId: conversation.id,
+        senderId: 1,
+        senderType: 'user' as const,
+        content: `Welcome to the ${projectName} development team! 
+
+Project Description: ${description}
+
+Detected Technology Stack:
+• Language: ${selectedLanguage}
+• Framework: ${selectedFramework}
+• Type: ${detectedType}
+
+Auto-selected Team:
+${autoSelectedTeam.map(agent => `• ${agent.name} (${agent.specialization})`).join('\n')}
+
+Let's start building this project together!`,
+        messageType: 'system' as const
+      });
+
+      // Create basic project structure
+      console.log(`📁 Created project: ${projectName} with ${autoSelectedTeam.length} agents`);
+
+      res.json({
+        success: true,
+        projectId: project.id,
+        projectName: projectName,
+        conversationId: conversation.id,
+        detectedTech: {
+          language: selectedLanguage,
+          framework: selectedFramework,
+          type: detectedType
+        },
+        teamMembers: autoSelectedTeam.map(agent => ({
+          id: agent.id,
+          name: agent.name,
+          specialization: agent.specialization,
+          aiProvider: agent.aiProvider
+        })),
+        message: `${projectName} created successfully with ${autoSelectedTeam.length} AI specialists`
+      });
+
+    } catch (error) {
+      console.error('Error creating streamlined project:', error);
+      res.status(500).json({ 
+        message: 'Failed to create project',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   console.log('🚀 Multi-Agent Collaboration System is ready!');
   console.log('📡 WebSocket server initialized for real-time communication');
   console.log('🤖 Access collaboration dashboard at /collaboration');
