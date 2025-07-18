@@ -14,6 +14,7 @@ import { agentMemoryService } from "./services/agent-memory-service";
 import { extensionManager } from "./services/extension-manager";
 import { initializeDevTeamAgents } from "./services/team-agents";
 import { agentServerAccess } from "./services/agent-server-access";
+import { DevUrlConstructor } from "./services/dev-url-constructor";
 import { 
   insertCodeGenerationSchema, insertProjectSchema, insertApiTestSchema,
   insertAgentSchema, insertConversationSchema, insertMessageSchema,
@@ -41,6 +42,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Initialize team agents in database
   await initializeDevTeamAgents();
+  
+  // Initialize dev URL constructor
+  const devUrlConstructor = new DevUrlConstructor(app);
+  console.log("🌐 Dev URL Constructor initialized");
   
   // Add health check endpoints for production deployment
   app.get('/health', (req, res) => {
@@ -3801,6 +3806,39 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     } catch (error) {
       console.error('Error getting system info:', error);
       res.status(500).json({ message: 'Failed to get system info' });
+    }
+  });
+
+  // ==================== DEV URL CONSTRUCTOR API ====================
+  // Get all project dev URLs
+  app.get('/api/dev-urls', (req, res) => {
+    try {
+      const devUrls = devUrlConstructor.discoverProjects();
+      const projects = devUrlConstructor.getProjects().map(project => ({
+        id: project.id,
+        name: project.name,
+        type: project.type,
+        devUrl: `http://localhost:5000/dev/${project.id}`,
+        entryPoint: project.entryPoint,
+        assets: project.assets
+      }));
+      
+      res.json({ projects, devUrls });
+    } catch (error) {
+      console.error('Error getting dev URLs:', error);
+      res.status(500).json({ message: 'Failed to get dev URLs' });
+    }
+  });
+
+  // Trigger live reload for a project
+  app.post('/api/dev-urls/:projectId/reload', (req, res) => {
+    try {
+      const { projectId } = req.params;
+      devUrlConstructor.triggerReload(projectId);
+      res.json({ message: `Live reload triggered for ${projectId}` });
+    } catch (error) {
+      console.error('Error triggering reload:', error);
+      res.status(500).json({ message: 'Failed to trigger reload' });
     }
   });
 

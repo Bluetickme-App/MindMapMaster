@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code, Sparkles, Map, Zap, Monitor } from "lucide-react";
+import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code, Sparkles, Map, Zap, Monitor, ExternalLink } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function QuickActions() {
@@ -121,6 +121,15 @@ export default function QuickActions() {
       color: "indigo-500",
       onClick: () => {
         setLocation('/replit-ai-enhanced');
+      },
+    },
+    {
+      title: "Dev URLs",
+      description: "Project development URLs",
+      icon: ExternalLink,
+      color: "orange-500",
+      onClick: () => {
+        setLocation('/dev-urls');
       },
     },
     {

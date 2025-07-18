@@ -691,6 +691,17 @@ Changelog:
   - All API endpoints tested and working: Create (description-based), GitHub (URL import), Clone (website + rebrand)
   - Successfully tested cloning Selfridges.com and rebranding as "TripleA" with 5 specialized AI agents
   - System provides simplified alternative to complex multi-agent platform while maintaining full AI collaboration capabilities
+- July 18, 2025. Implemented comprehensive Dev URL Constructor system like Replit:
+  - Created DevUrlConstructor service that automatically generates unique development URLs for each project
+  - Implemented dynamic URL routing with `/dev/[project-name]` pattern matching Replit's approach
+  - Added automatic project discovery and registration system for all project types (HTML, Node.js, Python, PHP, React)
+  - Built proper asset serving with MIME type detection for CSS, JavaScript, images, and fonts
+  - Created live reload functionality with WebSocket integration for development workflow
+  - Added comprehensive Dev URLs frontend page (`/dev-urls`) showing all project URLs with management features
+  - Implemented API endpoints: `/api/dev-urls` for project listing and `/api/dev-urls/:id/reload` for live reload
+  - All 7 projects now accessible via dedicated dev URLs: TripleA Clone, Gym Buddy, Recipe App, etc.
+  - Dev URLs button added to Quick Actions dashboard for easy access to project development URLs
+  - System resolves user's 404 issues by providing proper development URL routing instead of localhost:8080
 
 ## User Preferences
 
