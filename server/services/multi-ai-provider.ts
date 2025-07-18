@@ -195,7 +195,7 @@ class GeminiProvider implements AIProvider {
 
   constructor() {
     this.client = new GoogleGenAI({ 
-      apiKey: process.env.GEMINI_API_KEY || "default_key" 
+      apiKey: process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || "default_key" 
     });
   }
 
