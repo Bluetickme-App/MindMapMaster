@@ -33,13 +33,7 @@ export default function ReplitSimple() {
 
   const createProjectMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/replit-simple/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+      return apiRequest('POST', '/api/replit-simple/create', data);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
