@@ -211,14 +211,39 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     if (projectsQuery.data && projectsQuery.data.length > 0) {
+      // Check for project parameter in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const projectParam = urlParams.get('project');
+      
+      if (projectParam) {
+        const targetProject = projectsQuery.data.find(p => p.id === parseInt(projectParam));
+        if (targetProject) {
+          setSelectedProject(targetProject);
+          return;
+        }
+      }
+      
+      // Default to first project if no valid project parameter
       setSelectedProject(projectsQuery.data[0]);
     }
   }, [projectsQuery.data]);
 
-  // Refetch file tree when project changes
+  // Refetch file tree and check for existing conversation when project changes
   useEffect(() => {
     if (selectedProject) {
       queryClient.invalidateQueries({ queryKey: ['/api/files'] });
+      
+      // Check if project has an existing conversation
+      fetch(`/api/conversations?projectId=${selectedProject.id}`)
+        .then(res => res.json())
+        .then(conversations => {
+          if (conversations && conversations.length > 0) {
+            setConversationId(conversations[0].id);
+            setSelectedAgents(conversations[0].participants || []);
+            fetchConversationMessages();
+          }
+        })
+        .catch(err => console.error('Error checking conversations:', err));
     }
   }, [selectedProject, queryClient]);
 
