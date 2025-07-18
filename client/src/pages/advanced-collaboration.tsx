@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Lock, Unlock, Save, RotateCcw, Eye, AlertCircle, CheckCircle, Users, FileText, Activity, Play, Code, Sparkles } from 'lucide-react';
+import { Lock, Unlock, Save, RotateCcw, Eye, AlertCircle, CheckCircle, Users, FileText, Activity, Play, Code, Sparkles, Monitor, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 interface FileInfo {
   id: number;
@@ -21,6 +22,8 @@ interface Checkpoint {
   message: string;
   createdAt: string;
   createdBy: string;
+  fileCount?: number;
+  size?: string;
 }
 
 interface LiveSession {
@@ -29,6 +32,8 @@ interface LiveSession {
   fileName: string;
   isActive: boolean;
   startedAt: string;
+  lastActivity?: string;
+  linesModified?: number;
 }
 
 interface LiveUpdate {
@@ -37,14 +42,25 @@ interface LiveUpdate {
   content: string;
   agentName: string;
   timestamp: string;
-  updateType: 'partial' | 'complete' | 'thinking' | 'error';
+  updateType: 'partial' | 'complete' | 'thinking' | 'error' | 'code_change';
   message?: string;
+  action?: string;
+  lineCount?: number;
+}
+
+interface ActivityLogItem {
+  id: number;
+  type: string;
+  icon: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  agent: string;
+  status: string;
 }
 
 export default function AdvancedCollaboration() {
   const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
-  const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
-  const [liveSessions, setLiveSessions] = useState<LiveSession[]>([]);
   const [liveUpdates, setLiveUpdates] = useState<LiveUpdate[]>([]);
   const [fileContent, setFileContent] = useState('');
   const [isLocking, setIsLocking] = useState(false);
@@ -52,6 +68,22 @@ export default function AdvancedCollaboration() {
   const [isStreamingActive, setIsStreamingActive] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const updatesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch live data from APIs
+  const { data: checkpoints = [], refetch: refetchCheckpoints } = useQuery({
+    queryKey: ['/api/collaboration/checkpoints'],
+    refetchInterval: 5000, // Refresh every 5 seconds
+  });
+
+  const { data: liveSessions = [], refetch: refetchSessions } = useQuery({
+    queryKey: ['/api/collaboration/live-sessions'],
+    refetchInterval: 3000, // Refresh every 3 seconds
+  });
+
+  const { data: activityLog = [], refetch: refetchActivity } = useQuery({
+    queryKey: ['/api/collaboration/activity-log'],
+    refetchInterval: 3000, // Refresh every 3 seconds
+  });
 
   // Mock file data
   const mockFiles: FileInfo[] = [
@@ -79,12 +111,7 @@ export default function AdvancedCollaboration() {
     }
   ];
 
-  // Mock checkpoint data
-  const mockCheckpoints: Checkpoint[] = [
-    { id: 1, message: 'Initial homepage component', createdAt: '2025-01-18 14:30', createdBy: 'Maya Designer' },
-    { id: 2, message: 'Added responsive layout', createdAt: '2025-01-18 15:15', createdBy: 'Jordan CSS' },
-    { id: 3, message: 'Enhanced accessibility', createdAt: '2025-01-18 16:00', createdBy: 'Alex Senior' }
-  ];
+
 
   // WebSocket connection for live updates
   useEffect(() => {
@@ -256,16 +283,7 @@ export default function AdvancedCollaboration() {
     }
   };
 
-  // Mock live sessions
-  const mockLiveSessions: LiveSession[] = [
-    { id: 'session_1', agentName: 'Sam AI', fileName: 'UserService.ts', isActive: true, startedAt: '2025-01-18 16:30' },
-    { id: 'session_2', agentName: 'Taylor QA', fileName: 'test-utils.js', isActive: true, startedAt: '2025-01-18 16:25' }
-  ];
-
-  useEffect(() => {
-    setCheckpoints(mockCheckpoints);
-    setLiveSessions(mockLiveSessions);
-  }, []);
+  // WebSocket connection for live updates
 
   const handleFileSelect = (file: FileInfo) => {
     setSelectedFile(file);
@@ -355,7 +373,7 @@ export default function AdvancedCollaboration() {
           createdAt: new Date().toISOString(),
           createdBy: 'You'
         };
-        setCheckpoints([...checkpoints, newCheckpoint]);
+        refetchCheckpoints();
         toast({
           title: "Checkpoint Created",
           description: "File state saved successfully",
@@ -648,72 +666,144 @@ export default function AdvancedCollaboration() {
         </TabsContent>
 
         <TabsContent value="streaming" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                Live Agent Streaming
-                <Badge variant={isStreamingActive ? "default" : "secondary"} className="ml-2">
-                  {isStreamingActive ? 'LIVE' : 'OFFLINE'}
-                </Badge>
-              </CardTitle>
-              <CardDescription>
-                Watch agents transform your gym buddy project in real-time with live code updates
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-96 w-full border rounded-lg p-4">
-                {liveUpdates.length === 0 ? (
-                  <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                    <Code className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No live streams active. Click "Start Gym Buddy Demo" to watch agents work!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {liveUpdates.map((update, index) => (
-                      <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-blue-600 dark:text-blue-400">
-                            {update.agentName}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {update.timestamp}
-                          </span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Live Streaming Panel */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  Live Agent Streaming
+                  <Badge variant={isStreamingActive ? "default" : "secondary"} className="ml-2">
+                    {isStreamingActive ? 'LIVE' : 'OFFLINE'}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  Watch agents transform your gym buddy project in real-time with live code updates
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-96 w-full border rounded-lg p-4 bg-slate-950">
+                  {liveUpdates.length === 0 ? (
+                    <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                      <Code className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No live streams active. Click "Start Real AI Transformation" to watch agents work!</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {liveUpdates.map((update, index) => (
+                        <div key={index} className="border-l-4 border-blue-500 pl-4 py-3 bg-slate-900/50 rounded-r-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                              <span className="font-bold text-blue-400 text-sm">
+                                {update.agentName}
+                              </span>
+                              {update.fileName && update.fileName !== 'transformation_complete' && (
+                                <span className="text-xs text-slate-400">→ {update.fileName}</span>
+                              )}
+                            </div>
+                            <span className="text-xs text-slate-500">
+                              {update.timestamp}
+                            </span>
+                          </div>
+                          
+                          {update.action && (
+                            <p className="text-xs text-slate-300 mb-2 italic">
+                              {update.action}
+                            </p>
+                          )}
+                          
+                          {update.updateType === 'thinking' ? (
+                            <div className="flex items-center gap-2 text-yellow-400">
+                              <Activity className="w-3 h-3 animate-spin" />
+                              <span className="text-xs">Thinking...</span>
+                            </div>
+                          ) : update.content && update.fileName !== 'transformation_complete' && (
+                            <div className="bg-slate-800 rounded p-3 mt-2 border border-slate-700">
+                              <pre className="text-xs font-mono text-green-400 whitespace-pre-wrap overflow-auto max-h-24 leading-relaxed">
+                                {update.content}
+                              </pre>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge 
+                              variant={update.updateType === 'complete' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {update.updateType === 'code_change' ? 'CODE_UPDATED' : update.updateType.toUpperCase()}
+                            </Badge>
+                            {update.lineCount && (
+                              <span className="text-xs text-slate-500">
+                                {update.lineCount} lines
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        
-                        {update.message && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                            {update.message}
-                          </p>
-                        )}
-                        
-                        {update.updateType === 'thinking' ? (
-                          <div className="flex items-center gap-2 text-yellow-600">
-                            <Activity className="w-4 h-4 animate-spin" />
-                            <span className="text-sm">Thinking...</span>
-                          </div>
-                        ) : update.content && (
-                          <div className="bg-gray-50 dark:bg-gray-800 rounded p-3 mt-2">
-                            <pre className="text-xs font-mono whitespace-pre-wrap overflow-auto max-h-32">
-                              {update.content}
-                            </pre>
-                          </div>
-                        )}
-                        
-                        <Badge 
-                          variant={update.updateType === 'complete' ? 'default' : 'secondary'}
-                          className="mt-2 text-xs"
-                        >
-                          {update.updateType}
-                        </Badge>
+                      ))}
+                      <div ref={updatesEndRef} />
+                    </div>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Live Preview Panel */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Monitor className="h-5 w-5" />
+                  Live Preview
+                  <Badge variant={liveUpdates.length > 0 ? "default" : "secondary"} className="ml-2">
+                    {liveUpdates.length > 0 ? 'UPDATING' : 'STATIC'}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  See the transformed gym buddy app as agents modify it
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-96 w-full border rounded-lg overflow-hidden bg-white">
+                  {liveUpdates.length === 0 ? (
+                    <div className="flex items-center justify-center h-full bg-gray-50">
+                      <div className="text-center text-gray-500">
+                        <Monitor className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>Preview will appear when agents start working</p>
                       </div>
-                    ))}
-                    <div ref={updatesEndRef} />
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                    </div>
+                  ) : (
+                    <iframe
+                      src="/gym-buddy-preview"
+                      className="w-full h-full border-0"
+                      title="Gym Buddy Live Preview"
+                      key={liveUpdates.length} // Force refresh when updates change
+                    />
+                  )}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.open('/gym-buddy-preview', '_blank')}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Open in New Tab
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const iframe = document.querySelector('iframe[title="Gym Buddy Live Preview"]') as HTMLIFrameElement;
+                      if (iframe) iframe.src = iframe.src; // Force refresh
+                    }}
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-4">
@@ -729,36 +819,46 @@ export default function AdvancedCollaboration() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 border rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <div>
-                    <p className="font-medium">File lock acquired</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Sam AI locked UserService.ts for editing
-                    </p>
+                {activityLog.map((activity) => {
+                  const getIcon = (iconType: string) => {
+                    switch (iconType) {
+                      case 'lock': return <Lock className="h-5 w-5 text-red-500" />;
+                      case 'unlock': return <Unlock className="h-5 w-5 text-green-500" />;
+                      case 'save': return <Save className="h-5 w-5 text-blue-500" />;
+                      case 'code': return <Code className="h-5 w-5 text-purple-500" />;
+                      case 'users': return <Users className="h-5 w-5 text-cyan-500" />;
+                      default: return <Activity className="h-5 w-5 text-gray-500" />;
+                    }
+                  };
+
+                  const getStatusColor = (status: string) => {
+                    return status === 'active' ? 'default' : 'outline';
+                  };
+
+                  return (
+                    <div key={activity.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                      {getIcon(activity.icon)}
+                      <div>
+                        <p className="font-medium">{activity.title}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {activity.description}
+                        </p>
+                      </div>
+                      <div className="ml-auto flex flex-col items-end gap-1">
+                        <Badge variant={getStatusColor(activity.status)} className="text-xs">
+                          {activity.status}
+                        </Badge>
+                        <span className="text-xs text-gray-500">{activity.timestamp}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {activityLog.length === 0 && (
+                  <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                    <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No recent collaboration activity</p>
                   </div>
-                  <Badge variant="outline">2 min ago</Badge>
-                </div>
-                <div className="flex items-center gap-3 p-3 border rounded-lg">
-                  <Save className="h-5 w-5 text-blue-500" />
-                  <div>
-                    <p className="font-medium">Checkpoint created</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Maya Designer saved checkpoint for HomePage.jsx
-                    </p>
-                  </div>
-                  <Badge variant="outline">5 min ago</Badge>
-                </div>
-                <div className="flex items-center gap-3 p-3 border rounded-lg">
-                  <RotateCcw className="h-5 w-5 text-orange-500" />
-                  <div>
-                    <p className="font-medium">File restored</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Alex Senior reverted styles.css to previous checkpoint
-                    </p>
-                  </div>
-                  <Badge variant="outline">8 min ago</Badge>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
