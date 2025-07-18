@@ -4533,7 +4533,379 @@ Please coordinate with available agents and stream each file change as it happen
 
   // Gym Buddy Live Preview - Shows the transformed application
   app.get('/gym-buddy-preview', (req, res) => {
-    const gymBuddyHTML = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Gym Buddy Finder - Live Preview</title><style>body{margin:0;font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:2rem}.container{max-width:1200px;margin:0 auto;background:white;border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,0.1);padding:2rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:center}h1{font-size:3rem;color:#2d3748;margin-bottom:1rem;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.subtitle{font-size:1.2rem;color:#718096;margin-bottom:2rem}.features{display:grid;gap:1rem;margin-bottom:2rem}.feature{display:flex;align-items:center;gap:0.75rem;padding:1rem;background:#f7fafc;border-radius:10px;border-left:4px solid #667eea}.feature-icon{width:24px;height:24px;background:#667eea;border-radius:50%}.cta-button{background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:1rem 2rem;border:none;border-radius:50px;font-size:1.1rem;font-weight:600;cursor:pointer;transition:transform 0.2s;box-shadow:0 10px 20px rgba(102,126,234,0.3)}.cta-button:hover{transform:translateY(-2px);box-shadow:0 15px 30px rgba(102,126,234,0.4)}.preview-image{background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);height:300px;border-radius:15px;display:flex;align-items:center;justify-content:center;color:white;font-size:1.2rem;font-weight:600;text-align:center}.status-badge{position:fixed;top:20px;right:20px;background:#48bb78;color:white;padding:0.5rem 1rem;border-radius:20px;font-size:0.9rem;font-weight:600;animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}@media (max-width:768px){.container{padding:1rem;grid-template-columns:1fr;gap:1.5rem}h1{font-size:2rem}body{padding:1rem}}</style></head><body><div class="status-badge">🔴 LIVE PREVIEW - Updated by AI Agents</div><div class="container"><div class="content"><h1>Gym Buddy Finder</h1><p class="subtitle">Connect with workout partners in your area. Find motivation, share goals, and achieve fitness together.</p><div class="features"><div class="feature"><div class="feature-icon"></div><span>Smart Matching Algorithm</span></div><div class="feature"><div class="feature-icon"></div><span>Location-Based Search</span></div><div class="feature"><div class="feature-icon"></div><span>Workout Goal Tracking</span></div><div class="feature"><div class="feature-icon"></div><span>Real-time Chat</span></div></div><button class="cta-button" onclick="showDemo()">Start Finding Buddies</button></div><div class="preview-image">📱 Interactive App Preview<br><small style="opacity:0.8;font-size:0.9rem;">Transformed by Maya Designer, Sam AI & Jordan CSS</small></div></div><script>const gymBuddyApp={init(){this.setupUserProfiles();this.enableMatching();this.updateTimestamp()},setupUserProfiles(){console.log("User profiles initialized")},enableMatching(){console.log("Smart matching enabled")},updateTimestamp(){setInterval(()=>{const badge=document.querySelector('.status-badge');if(badge)badge.innerHTML=\`🔴 LIVE PREVIEW - Last Updated: \${new Date().toLocaleTimeString()}\`},5000)}};function showDemo(){alert('🎉 This is a live preview of the transformed Gym Buddy app!\\n\\nFeatures added by AI agents:\\n• Modern gradient design (Maya Designer)\\n• Interactive JavaScript (Sam AI)\\n• Responsive layout (Jordan CSS)')}gymBuddyApp.init();</script></body></html>`;
+    const gymBuddyHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Buddy Chat - Live Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: #2d2d2d;
+            padding: 12px 20px;
+            border-bottom: 1px solid #404040;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 120px);
+        }
+        
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .message.agent {
+            background: #2563eb;
+            color: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message.user {
+            background: #374151;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.system {
+            background: #065f46;
+            color: #d1fae5;
+            align-self: center;
+            font-size: 12px;
+            max-width: 100%;
+            text-align: center;
+        }
+        
+        .message-header {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        
+        .input-area {
+            padding: 16px 20px;
+            background: #2d2d2d;
+            border-top: 1px solid #404040;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        
+        .message-input {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: white;
+            font-size: 14px;
+            resize: none;
+            min-height: 40px;
+            max-height: 120px;
+        }
+        
+        .message-input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        
+        .send-button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .send-button:hover {
+            background: #1d4ed8;
+        }
+        
+        .send-button:disabled {
+            background: #374151;
+            cursor: not-allowed;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            margin: 8px 0;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 2px;
+        }
+        
+        .typing-dots span {
+            width: 4px;
+            height: 4px;
+            background: #9ca3af;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+        
+        .feature-card {
+            background: #374151;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            border-left: 3px solid #2563eb;
+        }
+        
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #f3f4f6;
+        }
+        
+        .feature-desc {
+            font-size: 13px;
+            color: #d1d5db;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">
+            <div class="status-dot"></div>
+            Gym Buddy Chat - Live Preview
+        </div>
+        <div style="font-size: 12px; color: #9ca3af;">
+            Transformed by AI Agents
+        </div>
+    </div>
+    
+    <div class="chat-container">
+        <div class="messages" id="messages">
+            <div class="message system">
+                <div class="message-header">System</div>
+                Gym Buddy Finder chat system initialized
+            </div>
+            
+            <div class="message agent">
+                <div class="message-header">Maya Designer</div>
+                I've enhanced the visual design with modern gradients and improved the user interface. The app now has a professional look that matches current design trends.
+            </div>
+            
+            <div class="message agent">
+                <div class="message-header">Sam AI</div>
+                I've implemented the smart matching algorithm and real-time chat functionality. Here are the key features:
+                
+                <div class="feature-card">
+                    <div class="feature-title">Smart Matching</div>
+                    <div class="feature-desc">AI-powered algorithm matches users based on workout preferences, location, and fitness goals</div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-title">Real-time Chat</div>
+                    <div class="feature-desc">Instant messaging with workout partners, group chat support, and media sharing</div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-title">Goal Tracking</div>
+                    <div class="feature-desc">Track fitness progress, share achievements, and motivate each other</div>
+                </div>
+            </div>
+            
+            <div class="message agent">
+                <div class="message-header">Jordan CSS</div>
+                I've optimized the responsive design for all devices. The interface now works seamlessly on mobile, tablet, and desktop with touch-friendly interactions.
+            </div>
+            
+            <div class="message system">
+                <div class="message-header">System</div>
+                All AI agents have completed the transformation. The Gym Buddy app is now ready with enhanced features!
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typingIndicator" style="display: none;">
+            AI Agent is typing
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="input-area">
+        <div class="input-container">
+            <textarea 
+                class="message-input" 
+                id="messageInput" 
+                placeholder="Send message to working agents..."
+                rows="1"
+            ></textarea>
+            <button class="send-button" id="sendButton" onclick="sendMessage()">
+                Send
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        let messageCount = 0;
+        
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage('user', 'You', message);
+            input.value = '';
+            
+            // Show typing indicator
+            showTyping();
+            
+            // Simulate agent response
+            setTimeout(() => {
+                hideTyping();
+                respondToMessage(message);
+            }, 2000);
+        }
+        
+        function addMessage(type, sender, content) {
+            const messages = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = \`message \${type}\`;
+            
+            const now = new Date().toLocaleTimeString();
+            messageDiv.innerHTML = \`
+                <div class="message-header">\${sender} • \${now}</div>
+                \${content}
+            \`;
+            
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        function showTyping() {
+            document.getElementById('typingIndicator').style.display = 'flex';
+        }
+        
+        function hideTyping() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+        
+        function respondToMessage(userMessage) {
+            const responses = [
+                {
+                    sender: 'Sam AI',
+                    message: 'I can help you find the perfect workout buddy! What type of exercises are you interested in?'
+                },
+                {
+                    sender: 'Maya Designer',
+                    message: 'The interface is designed to make finding gym partners intuitive and engaging. Would you like me to show you the matching features?'
+                },
+                {
+                    sender: 'Jordan CSS',
+                    message: 'The app is fully responsive and works great on all devices. Try testing it on your phone!'
+                }
+            ];
+            
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            addMessage('agent', randomResponse.sender, randomResponse.message);
+        }
+        
+        // Handle enter key
+        document.getElementById('messageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Auto-resize textarea
+        document.getElementById('messageInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+        
+        // Initialize with a welcome message after a short delay
+        setTimeout(() => {
+            addMessage('agent', 'Gym Buddy Assistant', 'Welcome to Gym Buddy Chat! I can help you connect with workout partners. What would you like to know?');
+        }, 1000);
+    </script>
+</body>
+</html>`;
     res.setHeader('Content-Type', 'text/html');
     res.send(gymBuddyHTML);
   });
