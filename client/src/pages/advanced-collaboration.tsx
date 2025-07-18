@@ -226,7 +226,7 @@ export default function AdvancedCollaboration() {
     setLiveSessions([]); // Clear previous sessions
     
     try {
-      const response = await fetch('/api/live-editing/start-real-transformation', {
+      const response = await fetch('/api/live-editing/start-agent-work', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -238,10 +238,10 @@ export default function AdvancedCollaboration() {
       if (response.ok) {
         const result = await response.json();
         toast({
-          title: "Real AI Transformation Started",
-          description: "Agents are now working on the project with live streaming!"
+          title: "AI Agents Working Live",
+          description: `${result.agentsWorking} agents are now modifying files - watch the stream!`
         });
-        console.log('Real transformation started:', result);
+        console.log('Agent work started:', result);
       } else {
         throw new Error('Failed to start transformation');
       }
