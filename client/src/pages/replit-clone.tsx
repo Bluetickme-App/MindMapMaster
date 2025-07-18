@@ -578,8 +578,20 @@ export default function ReplitClone() {
                     .then(res => res.json())
                     .then(data => {
                       toast({ title: data.message });
+                      // Get the project info to update file system
+                      const selectedProject = projectsQuery.data?.find(p => p.id == e.target.value);
+                      if (selectedProject) {
+                        // Update project info to trigger file system refresh
+                        setProjectInfo({
+                          name: selectedProject.name,
+                          description: selectedProject.description || '',
+                          type: 'single',
+                          agentIds: [],
+                          brief: ''
+                        });
+                      }
                       // Force refresh file system and clear selections
-                      queryClient.invalidateQueries({ queryKey: ['/api/filesystem'] });
+                      queryClient.invalidateQueries({ queryKey: ['/api/workspace/files'] });
                       setSelectedFile(null);
                       setFileContent('');
                       setPreviewUrl('');
