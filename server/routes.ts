@@ -3332,6 +3332,37 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     }
   });
 
+  // Add premium file serving
+  app.get('/triplea-styles-premium.css', async (req, res) => {
+    const path = await import('path');
+    const fs = await import('fs');
+    
+    try {
+      const filePath = path.join(process.cwd(), 'triplea-styles-premium.css');
+      const content = fs.readFileSync(filePath, 'utf-8');
+      res.setHeader('Content-Type', 'text/css');
+      res.send(content);
+    } catch (error) {
+      console.error('Error serving triplea-styles-premium.css:', error);
+      res.status(404).send('File not found');
+    }
+  });
+  
+  app.get('/triplea-script-premium.js', async (req, res) => {
+    const path = await import('path');
+    const fs = await import('fs');
+    
+    try {
+      const filePath = path.join(process.cwd(), 'triplea-script-premium.js');
+      const content = fs.readFileSync(filePath, 'utf-8');
+      res.setHeader('Content-Type', 'application/javascript');
+      res.send(content);
+    } catch (error) {
+      console.error('Error serving triplea-script-premium.js:', error);
+      res.status(404).send('File not found');
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Add error handling for server creation
