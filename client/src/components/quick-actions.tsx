@@ -132,6 +132,15 @@ export default function QuickActions() {
         setLocation('/multi-ai-sdk-demo');
       },
     },
+    {
+      title: "Live Stream",
+      description: "Watch agents work in real-time",
+      icon: Users,
+      color: "cyan-500",
+      onClick: () => {
+        setLocation('/advanced-collaboration');
+      },
+    },
   ];
 
   return (
