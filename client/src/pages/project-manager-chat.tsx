@@ -24,8 +24,8 @@ interface ProjectPlan {
 }
 
 export default function ProjectManagerChat() {
-  const [taskDescription, setTaskDescription] = useState("");
-  const [requiredSkills, setRequiredSkills] = useState("");
+  const [taskDescription, setTaskDescription] = useState("Transform the current basic Gym Buddy Finder into a proper modern website with images, interactive functionality, user profiles, responsive design, and a complete user experience. The current version is just basic HTML - we need a full-featured web application with image uploads, user matching algorithms, interactive maps, chat functionality, and modern UI components.");
+  const [requiredSkills, setRequiredSkills] = useState("Frontend Development, UI/UX Design, Backend API Development, Image Processing, Database Design, React Components");
   const [isLoading, setIsLoading] = useState(false);
   const [coordinationResult, setCoordinationResult] = useState<{
     conversationId: number;
