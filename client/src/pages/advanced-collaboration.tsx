@@ -1,0 +1,474 @@
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Lock, Unlock, Save, RotateCcw, Eye, AlertCircle, CheckCircle, Users, FileText, Activity } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+
+interface FileInfo {
+  id: number;
+  name: string;
+  path: string;
+  isLocked: boolean;
+  lockedBy?: string;
+  content: string;
+}
+
+interface Checkpoint {
+  id: number;
+  message: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+interface LiveSession {
+  id: string;
+  agentName: string;
+  fileName: string;
+  isActive: boolean;
+  startedAt: string;
+}
+
+export default function AdvancedCollaboration() {
+  const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
+  const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
+  const [liveSessions, setLiveSessions] = useState<LiveSession[]>([]);
+  const [fileContent, setFileContent] = useState('');
+  const [isLocking, setIsLocking] = useState(false);
+  const [isCreatingCheckpoint, setIsCreatingCheckpoint] = useState(false);
+
+  // Mock file data
+  const mockFiles: FileInfo[] = [
+    { 
+      id: 1, 
+      name: 'HomePage.jsx', 
+      path: '/src/components/HomePage.jsx',
+      isLocked: false,
+      content: `import React from 'react';\n\nconst HomePage = () => {\n  return (\n    <div className="homepage">\n      <h1>Welcome to CodeCraft</h1>\n      <p>Your AI development assistant</p>\n    </div>\n  );\n};\n\nexport default HomePage;`
+    },
+    { 
+      id: 2, 
+      name: 'UserService.ts', 
+      path: '/src/services/UserService.ts',
+      isLocked: true,
+      lockedBy: 'Sam AI',
+      content: `export class UserService {\n  async getUser(id: string) {\n    // AI Agent working on this...\n    return fetch(\`/api/users/\${id}\`);\n  }\n\n  async updateUser(id: string, data: any) {\n    return fetch(\`/api/users/\${id}\`, {\n      method: 'PUT',\n      body: JSON.stringify(data)\n    });\n  }\n}`
+    },
+    { 
+      id: 3, 
+      name: 'styles.css', 
+      path: '/src/styles/styles.css',
+      isLocked: false,
+      content: `.homepage {\n  padding: 2rem;\n  text-align: center;\n}\n\n.homepage h1 {\n  color: #2563eb;\n  font-size: 3rem;\n  margin-bottom: 1rem;\n}\n\n.homepage p {\n  color: #64748b;\n  font-size: 1.2rem;\n}`
+    }
+  ];
+
+  // Mock checkpoint data
+  const mockCheckpoints: Checkpoint[] = [
+    { id: 1, message: 'Initial homepage component', createdAt: '2025-01-18 14:30', createdBy: 'Maya Designer' },
+    { id: 2, message: 'Added responsive layout', createdAt: '2025-01-18 15:15', createdBy: 'Jordan CSS' },
+    { id: 3, message: 'Enhanced accessibility', createdAt: '2025-01-18 16:00', createdBy: 'Alex Senior' }
+  ];
+
+  // Mock live sessions
+  const mockLiveSessions: LiveSession[] = [
+    { id: 'session_1', agentName: 'Sam AI', fileName: 'UserService.ts', isActive: true, startedAt: '2025-01-18 16:30' },
+    { id: 'session_2', agentName: 'Taylor QA', fileName: 'test-utils.js', isActive: true, startedAt: '2025-01-18 16:25' }
+  ];
+
+  useEffect(() => {
+    setCheckpoints(mockCheckpoints);
+    setLiveSessions(mockLiveSessions);
+  }, []);
+
+  const handleFileSelect = (file: FileInfo) => {
+    setSelectedFile(file);
+    setFileContent(file.content);
+  };
+
+  const handleLockFile = async () => {
+    if (!selectedFile) return;
+    
+    setIsLocking(true);
+    try {
+      // Simulate API call to lock file
+      const response = await fetch(`/api/files/${selectedFile.id}/lock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: 1 }) // Current user as agent
+      });
+
+      if (response.ok) {
+        setSelectedFile({ ...selectedFile, isLocked: true, lockedBy: 'You' });
+        toast({
+          title: "File Locked",
+          description: `${selectedFile.name} is now locked for editing`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Lock Failed",
+        description: "Could not lock file. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLocking(false);
+    }
+  };
+
+  const handleUnlockFile = async () => {
+    if (!selectedFile) return;
+    
+    setIsLocking(true);
+    try {
+      const response = await fetch(`/api/files/${selectedFile.id}/unlock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: 1 })
+      });
+
+      if (response.ok) {
+        setSelectedFile({ ...selectedFile, isLocked: false, lockedBy: undefined });
+        toast({
+          title: "File Unlocked",
+          description: `${selectedFile.name} is now available for editing`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Unlock Failed",
+        description: "Could not unlock file. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLocking(false);
+    }
+  };
+
+  const handleCreateCheckpoint = async () => {
+    if (!selectedFile) return;
+    
+    setIsCreatingCheckpoint(true);
+    try {
+      const response = await fetch(`/api/files/${selectedFile.id}/checkpoint`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: 1,
+          filePath: selectedFile.path,
+          content: fileContent,
+          message: `Checkpoint for ${selectedFile.name}`,
+          agentId: 1
+        })
+      });
+
+      if (response.ok) {
+        const newCheckpoint = {
+          id: checkpoints.length + 1,
+          message: `Checkpoint for ${selectedFile.name}`,
+          createdAt: new Date().toISOString(),
+          createdBy: 'You'
+        };
+        setCheckpoints([...checkpoints, newCheckpoint]);
+        toast({
+          title: "Checkpoint Created",
+          description: "File state saved successfully",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Checkpoint Failed",
+        description: "Could not create checkpoint. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingCheckpoint(false);
+    }
+  };
+
+  const handleRestoreCheckpoint = async (checkpointId: number) => {
+    try {
+      const response = await fetch(`/api/checkpoints/${checkpointId}/restore`, {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Checkpoint Restored",
+          description: "File reverted to previous state",
+        });
+        // Reload file content
+        if (selectedFile) {
+          setFileContent(selectedFile.content);
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Restore Failed",
+        description: "Could not restore checkpoint. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold gradient-text">Advanced Collaboration</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            File locking, checkpoints, and live editing for seamless team collaboration
+          </p>
+        </div>
+        <Badge variant="outline" className="flex items-center gap-2">
+          <Activity className="h-4 w-4" />
+          {liveSessions.filter(s => s.isActive).length} Active Sessions
+        </Badge>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* File Explorer */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Project Files
+            </CardTitle>
+            <CardDescription>Select a file to collaborate on</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {mockFiles.map((file) => (
+              <div
+                key={file.id}
+                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                  selectedFile?.id === file.id
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+                    : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+                onClick={() => handleFileSelect(file)}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{file.name}</span>
+                  {file.isLocked && (
+                    <Lock className="h-4 w-4 text-red-500" />
+                  )}
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{file.path}</p>
+                {file.isLocked && file.lockedBy && (
+                  <Badge variant="secondary" className="mt-1 text-xs">
+                    Locked by {file.lockedBy}
+                  </Badge>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* File Editor */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                {selectedFile ? selectedFile.name : 'Select a file'}
+                {selectedFile?.isLocked && (
+                  <AlertCircle className="h-5 w-5 text-red-500" />
+                )}
+              </CardTitle>
+              {selectedFile && (
+                <div className="flex gap-2">
+                  {selectedFile.isLocked ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleUnlockFile}
+                      disabled={isLocking || selectedFile.lockedBy !== 'You'}
+                    >
+                      <Unlock className="h-4 w-4 mr-2" />
+                      Unlock
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleLockFile}
+                      disabled={isLocking}
+                    >
+                      <Lock className="h-4 w-4 mr-2" />
+                      Lock
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCreateCheckpoint}
+                    disabled={isCreatingCheckpoint || !selectedFile}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Checkpoint
+                  </Button>
+                </div>
+              )}
+            </div>
+            {selectedFile && (
+              <CardDescription>
+                {selectedFile.isLocked 
+                  ? `🔒 Locked by ${selectedFile.lockedBy}`
+                  : '🔓 Available for editing'
+                }
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            {selectedFile ? (
+              <textarea
+                value={fileContent}
+                onChange={(e) => setFileContent(e.target.value)}
+                disabled={selectedFile.isLocked && selectedFile.lockedBy !== 'You'}
+                className="w-full h-96 p-4 font-mono text-sm border rounded-lg resize-none"
+                placeholder="File content will appear here..."
+              />
+            ) : (
+              <div className="h-96 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                Select a file from the explorer to start editing
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Collaboration Features */}
+      <Tabs defaultValue="checkpoints" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="checkpoints">Checkpoints</TabsTrigger>
+          <TabsTrigger value="live-sessions">Live Sessions</TabsTrigger>
+          <TabsTrigger value="activity">Activity Log</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="checkpoints" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Save className="h-5 w-5" />
+                File Checkpoints
+              </CardTitle>
+              <CardDescription>
+                Restore your files to previous states when agents break code
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {checkpoints.map((checkpoint) => (
+                  <div
+                    key={checkpoint.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div>
+                      <p className="font-medium">{checkpoint.message}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {checkpoint.createdAt} by {checkpoint.createdBy}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRestoreCheckpoint(checkpoint.id)}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Restore
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="live-sessions" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Live Editing Sessions
+              </CardTitle>
+              <CardDescription>
+                See which agents are currently working on files
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {liveSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                      <div>
+                        <p className="font-medium">{session.agentName}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Editing {session.fileName}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline">
+                      Started {session.startedAt}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Collaboration Activity
+              </CardTitle>
+              <CardDescription>
+                Recent collaboration events and agent actions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 border rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="font-medium">File lock acquired</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Sam AI locked UserService.ts for editing
+                    </p>
+                  </div>
+                  <Badge variant="outline">2 min ago</Badge>
+                </div>
+                <div className="flex items-center gap-3 p-3 border rounded-lg">
+                  <Save className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <p className="font-medium">Checkpoint created</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Maya Designer saved checkpoint for HomePage.jsx
+                    </p>
+                  </div>
+                  <Badge variant="outline">5 min ago</Badge>
+                </div>
+                <div className="flex items-center gap-3 p-3 border rounded-lg">
+                  <RotateCcw className="h-5 w-5 text-orange-500" />
+                  <div>
+                    <p className="font-medium">File restored</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Alex Senior reverted styles.css to previous checkpoint
+                    </p>
+                  </div>
+                  <Badge variant="outline">8 min ago</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

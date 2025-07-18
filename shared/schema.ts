@@ -61,8 +61,35 @@ export const projectFiles = pgTable("project_files", {
   content: text("content").notNull(),
   fileType: text("file_type").notNull(), // file, folder
   size: integer("size").default(0),
+  isLocked: boolean("is_locked").default(false),
+  lockedBy: integer("locked_by"), // agent ID that has the file locked
+  lockedAt: timestamp("locked_at"),
   lastModified: timestamp("last_modified").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// File checkpoints for rollback capability
+export const fileCheckpoints = pgTable("file_checkpoints", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  fileId: integer("file_id").notNull(),
+  filePath: text("file_path").notNull(),
+  content: text("content").notNull(),
+  checkpointMessage: text("checkpoint_message"),
+  createdBy: integer("created_by"), // agent ID
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Live editing sessions
+export const liveEditingSessions = pgTable("live_editing_sessions", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  fileId: integer("file_id").notNull(),
+  agentId: integer("agent_id").notNull(),
+  sessionId: text("session_id").notNull(),
+  isActive: boolean("is_active").default(true),
+  startedAt: timestamp("started_at").defaultNow(),
+  endedAt: timestamp("ended_at"),
 });
 
 export const apiTests = pgTable("api_tests", {

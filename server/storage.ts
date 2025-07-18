@@ -51,6 +51,7 @@ export interface IStorage {
   // Agent operations
   getAgent(id: number): Promise<Agent | undefined>;
   getAllAgents(): Promise<Agent[]>;
+  getAgentByName(name: string): Promise<Agent | undefined>;
   getAgentsByType(type: string): Promise<Agent[]>;
   createAgent(agent: InsertAgent): Promise<Agent>;
   updateAgent(id: number, agent: Partial<InsertAgent>): Promise<Agent>;
@@ -266,6 +267,11 @@ export class DatabaseStorage implements IStorage {
 
   async getAllAgents(): Promise<Agent[]> {
     return await db.select().from(agents);
+  }
+
+  async getAgentByName(name: string): Promise<Agent | undefined> {
+    const [agent] = await db.select().from(agents).where(eq(agents.name, name));
+    return agent || undefined;
   }
 
   async getAgentsByType(type: string): Promise<Agent[]> {
@@ -1034,6 +1040,10 @@ Your communication style is detailed, constructive, and educational, always expl
 
   async getAllAgents(): Promise<Agent[]> {
     return Array.from(this.agents.values());
+  }
+
+  async getAgentByName(name: string): Promise<Agent | undefined> {
+    return Array.from(this.agents.values()).find(agent => agent.name === name);
   }
 
   async getAgentsByType(type: string): Promise<Agent[]> {

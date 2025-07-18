@@ -29,6 +29,8 @@ import AgentRoadmapFlow from "@/pages/agent-roadmap-flow";
 import StreamlinedProjectCreation from "@/pages/streamlined-project-creation";
 import SimpleProjectCreation from "@/pages/simple-project-creation";
 import MultiAISDKDemo from "@/pages/multi-ai-sdk-demo";
+import ProjectManagerChat from "@/pages/project-manager-chat";
+import AdvancedCollaboration from "@/pages/advanced-collaboration";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -61,6 +63,8 @@ function Router() {
       <Route path="/create-streamlined" component={StreamlinedProjectCreation} />
       <Route path="/create-simple" component={SimpleProjectCreation} />
       <Route path="/multi-ai-sdk-demo" component={MultiAISDKDemo} />
+      <Route path="/project-manager" component={ProjectManagerChat} />
+      <Route path="/advanced-collaboration" component={AdvancedCollaboration} />
       <Route component={NotFound} />
     </Switch>
   );

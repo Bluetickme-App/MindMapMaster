@@ -2760,6 +2760,54 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     }
   });
 
+  // Project Manager coordination endpoints
+  app.post("/api/project-manager/coordinate", async (req, res) => {
+    try {
+      const { projectId, taskDescription, requiredSkills = [] } = req.body;
+      
+      if (!taskDescription) {
+        return res.status(400).json({ message: "Task description is required" });
+      }
+
+      const { projectManagerCoordination } = await import('./services/project-manager-coordination.js');
+      
+      // Create coordination conversation and plan
+      const result = await projectManagerCoordination.createTaskDelegationConversation(
+        projectId || 1,
+        taskDescription,
+        requiredSkills
+      );
+
+      // Execute the plan
+      await projectManagerCoordination.executePlan(result.plan, result.conversationId);
+
+      res.json({
+        success: true,
+        conversationId: result.conversationId,
+        plan: result.plan,
+        message: "Project Manager has coordinated the task and delegated to appropriate team members"
+      });
+    } catch (error) {
+      console.error("Project Manager coordination error:", error);
+      res.status(500).json({ message: "Failed to coordinate project task" });
+    }
+  });
+
+  // Get coordination summary
+  app.get("/api/project-manager/coordination/:conversationId", async (req, res) => {
+    try {
+      const { conversationId } = req.params;
+      const { projectManagerCoordination } = await import('./services/project-manager-coordination.js');
+      
+      const summary = await projectManagerCoordination.getCoordinationSummary(parseInt(conversationId));
+      
+      res.json({ summary });
+    } catch (error) {
+      console.error("Get coordination summary error:", error);
+      res.status(500).json({ message: "Failed to get coordination summary" });
+    }
+  });
+
   // Conversation management routes
   app.get("/api/conversations", async (req, res) => {
     try {
@@ -4067,6 +4115,161 @@ console.log('File: ${filePath}');
     }
   });
   
+  // File Locking API Endpoints
+  app.post('/api/files/:fileId/lock', async (req, res) => {
+    try {
+      const fileId = parseInt(req.params.fileId);
+      const { agentId } = req.body;
+      
+      if (!agentId) {
+        return res.status(400).json({ error: 'Agent ID is required' });
+      }
+
+      const { FileLockingService } = await import('./services/file-locking');
+      const fileLockingService = FileLockingService.getInstance();
+      
+      const result = await fileLockingService.lockFile(fileId, agentId);
+      
+      if (result.success) {
+        res.json({ message: result.message, locked: true });
+      } else {
+        res.status(409).json({ error: result.message, locked: false });
+      }
+    } catch (error) {
+      console.error('File lock error:', error);
+      res.status(500).json({ error: 'Failed to lock file' });
+    }
+  });
+
+  app.post('/api/files/:fileId/unlock', async (req, res) => {
+    try {
+      const fileId = parseInt(req.params.fileId);
+      const { agentId } = req.body;
+      
+      if (!agentId) {
+        return res.status(400).json({ error: 'Agent ID is required' });
+      }
+
+      const { FileLockingService } = await import('./services/file-locking');
+      const fileLockingService = FileLockingService.getInstance();
+      
+      const result = await fileLockingService.unlockFile(fileId, agentId);
+      
+      if (result.success) {
+        res.json({ message: result.message, unlocked: true });
+      } else {
+        res.status(400).json({ error: result.message, unlocked: false });
+      }
+    } catch (error) {
+      console.error('File unlock error:', error);
+      res.status(500).json({ error: 'Failed to unlock file' });
+    }
+  });
+
+  // Checkpoint Management API Endpoints
+  app.post('/api/files/:fileId/checkpoint', async (req, res) => {
+    try {
+      const fileId = parseInt(req.params.fileId);
+      const { projectId, filePath, content, message, agentId } = req.body;
+      
+      if (!projectId || !filePath || !content || !message) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const { CheckpointManager } = await import('./services/checkpoint-manager');
+      const checkpointManager = CheckpointManager.getInstance();
+      
+      const result = await checkpointManager.createCheckpoint(
+        projectId, fileId, filePath, content, message, agentId
+      );
+      
+      if (result.success) {
+        res.json({ 
+          message: result.message, 
+          checkpointId: result.checkpointId,
+          created: true 
+        });
+      } else {
+        res.status(500).json({ error: result.message, created: false });
+      }
+    } catch (error) {
+      console.error('Create checkpoint error:', error);
+      res.status(500).json({ error: 'Failed to create checkpoint' });
+    }
+  });
+
+  app.post('/api/checkpoints/:checkpointId/restore', async (req, res) => {
+    try {
+      const checkpointId = parseInt(req.params.checkpointId);
+      
+      const { CheckpointManager } = await import('./services/checkpoint-manager');
+      const checkpointManager = CheckpointManager.getInstance();
+      
+      const result = await checkpointManager.restoreFromCheckpoint(checkpointId);
+      
+      if (result.success) {
+        res.json({ message: result.message, restored: true });
+      } else {
+        res.status(400).json({ error: result.message, restored: false });
+      }
+    } catch (error) {
+      console.error('Restore checkpoint error:', error);
+      res.status(500).json({ error: 'Failed to restore from checkpoint' });
+    }
+  });
+
+  // Live Editing API Endpoints
+  app.post('/api/live-editing/start', async (req, res) => {
+    try {
+      const { projectId, fileId, agentId } = req.body;
+      
+      if (!projectId || !fileId || !agentId) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const { LiveEditingService } = await import('./services/live-editing');
+      const liveEditingService = LiveEditingService.getInstance();
+      
+      const result = await liveEditingService.startEditingSession(projectId, fileId, agentId);
+      
+      if (result.success) {
+        res.json({ 
+          message: result.message, 
+          sessionId: result.sessionId,
+          started: true 
+        });
+      } else {
+        res.status(400).json({ error: result.message, started: false });
+      }
+    } catch (error) {
+      console.error('Start live editing error:', error);
+      res.status(500).json({ error: 'Failed to start live editing session' });
+    }
+  });
+
+  app.post('/api/live-editing/:sessionId/update', async (req, res) => {
+    try {
+      const sessionId = req.params.sessionId;
+      const { fileId, content, agentId, changeType, lineNumbers } = req.body;
+      
+      if (!fileId || !content || !agentId) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const { LiveEditingService } = await import('./services/live-editing');
+      const liveEditingService = LiveEditingService.getInstance();
+      
+      await liveEditingService.broadcastFileUpdate(
+        sessionId, fileId, content, agentId, changeType || 'edit', lineNumbers
+      );
+      
+      res.json({ message: 'Update broadcasted successfully', broadcasted: true });
+    } catch (error) {
+      console.error('Broadcast update error:', error);
+      res.status(500).json({ error: 'Failed to broadcast update' });
+    }
+  });
+
   console.log('🚀 Multi-Agent Collaboration System is ready!');
   console.log('📡 WebSocket server initialized for real-time communication');
   console.log('🤖 Access collaboration dashboard at /collaboration');
@@ -4074,6 +4277,9 @@ console.log('File: ${filePath}');
   console.log('📁 File System API ready for real-time code editing');
   console.log('🎯 Project Manager Assistant ready for task delegation');
   console.log('🔧 Extension Manager ready with 25+ tool functions');
+  console.log('🔒 File Locking System enabled for conflict prevention');
+  console.log('📸 Checkpoint Manager ready for code rollback');
+  console.log('⚡ Live Editing Service for real-time agent visualization');
   
   return httpServer;
 }
