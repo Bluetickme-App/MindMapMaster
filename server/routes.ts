@@ -4270,6 +4270,28 @@ console.log('File: ${filePath}');
     }
   });
 
+  app.post('/api/live-editing/start-gym-buddy-demo', async (req, res) => {
+    try {
+      // Initialize live editing service with WebSocket manager
+      const { LiveEditingService } = await import('./services/live-editing-service');
+      const liveEditingService = new LiveEditingService(webSocketManager);
+      
+      // Start the gym buddy transformation demo
+      await liveEditingService.simulateGymBuddyTransformation();
+      
+      res.json({ 
+        success: true, 
+        message: 'Gym buddy transformation demo started. Check the Live Stream tab to watch agents work!' 
+      });
+    } catch (error) {
+      console.error('Error starting gym buddy demo:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to start transformation demo' 
+      });
+    }
+  });
+
   console.log('🚀 Multi-Agent Collaboration System is ready!');
   console.log('📡 WebSocket server initialized for real-time communication');
   console.log('🤖 Access collaboration dashboard at /collaboration');

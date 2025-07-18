@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Lock, Unlock, Save, RotateCcw, Eye, AlertCircle, CheckCircle, Users, FileText, Activity } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Lock, Unlock, Save, RotateCcw, Eye, AlertCircle, CheckCircle, Users, FileText, Activity, Play, Code, Sparkles } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface FileInfo {
@@ -30,13 +31,27 @@ interface LiveSession {
   startedAt: string;
 }
 
+interface LiveUpdate {
+  sessionId: string;
+  fileName: string;
+  content: string;
+  agentName: string;
+  timestamp: string;
+  updateType: 'partial' | 'complete' | 'thinking' | 'error';
+  message?: string;
+}
+
 export default function AdvancedCollaboration() {
   const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
   const [liveSessions, setLiveSessions] = useState<LiveSession[]>([]);
+  const [liveUpdates, setLiveUpdates] = useState<LiveUpdate[]>([]);
   const [fileContent, setFileContent] = useState('');
   const [isLocking, setIsLocking] = useState(false);
   const [isCreatingCheckpoint, setIsCreatingCheckpoint] = useState(false);
+  const [isStreamingActive, setIsStreamingActive] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const updatesEndRef = useRef<HTMLDivElement>(null);
 
   // Mock file data
   const mockFiles: FileInfo[] = [
@@ -70,6 +85,102 @@ export default function AdvancedCollaboration() {
     { id: 2, message: 'Added responsive layout', createdAt: '2025-01-18 15:15', createdBy: 'Jordan CSS' },
     { id: 3, message: 'Enhanced accessibility', createdAt: '2025-01-18 16:00', createdBy: 'Alex Senior' }
   ];
+
+  // WebSocket connection for live updates
+  useEffect(() => {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    
+    wsRef.current = new WebSocket(wsUrl);
+    
+    wsRef.current.onopen = () => {
+      console.log('Connected to live editing WebSocket');
+      toast({
+        title: "🔴 Live Stream Connected",
+        description: "Ready to stream agent responses in real-time"
+      });
+    };
+    
+    wsRef.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'session_start') {
+          setLiveSessions(prev => [...prev, {
+            id: data.data.sessionId,
+            agentName: data.data.agentId === 3 ? 'Maya Rodriguez' : data.data.agentId === 2 ? 'Sam Park' : 'AI Agent',
+            fileName: data.data.fileName,
+            isActive: true,
+            startedAt: new Date().toLocaleTimeString()
+          }]);
+        } else if (data.type === 'session_end') {
+          setLiveSessions(prev => 
+            prev.map(s => s.id === data.data.sessionId ? { ...s, isActive: false } : s)
+          );
+        } else if (data.type === 'code_update') {
+          setLiveUpdates(prev => [...prev, {
+            sessionId: data.data.sessionId,
+            fileName: data.data.fileName,
+            content: data.data.content,
+            agentName: data.data.agentName,
+            timestamp: new Date().toLocaleTimeString(),
+            updateType: data.data.updateType,
+            message: data.data.message
+          }]);
+          
+          // Auto-scroll to bottom
+          setTimeout(() => {
+            updatesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    };
+    
+    wsRef.current.onclose = () => {
+      console.log('Disconnected from live editing WebSocket');
+      toast({
+        title: "❌ Live Stream Disconnected",
+        description: "Attempting to reconnect..."
+      });
+    };
+    
+    return () => {
+      wsRef.current?.close();
+    };
+  }, []);
+  
+  // Auto-scroll to latest updates
+  useEffect(() => {
+    updatesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [liveUpdates]);
+
+  // Start gym buddy transformation demo
+  const startGymBuddyTransformation = async () => {
+    setIsStreamingActive(true);
+    setLiveUpdates([]);
+    
+    try {
+      const response = await fetch('/api/live-editing/start-gym-buddy-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "🚀 Transformation Started",
+          description: "Agents are now working on transforming the gym buddy project"
+        });
+      }
+    } catch (error) {
+      console.error('Error starting transformation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start transformation"
+      });
+    }
+  };
 
   // Mock live sessions
   const mockLiveSessions: LiveSession[] = [
@@ -339,11 +450,22 @@ export default function AdvancedCollaboration() {
 
       {/* Collaboration Features */}
       <Tabs defaultValue="checkpoints" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="checkpoints">Checkpoints</TabsTrigger>
-          <TabsTrigger value="live-sessions">Live Sessions</TabsTrigger>
-          <TabsTrigger value="activity">Activity Log</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between mb-4">
+          <TabsList className="grid w-full grid-cols-4 max-w-md">
+            <TabsTrigger value="checkpoints">Checkpoints</TabsTrigger>
+            <TabsTrigger value="live-sessions">Live Sessions</TabsTrigger>
+            <TabsTrigger value="streaming">Live Stream</TabsTrigger>
+            <TabsTrigger value="activity">Activity Log</TabsTrigger>
+          </TabsList>
+          <Button 
+            onClick={startGymBuddyTransformation}
+            disabled={isStreamingActive}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            <Play className="w-4 h-4 mr-2" />
+            {isStreamingActive ? 'Streaming Live...' : 'Start Gym Buddy Demo'}
+          </Button>
+        </div>
         
         <TabsContent value="checkpoints" className="space-y-4">
           <Card>
@@ -417,6 +539,75 @@ export default function AdvancedCollaboration() {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="streaming" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Live Agent Streaming
+                <Badge variant={isStreamingActive ? "default" : "secondary"} className="ml-2">
+                  {isStreamingActive ? 'LIVE' : 'OFFLINE'}
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                Watch agents transform your gym buddy project in real-time with live code updates
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-96 w-full border rounded-lg p-4">
+                {liveUpdates.length === 0 ? (
+                  <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                    <Code className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No live streams active. Click "Start Gym Buddy Demo" to watch agents work!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {liveUpdates.map((update, index) => (
+                      <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-blue-600 dark:text-blue-400">
+                            {update.agentName}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {update.timestamp}
+                          </span>
+                        </div>
+                        
+                        {update.message && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                            {update.message}
+                          </p>
+                        )}
+                        
+                        {update.updateType === 'thinking' ? (
+                          <div className="flex items-center gap-2 text-yellow-600">
+                            <Activity className="w-4 h-4 animate-spin" />
+                            <span className="text-sm">Thinking...</span>
+                          </div>
+                        ) : update.content && (
+                          <div className="bg-gray-50 dark:bg-gray-800 rounded p-3 mt-2">
+                            <pre className="text-xs font-mono whitespace-pre-wrap overflow-auto max-h-32">
+                              {update.content}
+                            </pre>
+                          </div>
+                        )}
+                        
+                        <Badge 
+                          variant={update.updateType === 'complete' ? 'default' : 'secondary'}
+                          className="mt-2 text-xs"
+                        >
+                          {update.updateType}
+                        </Badge>
+                      </div>
+                    ))}
+                    <div ref={updatesEndRef} />
+                  </div>
+                )}
+              </ScrollArea>
             </CardContent>
           </Card>
         </TabsContent>
