@@ -107,8 +107,25 @@ export default function AdvancedCollaboration() {
         console.log('WebSocket message received:', data);
         
         if (data.type === 'liveUpdate') {
-          const update = data.data;
+          let update = null;
+          // Parse content if it's a JSON string
+          if (typeof data.content === 'string') {
+            try {
+              update = JSON.parse(data.content);
+            } catch (e) {
+              console.error('Error parsing WebSocket message:', e);
+              return;
+            }
+          } else if (data.data) {
+            update = data.data;
+          }
           console.log('Live update received:', update);
+          
+          // Only proceed if we have valid update data
+          if (!update || !update.sessionId) {
+            console.log('Invalid update data, skipping...');
+            return;
+          }
           
           // Add live session if not exists
           setLiveSessions(prev => {
@@ -203,37 +220,37 @@ export default function AdvancedCollaboration() {
   }, [liveUpdates]);
 
   // Start gym buddy transformation demo
-  const startGymBuddyTransformation = async () => {
+  const startRealTransformation = async () => {
     setIsStreamingActive(true);
     setLiveUpdates([]); // Clear previous updates
     setLiveSessions([]); // Clear previous sessions
     
     try {
-      const response = await fetch('/api/live-editing/start-gym-buddy-demo', {
+      const response = await fetch('/api/live-editing/start-real-transformation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: 1, // Test Project (Gym Buddy)
+          conversationId: 6 // Project Manager conversation
+        })
       });
       
       if (response.ok) {
+        const result = await response.json();
         toast({
-          title: "🚀 Transformation Started",
-          description: "Watch the Live Stream tab - agents are working now!"
+          title: "Real AI Transformation Started",
+          description: "Agents are now working on the project with live streaming!"
         });
-        
-        // Set streaming active for 10 seconds
-        setTimeout(() => {
-          setIsStreamingActive(false);
-          toast({
-            title: "✅ Transformation Complete",
-            description: "Multi-agent gym buddy transformation finished!"
-          });
-        }, 10000);
+        console.log('Real transformation started:', result);
+      } else {
+        throw new Error('Failed to start transformation');
       }
     } catch (error) {
-      console.error('Error starting transformation:', error);
+      console.error('Error starting real transformation:', error);
       toast({
         title: "Error",
-        description: "Failed to start transformation"
+        description: "Failed to start real agent transformation",
+        variant: "destructive"
       });
       setIsStreamingActive(false);
     }
@@ -516,12 +533,12 @@ export default function AdvancedCollaboration() {
           </TabsList>
           <div className="flex gap-2">
             <Button 
-              onClick={startGymBuddyTransformation}
+              onClick={startRealTransformation}
               disabled={isStreamingActive}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
             >
               <Play className="w-4 h-4 mr-2" />
-              {isStreamingActive ? 'Streaming Live...' : 'Start Gym Buddy Demo'}
+              {isStreamingActive ? 'Agents Working...' : 'Start Real AI Transformation'}
             </Button>
             
             <Button 

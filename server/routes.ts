@@ -4262,6 +4262,27 @@ console.log('File: ${filePath}');
       await liveEditingService.broadcastFileUpdate(
         sessionId, fileId, content, agentId, changeType || 'edit', lineNumbers
       );
+
+      // Broadcast real-time update via WebSocket
+      const globalWebSocketManager = (global as any).webSocketManager;
+      if (globalWebSocketManager && typeof globalWebSocketManager.broadcastToAll === 'function') {
+        globalWebSocketManager.broadcastToAll({
+          type: 'liveUpdate',
+          conversationId: 0,
+          senderId: agentId || 0,
+          senderType: 'agent',
+          content: JSON.stringify({
+            sessionId,
+            fileName: fileId,
+            content: content,
+            agentName: `Agent ${agentId}`,
+            updateType: changeType || 'edit',
+            lineNumbers,
+            timestamp: new Date().toISOString()
+          }),
+          timestamp: new Date()
+        });
+      }
       
       res.json({ message: 'Update broadcasted successfully', broadcasted: true });
     } catch (error) {
@@ -4275,129 +4296,161 @@ console.log('File: ${filePath}');
     try {
       console.log('Testing WebSocket broadcast...');
       
-      if (webSocketManager && webSocketManager.broadcast) {
-        webSocketManager.broadcast('liveUpdate', {
-          sessionId: 'test-session',
-          fileName: 'test.js',
-          content: 'This is a test broadcast message',
-          agentName: 'Test Agent',
-          timestamp: new Date().toISOString(),
-          updateType: 'complete',
-          message: 'Testing WebSocket broadcasting functionality'
-        });
+      // Use global WebSocket manager access
+      const globalWebSocketManager = (global as any).webSocketManager;
+      console.log('Global WebSocket manager available:', !!globalWebSocketManager);
+      console.log('Local WebSocket manager available:', !!webSocketManager);
+      
+      if (globalWebSocketManager) {
+        console.log('Global manager methods:', Object.getOwnPropertyNames(globalWebSocketManager));
+        console.log('Global manager prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(globalWebSocketManager)));
+      }
+      
+      const manager = globalWebSocketManager || webSocketManager;
+      
+      // Try available broadcast methods
+      if (manager) {
+        console.log('Manager available, trying broadcast methods...');
         
-        res.json({ success: true, message: 'Test broadcast sent successfully' });
+        if (typeof manager.broadcastToAll === 'function') {
+          console.log('Using manager.broadcastToAll...');
+          manager.broadcastToAll({
+            type: 'liveUpdate',
+            conversationId: 0,
+            senderId: 0,
+            senderType: 'system',
+            content: JSON.stringify({
+              sessionId: 'test-session',
+              fileName: 'test.js',
+              content: 'This is a test broadcast message',
+              agentName: 'Test Agent',
+              timestamp: new Date().toISOString(),
+              updateType: 'complete',
+              message: 'Testing WebSocket broadcasting functionality'
+            }),
+            timestamp: new Date()
+          });
+          return res.json({ success: true, message: 'Test broadcast sent successfully via broadcastToAll()' });
+        } else if (typeof manager.broadcastToConversation === 'function') {
+          console.log('Using manager.broadcastToConversation...');
+          manager.broadcastToConversation(1, {
+            type: 'liveUpdate',
+            conversationId: 1,
+            senderId: 0,
+            senderType: 'system',
+            content: JSON.stringify({
+              sessionId: 'test-session',
+              fileName: 'test.js',
+              content: 'This is a test broadcast message',
+              agentName: 'Test Agent',
+              timestamp: new Date().toISOString(),
+              updateType: 'complete',
+              message: 'Testing WebSocket broadcasting functionality'
+            }),
+            timestamp: new Date()
+          });
+          return res.json({ success: true, message: 'Test broadcast sent successfully via broadcastToConversation()' });
+        } else {
+          console.log('No suitable broadcast method found');
+          console.log('Available methods:', Object.getOwnPropertyNames(manager));
+          console.log('Available prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(manager)));
+          return res.status(500).json({ success: false, error: 'No broadcast method available' });
+        }
       } else {
-        res.status(500).json({ success: false, error: 'WebSocket manager not available' });
+        console.log('WebSocket manager not available');
+        return res.status(500).json({ success: false, error: 'WebSocket manager not available' });
       }
     } catch (error) {
       console.error('Test broadcast error:', error);
-      res.status(500).json({ success: false, error: 'Test broadcast failed' });
+      return res.status(500).json({ success: false, error: 'Test broadcast failed' });
     }
   });
 
-  app.post('/api/live-editing/start-gym-buddy-demo', async (req, res) => {
+  app.post('/api/live-editing/start-real-transformation', async (req, res) => {
     try {
-      console.log('Starting real-time gym buddy transformation with AI agents...');
+      const { projectId, conversationId } = req.body;
+      console.log('Starting real AI agent transformation for project:', projectId);
       
-      // Get available agents for direct use
-      const agents = await storage.getAllAgents();
-      const mayaDesigner = agents.find(a => a.name.includes('Maya'));
-      const samDeveloper = agents.find(a => a.name.includes('Sam'));
-      const jordanCSS = agents.find(a => a.name.includes('Jordan'));
+      if (!projectId || !conversationId) {
+        return res.status(400).json({ error: 'Project ID and conversation ID required' });
+      }
 
-      // Test immediate broadcast first
-      if (webSocketManager && webSocketManager.broadcast) {
-        console.log('Broadcasting immediate test message...');
-        webSocketManager.broadcast('liveUpdate', {
-          sessionId: 'immediate-test',
-          fileName: 'immediate-test.js',
-          content: 'Immediate broadcast test',
-          agentName: 'System Test',
-          timestamp: new Date().toISOString(),
-          updateType: 'complete',
-          message: 'Testing immediate WebSocket broadcast'
+      // Get the project and conversation
+      const project = await storage.getProject(projectId);
+      const conversation = await storage.getConversation(conversationId);
+      
+      if (!project || !conversation) {
+        return res.status(404).json({ error: 'Project or conversation not found' });
+      }
+
+      // Start live editing session
+      const sessionId = `live-${projectId}-${Date.now()}`;
+      const globalWebSocketManager = (global as any).webSocketManager;
+      
+      // Broadcast session start
+      if (globalWebSocketManager && typeof globalWebSocketManager.broadcastToAll === 'function') {
+        globalWebSocketManager.broadcastToAll({
+          type: 'liveUpdate',
+          conversationId: conversationId,
+          senderId: 0,
+          senderType: 'system',
+          content: JSON.stringify({
+            sessionId,
+            fileName: 'session_start',
+            content: `Starting live transformation of ${project.name}`,
+            agentName: 'System',
+            updateType: 'thinking',
+            timestamp: new Date().toISOString(),
+            action: 'Initializing live editing session'
+          }),
+          timestamp: new Date()
         });
       }
 
-      // Start real agent responses with live streaming
-      if (webSocketManager && webSocketManager.broadcast) {
-        // Broadcast start of session
-        console.log('Broadcasting gym buddy start message...');
-        webSocketManager.broadcast('liveUpdate', {
-          sessionId: 'gym-buddy-transformation',
-          fileName: 'Project Coordination',
-          content: 'Starting multi-agent transformation...',
-          agentName: 'Morgan Davis (Project Manager)',
-          timestamp: new Date().toISOString(),
-          updateType: 'thinking',
-          message: 'Coordinating specialized agents for gym buddy transformation project...'
-        });
+      // Send task assignment to Project Manager via existing coordination system
+      const taskMessage = `Transform the ${project.name} project into a modern web application. Work with the team to:
+1. Improve the HTML structure and add responsive design
+2. Add modern CSS styling and animations  
+3. Implement interactive JavaScript functionality
+4. Add user profiles and matching features
+5. Stream all changes in real-time for live editing visualization
 
-        // Maya starts working on design (2 seconds)
-        setTimeout(() => {
-          webSocketManager.broadcast('liveUpdate', {
-            sessionId: 'maya-design-session',
-            fileName: 'src/styles/modern-design.css',
-            content: 'Creating modern CSS architecture with responsive design...',
-            agentName: mayaDesigner?.name || 'Maya Rodriguez (Designer)',
-            timestamp: new Date().toISOString(),
-            updateType: 'partial',
-            message: 'Implementing modern design system with gradient backgrounds and mobile-first approach...'
-          });
-        }, 2000);
+Project Details:
+- Language: ${project.language}
+- Framework: ${project.framework || 'Vanilla JavaScript'}
+- Description: ${project.description}
 
-        // Sam builds React components (4 seconds)
-        setTimeout(() => {
-          webSocketManager.broadcast('liveUpdate', {
-            sessionId: 'sam-react-session',
-            fileName: 'src/components/UserProfile.jsx',
-            content: 'Building interactive React components with state management...',
-            agentName: samDeveloper?.name || 'Sam Park (Developer)',
-            timestamp: new Date().toISOString(),
-            updateType: 'partial',
-            message: 'Creating reusable components with search functionality and user interactions...'
-          });
-        }, 4000);
+Please coordinate with available agents and stream each file change as it happens.`;
 
-        // Jordan optimizes CSS (6 seconds)
-        setTimeout(() => {
-          webSocketManager.broadcast('liveUpdate', {
-            sessionId: 'jordan-css-session',
-            fileName: 'src/animations/profile-cards.css',
-            content: 'Performance-optimized animations and mobile responsive design',
-            agentName: jordanCSS?.name || 'Jordan Kim (CSS Specialist)',
-            timestamp: new Date().toISOString(),
-            updateType: 'complete',
-            message: '✅ Advanced CSS animations and mobile experience optimization complete!'
-          });
-        }, 6000);
+      // Add message to the conversation to trigger Project Manager
+      const newMessage = await storage.createMessage({
+        conversationId: conversationId,
+        senderId: 1, // User ID
+        senderType: 'user',
+        content: taskMessage,
+        messageType: 'task_assignment',
+        metadata: { 
+          sessionId,
+          projectId: projectId,
+          liveEditing: true
+        }
+      });
 
-        // Project completion (8 seconds)
-        setTimeout(() => {
-          webSocketManager.broadcast('liveUpdate', {
-            sessionId: 'project-completion',
-            fileName: 'README.md',
-            content: 'Gym Buddy Finder transformed into modern web application',
-            agentName: 'Multi-Agent Team',
-            timestamp: new Date().toISOString(),
-            updateType: 'complete',
-            message: '🎉 Project transformation complete! Modern web app with interactive features ready for deployment.'
-          });
-        }, 8000);
+      // Trigger agent responses through the existing system
+      if (globalWebSocketManager && typeof globalWebSocketManager.triggerAgentResponsesFromAPI === 'function') {
+        await globalWebSocketManager.triggerAgentResponsesFromAPI(conversationId, newMessage);
       }
-      
+
       res.json({ 
         success: true, 
-        message: 'Real-time transformation started! Watch agents work in Live Stream tab with current timestamps!',
-        timestamp: new Date().toISOString()
+        sessionId,
+        message: 'Live transformation started with real AI agents',
+        conversationId: conversationId
       });
+
     } catch (error) {
-      console.error('Error starting gym buddy demo:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to start transformation demo' 
-      });
+      console.error('Error starting real transformation:', error);
+      res.status(500).json({ error: 'Failed to start live transformation' });
     }
   });
 
