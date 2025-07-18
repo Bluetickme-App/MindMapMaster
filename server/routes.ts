@@ -3286,6 +3286,52 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     }
   });
 
+  // Add static file serving for root directory files
+  app.get('/triplea-index.html', async (req, res) => {
+    const path = await import('path');
+    const fs = await import('fs');
+    
+    try {
+      const filePath = path.join(process.cwd(), 'triplea-index.html');
+      const content = fs.readFileSync(filePath, 'utf-8');
+      res.setHeader('Content-Type', 'text/html');
+      res.send(content);
+    } catch (error) {
+      console.error('Error serving triplea-index.html:', error);
+      res.status(404).send('File not found');
+    }
+  });
+  
+  app.get('/triplea-styles.css', async (req, res) => {
+    const path = await import('path');
+    const fs = await import('fs');
+    
+    try {
+      const filePath = path.join(process.cwd(), 'triplea-styles.css');
+      const content = fs.readFileSync(filePath, 'utf-8');
+      res.setHeader('Content-Type', 'text/css');
+      res.send(content);
+    } catch (error) {
+      console.error('Error serving triplea-styles.css:', error);
+      res.status(404).send('File not found');
+    }
+  });
+  
+  app.get('/triplea-script.js', async (req, res) => {
+    const path = await import('path');
+    const fs = await import('fs');
+    
+    try {
+      const filePath = path.join(process.cwd(), 'triplea-script.js');
+      const content = fs.readFileSync(filePath, 'utf-8');
+      res.setHeader('Content-Type', 'application/javascript');
+      res.send(content);
+    } catch (error) {
+      console.error('Error serving triplea-script.js:', error);
+      res.status(404).send('File not found');
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Add error handling for server creation
