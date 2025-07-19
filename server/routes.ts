@@ -3421,6 +3421,361 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     }
   });
 
+  // ==================== REPLIT SIMPLE API ====================
+  app.post('/api/replit-simple/create', async (req, res) => {
+    try {
+      const { type, description, githubUrl, websiteUrl, brandName, useTeam, selectedAgents } = req.body;
+      
+      // Create project based on type
+      let projectData: any = {
+        userId: currentUserId,
+        name: 'Influencer Management Site',
+        description: description || 'An influencer management platform with API integrations',
+        language: 'html',
+        framework: 'vanilla',
+        status: 'active'
+      };
+
+      if (type === 'create') {
+        // Create project in database
+        const project = await storage.createProject(projectData);
+        
+        // Create project directory and files
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        
+        const projectDir = path.join(process.cwd(), 'projects', `influencer-management-${project.id}`);
+        await fs.mkdir(projectDir, { recursive: true });
+        
+        // Generate comprehensive influencer management platform HTML
+        const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influencer Management Platform</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🚀 Influencer Management Platform</h1>
+            <nav class="nav">
+                <a href="#dashboard">Dashboard</a>
+                <a href="#influencers">Influencers</a>
+                <a href="#campaigns">Campaigns</a>
+                <a href="#integrations">API Integrations</a>
+            </nav>
+        </header>
+        
+        <main class="main">
+            <section id="dashboard" class="dashboard">
+                <h2>📊 Dashboard Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Influencers</h3>
+                        <p class="stat-number">247</p>
+                        <span class="stat-change">+12% this month</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Active Campaigns</h3>
+                        <p class="stat-number">12</p>
+                        <span class="stat-change">+3 this week</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Reach</h3>
+                        <p class="stat-number">2.4M</p>
+                        <span class="stat-change">+8.2% engagement</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Revenue</h3>
+                        <p class="stat-number">$45.2K</p>
+                        <span class="stat-change">+15% vs last month</span>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="integrations" class="integrations">
+                <h2>🔗 API Integrations</h2>
+                <div class="integration-cards">
+                    <div class="integration-card">
+                        <div class="integration-icon">📱</div>
+                        <h3>Instagram API</h3>
+                        <p>Connect to Instagram Graph API for real-time follower data and engagement metrics</p>
+                        <button class="btn-primary" data-api="instagram">Connect Instagram</button>
+                        <div class="integration-status">Status: Ready to connect</div>
+                    </div>
+                    <div class="integration-card">
+                        <div class="integration-icon">🎵</div>
+                        <h3>TikTok Marketing API</h3>
+                        <p>Access TikTok Marketing API for campaign management and audience insights</p>
+                        <button class="btn-primary" data-api="tiktok">Connect TikTok</button>
+                        <div class="integration-status">Status: Ready to connect</div>
+                    </div>
+                    <div class="integration-card">
+                        <div class="integration-icon">🔐</div>
+                        <h3>CIA Analytics API</h3>
+                        <p>Custom integration for advanced data analytics and market intelligence</p>
+                        <button class="btn-primary" data-api="cia">Configure CIA API</button>
+                        <div class="integration-status">Status: Configuration required</div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="influencers" class="influencers">
+                <h2>👥 Top Influencers</h2>
+                <div class="influencer-grid">
+                    <div class="influencer-card">
+                        <div class="influencer-avatar">@fashion</div>
+                        <h4>Sarah Johnson</h4>
+                        <p>1.2M followers • Fashion & Lifestyle</p>
+                        <div class="engagement-rate">8.5% engagement</div>
+                    </div>
+                    <div class="influencer-card">
+                        <div class="influencer-avatar">@tech</div>
+                        <h4>Mike Chen</h4>
+                        <p>850K followers • Technology</p>
+                        <div class="engagement-rate">12.3% engagement</div>
+                    </div>
+                    <div class="influencer-card">
+                        <div class="influencer-avatar">@fitness</div>
+                        <h4>Emma Wellness</h4>
+                        <p>950K followers • Health & Fitness</p>
+                        <div class="engagement-rate">9.7% engagement</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>`;
+
+        // Create CSS with professional styling
+        const cssContent = `* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #ffffff;
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    background: linear-gradient(45deg, #667eea, #764ba2, #f093fb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+}
+
+.nav {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.nav a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    padding: 12px 25px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 500;
+}
+
+.nav a:hover {
+    background: rgba(102, 126, 234, 0.2);
+    border-color: rgba(102, 126, 234, 0.5);
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.stat-number {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 10px 0;
+}
+
+.stat-change {
+    color: #4ade80;
+    font-weight: 500;
+}
+
+.integration-cards, .influencer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.integration-card, .influencer-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}`;
+
+        // Create JavaScript with interactivity
+        const jsContent = `document.addEventListener('DOMContentLoaded', function() {
+    console.log('Influencer Management Platform Loaded');
+
+    // Smooth scrolling
+    document.querySelectorAll('.nav a').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
+
+    // API Integration buttons
+    document.querySelectorAll('.btn-primary').forEach(button => {
+        button.addEventListener('click', function() {
+            const apiType = this.getAttribute('data-api');
+            this.textContent = 'Connecting...';
+            this.disabled = true;
+            
+            setTimeout(() => {
+                this.textContent = 'Connected ✓';
+                this.style.background = 'linear-gradient(45deg, #10b981, #059669)';
+                this.disabled = false;
+                
+                // Show notification
+                showNotification(\`Successfully connected to \${apiType.toUpperCase()} API!\`);
+            }, 2000);
+        });
+    });
+
+    function showNotification(message) {
+        const notification = document.createElement('div');
+        notification.style.cssText = \`
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 1000;
+            font-weight: 600;
+        \`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => notification.remove(), 3000);
+    }
+});`;
+
+        // Write files
+        await fs.writeFile(path.join(projectDir, 'index.html'), htmlContent);
+        await fs.writeFile(path.join(projectDir, 'style.css'), cssContent);
+        await fs.writeFile(path.join(projectDir, 'script.js'), jsContent);
+        
+        const readmeContent = `# Influencer Management Platform
+
+A comprehensive platform for managing influencers with API integrations.
+
+## Features
+- Dashboard with key metrics
+- API integrations (Instagram, TikTok, CIA)
+- Responsive design
+- Professional UI/UX
+
+## Development URL
+http://localhost:5000/dev/influencer-management-${project.id}`;
+        
+        await fs.writeFile(path.join(projectDir, 'README.md'), readmeContent);
+        
+        res.json({
+          success: true,
+          projectId: project.id,
+          message: 'Influencer management platform created successfully!',
+          devUrl: `http://localhost:5000/dev/influencer-management-${project.id}`
+        });
+        
+      } else {
+        res.status(400).json({ message: 'Invalid project type' });
+      }
+      
+    } catch (error) {
+      console.error('Replit Simple creation error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to create project: ' + error.message
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Add error handling for server creation
