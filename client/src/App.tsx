@@ -33,6 +33,7 @@ import ProjectManagerChat from "@/pages/project-manager-chat";
 import AdvancedCollaboration from "@/pages/advanced-collaboration";
 import CreateStreamlined from "@/pages/create-streamlined";
 import DevUrls from "@/pages/DevUrls";
+import CodexEnhanced from "@/pages/CodexEnhanced";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -68,6 +69,7 @@ function Router() {
       <Route path="/project-manager" component={ProjectManagerChat} />
       <Route path="/advanced-collaboration" component={AdvancedCollaboration} />
       <Route path="/dev-urls" component={DevUrls} />
+      <Route path="/codex-enhanced" component={CodexEnhanced} />
       <Route component={NotFound} />
     </Switch>
   );

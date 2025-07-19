@@ -15,6 +15,7 @@ import { extensionManager } from "./services/extension-manager";
 import { initializeDevTeamAgents } from "./services/team-agents";
 import { agentServerAccess } from "./services/agent-server-access";
 import { DevUrlConstructor } from "./services/dev-url-constructor";
+import { codexEnhanced } from "./services/codex-enhanced";
 import { 
   insertCodeGenerationSchema, insertProjectSchema, insertApiTestSchema,
   insertAgentSchema, insertConversationSchema, insertMessageSchema,
@@ -3839,6 +3840,186 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
     } catch (error) {
       console.error('Error triggering reload:', error);
       res.status(500).json({ message: 'Failed to trigger reload' });
+    }
+  });
+
+  // ==================== CODEX ENHANCED API ENDPOINTS ====================
+  // Code completion
+  app.post('/api/codex/complete', async (req, res) => {
+    try {
+      const { code, language, context } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: 'Code is required' });
+      }
+      
+      const result = await codexEnhanced.completeCode(code, language, context);
+      res.json(result);
+    } catch (error) {
+      console.error('Error completing code:', error);
+      res.status(500).json({ message: 'Failed to complete code' });
+    }
+  });
+
+  // Code explanation
+  app.post('/api/codex/explain', async (req, res) => {
+    try {
+      const { code, language } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: 'Code is required' });
+      }
+      
+      const result = await codexEnhanced.explainCode(code, language);
+      res.json(result);
+    } catch (error) {
+      console.error('Error explaining code:', error);
+      res.status(500).json({ message: 'Failed to explain code' });
+    }
+  });
+
+  // Code debugging
+  app.post('/api/codex/debug', async (req, res) => {
+    try {
+      const { code, error, language } = req.body;
+      
+      if (!code || !error) {
+        return res.status(400).json({ message: 'Code and error are required' });
+      }
+      
+      const result = await codexEnhanced.debugCode(code, error, language);
+      res.json(result);
+    } catch (error) {
+      console.error('Error debugging code:', error);
+      res.status(500).json({ message: 'Failed to debug code' });
+    }
+  });
+
+  // Code refactoring
+  app.post('/api/codex/refactor', async (req, res) => {
+    try {
+      const { code, language, requirements } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: 'Code is required' });
+      }
+      
+      const result = await codexEnhanced.refactorCode(code, language, requirements);
+      res.json(result);
+    } catch (error) {
+      console.error('Error refactoring code:', error);
+      res.status(500).json({ message: 'Failed to refactor code' });
+    }
+  });
+
+  // Code optimization
+  app.post('/api/codex/optimize', async (req, res) => {
+    try {
+      const { code, language, target } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: 'Code is required' });
+      }
+      
+      const result = await codexEnhanced.optimizeCode(code, language, target);
+      res.json(result);
+    } catch (error) {
+      console.error('Error optimizing code:', error);
+      res.status(500).json({ message: 'Failed to optimize code' });
+    }
+  });
+
+  // Generate test cases
+  app.post('/api/codex/test-cases', async (req, res) => {
+    try {
+      const { code, language } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: 'Code is required' });
+      }
+      
+      const result = await codexEnhanced.generateTestCases(code, language);
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating test cases:', error);
+      res.status(500).json({ message: 'Failed to generate test cases' });
+    }
+  });
+
+  // Generate documentation
+  app.post('/api/codex/documentation', async (req, res) => {
+    try {
+      const { code, language } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: 'Code is required' });
+      }
+      
+      const result = await codexEnhanced.generateDocumentation(code, language);
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating documentation:', error);
+      res.status(500).json({ message: 'Failed to generate documentation' });
+    }
+  });
+
+  // Convert between languages
+  app.post('/api/codex/convert', async (req, res) => {
+    try {
+      const { code, fromLanguage, toLanguage } = req.body;
+      
+      if (!code || !fromLanguage || !toLanguage) {
+        return res.status(400).json({ message: 'Code, fromLanguage, and toLanguage are required' });
+      }
+      
+      const result = await codexEnhanced.convertLanguage(code, fromLanguage, toLanguage);
+      res.json(result);
+    } catch (error) {
+      console.error('Error converting language:', error);
+      res.status(500).json({ message: 'Failed to convert language' });
+    }
+  });
+
+  // Suggest improvements
+  app.post('/api/codex/improvements', async (req, res) => {
+    try {
+      const { code, language } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: 'Code is required' });
+      }
+      
+      const result = await codexEnhanced.suggestImprovements(code, language);
+      res.json(result);
+    } catch (error) {
+      console.error('Error suggesting improvements:', error);
+      res.status(500).json({ message: 'Failed to suggest improvements' });
+    }
+  });
+
+  // General code generation
+  app.post('/api/codex/generate', async (req, res) => {
+    try {
+      const { prompt, language, framework, context, mode, maxTokens, temperature } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ message: 'Prompt is required' });
+      }
+      
+      const result = await codexEnhanced.generateCode({
+        prompt,
+        language,
+        framework,
+        context,
+        mode,
+        maxTokens,
+        temperature
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating code:', error);
+      res.status(500).json({ message: 'Failed to generate code' });
     }
   });
 

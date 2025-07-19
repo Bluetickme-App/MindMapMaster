@@ -133,6 +133,15 @@ export default function QuickActions() {
       },
     },
     {
+      title: "Codex Enhanced",
+      description: "Advanced AI code generation",
+      icon: Code,
+      color: "violet-500",
+      onClick: () => {
+        setLocation('/codex-enhanced');
+      },
+    },
+    {
       title: "Create New Repl",
       description: "Simple project creation",
       icon: Plus,
