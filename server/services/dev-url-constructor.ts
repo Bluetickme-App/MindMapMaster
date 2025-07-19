@@ -17,13 +17,26 @@ export class DevUrlConstructor {
   
   constructor(app: Express) {
     this.app = app;
-    this.setupProjectRoutes();
+    
+    // Discover and register all existing projects
+    this.discoverProjects();
+    
+    // Setup routes for all discovered projects
+    if (this.app && this.projects.size > 0) {
+      this.setupProjectRoutes();
+    }
+    
+    console.log(`📦 Discovered ${this.projects.size} projects for dev URLs`);
   }
 
   // Register a project with its configuration
   registerProject(config: ProjectConfig): string {
     this.projects.set(config.id, config);
-    this.setupProjectRoutes(config);
+    
+    // Only setup routes if app is available
+    if (this.app) {
+      this.setupProjectRoutes(config);
+    }
     
     // Return the dev URL for this project
     return `http://localhost:5000/dev/${config.id}`;
@@ -36,14 +49,16 @@ export class DevUrlConstructor {
     projectsToSetup.forEach(project => {
       const projectPath = path.join(process.cwd(), 'projects', project.id);
       
-      // Main project route
+      // Main project route - serve index.html or main entry point
       this.app.get(`/dev/${project.id}`, (req, res) => {
+        console.log(`📁 Serving main route for ${project.id}: ${project.entryPoint}`);
         this.serveProjectFile(project, project.entryPoint, res);
       });
 
-      // Asset routes for the project
+      // Asset routes for the project - handle all file requests
       this.app.get(`/dev/${project.id}/*`, (req, res) => {
         const requestedFile = req.params[0];
+        console.log(`📄 Serving asset for ${project.id}: ${requestedFile}`);
         this.serveProjectFile(project, requestedFile, res);
       });
 
@@ -63,30 +78,45 @@ export class DevUrlConstructor {
       const projectPath = path.join(process.cwd(), 'projects', project.id);
       const fullPath = path.join(projectPath, filePath);
       
+      console.log(`🔍 Attempting to serve: ${fullPath}`);
+      console.log(`📂 Project path: ${projectPath}`);
+      console.log(`📋 Project exists: ${fs.existsSync(projectPath)}`);
+      
       // Security check - ensure file is within project directory
       if (!fullPath.startsWith(projectPath)) {
+        console.log(`❌ Security check failed for ${fullPath}`);
         return res.status(403).send('Access denied');
       }
       
+      // Check if file exists
       if (!fs.existsSync(fullPath)) {
-        return res.status(404).send(`File not found: ${filePath}`);
+        console.log(`❌ File not found: ${fullPath}`);
+        // List directory contents for debugging
+        if (fs.existsSync(projectPath)) {
+          const files = fs.readdirSync(projectPath);
+          console.log(`📁 Available files in ${project.id}:`, files);
+        }
+        return res.status(404).send(`File not found: ${filePath} in project ${project.id}`);
       }
       
       const content = fs.readFileSync(fullPath, 'utf-8');
       const mimeType = this.getMimeType(filePath);
       
+      console.log(`✅ Successfully serving ${filePath} with MIME type ${mimeType}`);
+      
       res.setHeader('Content-Type', mimeType);
       
-      // For HTML files, inject live reload script
+      // For HTML files, inject live reload script and fix relative paths
       if (mimeType === 'text/html') {
         const injectedContent = this.injectLiveReload(content, project.id);
-        res.send(injectedContent);
+        const fixedContent = this.fixRelativePaths(injectedContent, project.id);
+        res.send(fixedContent);
       } else {
         res.send(content);
       }
     } catch (error) {
-      console.error(`Error serving ${project.id}/${filePath}:`, error);
-      res.status(500).send('Server error');
+      console.error(`❌ Error serving ${project.id}/${filePath}:`, error);
+      res.status(500).send(`Server error: ${error.message}`);
     }
   }
 
@@ -118,13 +148,17 @@ export class DevUrlConstructor {
     <script>
       // Live reload for ${projectId}
       (function() {
-        const ws = new WebSocket('ws://localhost:5000/ws');
-        ws.onmessage = function(event) {
-          const data = JSON.parse(event.data);
-          if (data.type === 'reload' && data.projectId === '${projectId}') {
-            location.reload();
-          }
-        };
+        try {
+          const ws = new WebSocket('ws://localhost:5000/ws');
+          ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'reload' && data.projectId === '${projectId}') {
+              location.reload();
+            }
+          };
+        } catch (e) {
+          console.log('Live reload websocket not available');
+        }
       })();
     </script>
     `;
@@ -134,6 +168,29 @@ export class DevUrlConstructor {
     } else {
       return htmlContent + liveReloadScript;
     }
+  }
+
+  // Fix relative paths in HTML to work with dev URL structure
+  private fixRelativePaths(htmlContent: string, projectId: string): string {
+    // Fix relative CSS links
+    htmlContent = htmlContent.replace(
+      /href="(?!http|\/\/|\/dev\/)([^"]+\.css)"/g,
+      `href="/dev/${projectId}/$1"`
+    );
+    
+    // Fix relative JS links
+    htmlContent = htmlContent.replace(
+      /src="(?!http|\/\/|\/dev\/)([^"]+\.js)"/g,
+      `src="/dev/${projectId}/$1"`
+    );
+    
+    // Fix relative image sources
+    htmlContent = htmlContent.replace(
+      /src="(?!http|\/\/|\/dev\/)([^"]+\.(png|jpg|jpeg|gif|svg))"/g,
+      `src="/dev/${projectId}/$1"`
+    );
+    
+    return htmlContent;
   }
 
   // Auto-discover projects and register them
