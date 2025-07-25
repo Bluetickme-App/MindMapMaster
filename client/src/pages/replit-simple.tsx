@@ -21,10 +21,12 @@ export default function ReplitSimple() {
   const [projectType, setProjectType] = useState<'create' | 'github' | 'clone'>('create');
   const [description, setDescription] = useState('');
   const [githubUrl, setGithubUrl] = useState('');
+  const [githubToken, setGithubToken] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [brandName, setBrandName] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<number[]>([]);
   const [useTeam, setUseTeam] = useState(false);
+  const [error, setError] = useState('');
   const queryClient = useQueryClient();
 
   const { data: agents = [] } = useQuery<Agent[]>({
@@ -36,9 +38,13 @@ export default function ReplitSimple() {
       return apiRequest('POST', '/api/replit-simple/create', data);
     },
     onSuccess: (data) => {
+      setError('');
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       // Navigate to workspace with the new project
       window.location.href = `/workspace?project=${data.projectId}`;
+    },
+    onError: (error: any) => {
+      setError(error.message || 'Failed to create project');
     },
   });
 
@@ -53,6 +59,9 @@ export default function ReplitSimple() {
       projectData.description = description;
     } else if (projectType === 'github') {
       projectData.githubUrl = githubUrl;
+      if (githubToken) {
+        projectData.githubToken = githubToken;
+      }
     } else if (projectType === 'clone') {
       projectData.websiteUrl = websiteUrl;
       projectData.brandName = brandName;
@@ -141,6 +150,26 @@ export default function ReplitSimple() {
                     placeholder="https://github.com/username/repository"
                     className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-400"
                   />
+                </div>
+                
+                <div>
+                  <label className="text-white text-sm font-medium mb-2 block">
+                    GitHub Token (optional - for private repos)
+                  </label>
+                  <Input
+                    type="password"
+                    value={githubToken}
+                    onChange={(e) => setGithubToken(e.target.value)}
+                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                    className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-400"
+                  />
+                  <p className="text-slate-400 text-xs mt-1">
+                    Required only for private repositories. Get yours at{' '}
+                    <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" 
+                       className="text-purple-400 hover:text-purple-300">
+                      github.com/settings/tokens
+                    </a>
+                  </p>
                 </div>
               </TabsContent>
 
@@ -244,9 +273,11 @@ export default function ReplitSimple() {
               )}
             </Button>
 
-            {createProjectMutation.error && (
-              <div className="text-red-400 text-sm">
-                Error: {(createProjectMutation.error as any)?.message || 'Failed to create project'}
+            {(createProjectMutation.error || error) && (
+              <div className="bg-red-500/20 border border-red-500 rounded-lg p-4">
+                <div className="text-red-400 text-sm whitespace-pre-line">
+                  {error || (createProjectMutation.error as any)?.message || 'Failed to create project'}
+                </div>
               </div>
             )}
           </CardContent>

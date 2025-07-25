@@ -3424,7 +3424,7 @@ RESPOND WITH ONLY THE HTML FILE - NO OTHER TEXT WHATSOEVER.`
   // ==================== REPLIT SIMPLE API ====================
   app.post('/api/replit-simple/create', async (req, res) => {
     try {
-      const { type, description, githubUrl, websiteUrl, brandName, useTeam, selectedAgents } = req.body;
+      const { type, description, githubUrl, githubToken, websiteUrl, brandName, useTeam, selectedAgents } = req.body;
       
       // Create project based on type
       let projectData: any = {
@@ -3781,9 +3781,9 @@ http://localhost:5000/dev/influencer-management-${project.id}`;
 
           // Fetch repository data from GitHub API (with authentication if available)
           const { Octokit } = await import('octokit');
-          const githubToken = process.env.GITHUB_TOKEN;
+          const authToken = githubToken || process.env.GITHUB_TOKEN; // Use provided token or env token
           const octokit = new Octokit({
-            auth: githubToken, // Use token if available for private repos
+            auth: authToken, // Use token if available for private repos
           });
 
           let repoData;
@@ -3795,7 +3795,21 @@ http://localhost:5000/dev/influencer-management-${project.id}`;
             repoData = response.data;
           } catch (error) {
             console.error('GitHub API error:', error);
-            return res.status(400).json({ message: 'Repository not found or not accessible' });
+            
+            // Provide more helpful error messages
+            if (error.status === 404) {
+              return res.status(400).json({ 
+                message: `Repository '${owner}/${cleanRepoName}' not found. Please check:\n• Repository exists and URL is correct\n• Repository is public, or provide GitHub token for private repos\n• Repository name spelling is accurate`
+              });
+            } else if (error.status === 403) {
+              return res.status(400).json({ 
+                message: 'Access denied. This repository requires authentication. Please provide a GitHub token to access private repositories.'
+              });
+            } else {
+              return res.status(400).json({ 
+                message: `GitHub API error: ${error.message || 'Unable to access repository'}`
+              });
+            }
           }
 
           // Detect language and framework
@@ -4062,7 +4076,9 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
 
         } catch (error) {
           console.error('GitHub import error:', error);
-          res.status(500).json({ message: 'Failed to import GitHub repository: ' + error.message });
+          res.status(500).json({ 
+            message: 'Failed to import GitHub repository: ' + (error.message || 'Unknown error occurred')
+          });
         }
         
       } else if (type === 'clone') {

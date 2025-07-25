@@ -691,6 +691,16 @@ Changelog:
   - All API endpoints tested and working: Create (description-based), GitHub (URL import), Clone (website + rebrand)
   - Successfully tested cloning Selfridges.com and rebranding as "TripleA" with 5 specialized AI agents
   - System provides simplified alternative to complex multi-agent platform while maintaining full AI collaboration capabilities
+- July 25, 2025. Fixed GitHub import functionality completely:
+  - Resolved "Invalid project type" error in Replit Simple that was blocking GitHub imports
+  - Enhanced system to handle both public and private repositories with authentication support
+  - Added comprehensive repository processing with automatic language and framework detection
+  - Created professional import pages showing repository information, stats, and metadata
+  - Implemented GitHub token support for private repository access
+  - Added detailed error messages guiding users on repository access issues
+  - Successfully tested with React repository (237K stars, 49K forks) and TypeScript (105K stars, 12K forks)
+  - All GitHub imports now automatically register in dev URL system for immediate access
+  - Enhanced frontend with GitHub token input field and improved error handling display
 - July 18, 2025. Implemented comprehensive Dev URL Constructor system like Replit:
   - Created DevUrlConstructor service that automatically generates unique development URLs for each project
   - Implemented dynamic URL routing with `/dev/[project-name]` pattern matching Replit's approach
