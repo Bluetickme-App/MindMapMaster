@@ -3763,6 +3763,326 @@ http://localhost:5000/dev/influencer-management-${project.id}`;
           devUrl: `http://localhost:5000/dev/influencer-management-${project.id}`
         });
         
+      } else if (type === 'github') {
+        // Import from GitHub
+        if (!githubUrl) {
+          return res.status(400).json({ message: 'GitHub URL is required' });
+        }
+
+        try {
+          // Extract owner and repo from GitHub URL
+          const urlMatch = githubUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+          if (!urlMatch) {
+            return res.status(400).json({ message: 'Invalid GitHub URL format' });
+          }
+
+          const [, owner, repoName] = urlMatch;
+          const cleanRepoName = repoName.replace('.git', '');
+
+          // Fetch repository data from GitHub API (with authentication if available)
+          const { Octokit } = await import('octokit');
+          const githubToken = process.env.GITHUB_TOKEN;
+          const octokit = new Octokit({
+            auth: githubToken, // Use token if available for private repos
+          });
+
+          let repoData;
+          try {
+            const response = await octokit.rest.repos.get({
+              owner,
+              repo: cleanRepoName,
+            });
+            repoData = response.data;
+          } catch (error) {
+            console.error('GitHub API error:', error);
+            return res.status(400).json({ message: 'Repository not found or not accessible' });
+          }
+
+          // Detect language and framework
+          const language = repoData.language || 'Unknown';
+          let framework = 'vanilla';
+          
+          // Simple framework detection
+          const repoText = `${repoData.name} ${repoData.description}`.toLowerCase();
+          if (repoText.includes('react') || repoText.includes('next')) framework = 'react';
+          else if (repoText.includes('vue')) framework = 'vue';
+          else if (repoText.includes('angular')) framework = 'angular';
+          else if (repoText.includes('express') || repoText.includes('node')) framework = 'node';
+          else if (repoText.includes('django') || repoText.includes('flask')) framework = 'python';
+
+          // Update project data with GitHub info
+          projectData.name = repoData.name;
+          projectData.description = repoData.description || `Imported from ${githubUrl}`;
+          projectData.language = language.toLowerCase();
+          projectData.framework = framework;
+          projectData.githubRepo = githubUrl;
+
+          // Create project in database
+          const project = await storage.createProject(projectData);
+
+          // Create project directory
+          const fs = await import('fs/promises');
+          const path = await import('path');
+          
+          const projectDir = path.join(process.cwd(), 'projects', `${cleanRepoName}-${project.id}`);
+          await fs.mkdir(projectDir, { recursive: true });
+
+          // Create files based on detected language/framework
+          const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${repoData.name}</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📂 ${repoData.name}</h1>
+            <p class="subtitle">Imported from GitHub</p>
+        </header>
+        
+        <main class="main">
+            <section class="info-section">
+                <h2>Repository Information</h2>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3>Description</h3>
+                        <p>${repoData.description || 'No description available'}</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>Language</h3>
+                        <p>${language}</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>Framework</h3>
+                        <p>${framework}</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>GitHub Stats</h3>
+                        <p>⭐ ${repoData.stargazers_count} stars • 🍴 ${repoData.forks_count} forks</p>
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <a href="${githubUrl}" target="_blank" class="btn-primary">View on GitHub</a>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>`;
+
+          const cssContent = `/* ${repoData.name} - GitHub Import */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #2D1B69 0%, #11998E 100%);
+    color: #ffffff;
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 40px 0;
+}
+
+.header h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.info-section h2 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.info-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 15px;
+    padding: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-5px);
+}
+
+.info-card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    color: #ffffff;
+}
+
+.info-card p {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+}
+
+.actions {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.btn-primary {
+    display: inline-block;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    text-decoration: none;
+    padding: 15px 30px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .header h1 {
+        font-size: 2.5rem;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}`;
+
+          const jsContent = `// ${repoData.name} - GitHub Import
+console.log('${repoData.name} loaded successfully');
+console.log('Repository: ${githubUrl}');
+console.log('Language: ${language}');
+console.log('Framework: ${framework}');
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('GitHub import page loaded');
+    
+    // Add any interactive functionality here
+    const infoCards = document.querySelectorAll('.info-card');
+    infoCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.background = 'rgba(255, 255, 255, 0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.background = 'rgba(255, 255, 255, 0.1)';
+        });
+    });
+});`;
+
+          const readmeContent = `# ${repoData.name}
+
+${repoData.description}
+
+## Imported from GitHub
+- **Repository**: [${githubUrl}](${githubUrl})
+- **Language**: ${language}
+- **Framework**: ${framework}
+- **Stars**: ${repoData.stargazers_count}
+- **Forks**: ${repoData.forks_count}
+
+## Development URL
+http://localhost:5000/dev/${cleanRepoName}-${project.id}
+
+## Original Repository Info
+- **Created**: ${new Date(repoData.created_at).toLocaleDateString()}
+- **Updated**: ${new Date(repoData.updated_at).toLocaleDateString()}
+- **License**: ${repoData.license?.name || 'Not specified'}
+
+## Next Steps
+1. Clone the original repository locally if needed
+2. Review the codebase and adapt to your needs
+3. Use the AI agents to help with development
+4. Deploy when ready
+`;
+
+          // Write files
+          await fs.writeFile(path.join(projectDir, 'index.html'), htmlContent);
+          await fs.writeFile(path.join(projectDir, 'style.css'), cssContent);
+          await fs.writeFile(path.join(projectDir, 'script.js'), jsContent);
+          await fs.writeFile(path.join(projectDir, 'README.md'), readmeContent);
+
+          res.json({
+            success: true,
+            projectId: project.id,
+            name: repoData.name,
+            message: `Successfully imported ${repoData.name} from GitHub!`,
+            devUrl: `http://localhost:5000/dev/${cleanRepoName}-${project.id}`,
+            repoInfo: {
+              name: repoData.name,
+              description: repoData.description,
+              language: language,
+              framework: framework,
+              stars: repoData.stargazers_count,
+              forks: repoData.forks_count
+            }
+          });
+
+        } catch (error) {
+          console.error('GitHub import error:', error);
+          res.status(500).json({ message: 'Failed to import GitHub repository: ' + error.message });
+        }
+        
+      } else if (type === 'clone') {
+        // Clone and rebrand website
+        if (!websiteUrl || !brandName) {
+          return res.status(400).json({ message: 'Website URL and brand name are required' });
+        }
+
+        // Simple website cloning (placeholder implementation)
+        projectData.name = `${brandName} Website`;
+        projectData.description = `Clone of ${websiteUrl} rebranded as ${brandName}`;
+        
+        const project = await storage.createProject(projectData);
+        
+        res.json({
+          success: true,
+          projectId: project.id,
+          message: `Website cloning feature coming soon! Project created for ${brandName}.`
+        });
+        
       } else {
         res.status(400).json({ message: 'Invalid project type' });
       }
