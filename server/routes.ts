@@ -6,6 +6,7 @@ import { GitHubService } from "./services/github";
 import { multiAIService } from "./services/multi-ai-provider";
 import { WebSocketManager } from "./services/websocket-manager";
 import { debugCode } from "./services/openai";
+import * as anthropicService from "./services/anthropic";
 import { initializeDevTeamAgents } from "./services/team-agents";
 import { DevUrlConstructor } from "./services/dev-url-constructor";
 import { codexEnhanced } from "./services/codex-enhanced";
@@ -222,7 +223,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== GITHUB ROUTES ====================
   app.get("/api/github/status", async (req, res) => {
     try {
-      const githubService = new GitHubService();
+      const token = process.env.GITHUB_TOKEN;
+      if (!token) {
+        return res.json({ connected: false, error: "GitHub token not configured" });
+      }
+      
+      const githubService = new GitHubService(token);
       const status = await githubService.getConnectionStatus();
       res.json(status);
     } catch (error) {
@@ -233,7 +239,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/github/repositories", async (req, res) => {
     try {
-      const githubService = new GitHubService();
+      const token = process.env.GITHUB_TOKEN;
+      if (!token) {
+        return res.status(400).json({ message: "GitHub token not configured. Please set GITHUB_TOKEN environment variable." });
+      }
+      
+      const githubService = new GitHubService(token);
       const repositories = await githubService.getUserRepositories();
       res.json(repositories);
     } catch (error) {
@@ -1007,6 +1018,89 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
     } catch (error) {
       console.error('Error generating code:', error);
       res.status(500).json({ message: 'Failed to generate code' });
+    }
+  });
+
+  // ==================== CLAUDE AI ROUTES ====================
+  app.post('/api/claude/generate', async (req, res) => {
+    try {
+      const { prompt, maxTokens = 4000, temperature = 0.7 } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ message: 'Prompt is required' });
+      }
+      
+      const result = await anthropicService.generateText({
+        prompt,
+        maxTokens,
+        temperature
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error with Claude generation:', error);
+      res.status(500).json({ message: 'Failed to generate with Claude' });
+    }
+  });
+
+  app.post('/api/claude/code', async (req, res) => {
+    try {
+      const { prompt, language, framework } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ message: 'Prompt is required' });
+      }
+      
+      const result = await anthropicService.generateCode({
+        prompt,
+        language: language || 'javascript',
+        framework
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error with Claude code generation:', error);
+      res.status(500).json({ message: 'Failed to generate code with Claude' });
+    }
+  });
+
+  app.post('/api/claude/analyze', async (req, res) => {
+    try {
+      const { text, analysisType = 'general' } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ message: 'Text is required' });
+      }
+      
+      const result = await anthropicService.analyzeText({
+        text,
+        analysisType
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error with Claude analysis:', error);
+      res.status(500).json({ message: 'Failed to analyze with Claude' });
+    }
+  });
+
+  app.post('/api/claude/chat', async (req, res) => {
+    try {
+      const { messages, systemPrompt } = req.body;
+      
+      if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ message: 'Messages array is required' });
+      }
+      
+      const result = await anthropicService.chatCompletion({
+        messages,
+        systemPrompt
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error with Claude chat:', error);
+      res.status(500).json({ message: 'Failed to chat with Claude' });
     }
   });
 

@@ -15,8 +15,28 @@ export interface GitHubRepository {
 export class GitHubService {
   private octokit: Octokit;
 
-  constructor(token: string) {
+  constructor(token?: string) {
     this.octokit = new Octokit({ auth: token });
+  }
+
+  async getConnectionStatus(): Promise<{ connected: boolean; user?: any; error?: string }> {
+    try {
+      const { data } = await this.octokit.rest.users.getAuthenticated();
+      return {
+        connected: true,
+        user: {
+          username: data.login,
+          name: data.name,
+          email: data.email,
+          avatar_url: data.avatar_url
+        }
+      };
+    } catch (error) {
+      return {
+        connected: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
 
   async getUserRepositories(): Promise<GitHubRepository[]> {
