@@ -58,20 +58,7 @@ export default function VibeCodeAgents() {
     { id: "gemini", name: "Google Gemini", model: "gemini-pro", color: "blue-500", specialty: "Multi-modal Processing" },
   ];
 
-  useEffect(() => {
-    if (playing && duration > 0) {
-      const interval = setInterval(() => {
-        setCurrentTime(prev => {
-          if (prev >= duration) {
-            setPlaying(false);
-            return 0;
-          }
-          return prev + 100;
-        });
-      }, 100);
-      return () => clearInterval(interval);
-    }
-  }, [playing, duration]);
+  // Clean up old video controls - not needed for collaboration mode
 
   const startVibeCollaboration = async () => {
     if (!prompt.trim()) {
@@ -136,8 +123,9 @@ export default function VibeCodeAgents() {
         ));
 
         // Update UI for collaboration vibe
+        const currentAgent = availableAgents.find(a => a.id === agent.agent);
         toast({
-          title: `${agentInfo?.name} is vibing!`,
+          title: `${currentAgent?.name} is vibing!`,
           description: `Generated ${language} code with great energy`,
         });
       }
@@ -192,33 +180,9 @@ export default function VibeCodeAgents() {
     };
   };
 
-  const playVideo = () => {
-    setPlaying(!playing);
-  };
-
-  const exportVideo = async () => {
-    toast({
-      title: "Export Started",
-      description: "Generating MP4 video file...",
-    });
-
-    // Simulate video export
-    setTimeout(() => {
-      toast({
-        title: "Export Complete",
-        description: "Video exported as coding-agents-demo.mp4",
-      });
-    }, 3000);
-  };
-
+  // Helper functions
   const getAgentByType = (agentId: string) => {
     return availableAgents.find(a => a.id === agentId);
-  };
-
-  const formatTime = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}:${(seconds % 60).toString().padStart(2, '0')}`;
   };
 
   return (
@@ -361,7 +325,7 @@ export default function VibeCodeAgents() {
                 </>
               ) : (
                 <>
-                  <Rocket className="w-4 h-4 mr-2" />
+                  <Users className="w-4 h-4 mr-2" />
                   Start Building
                 </>
               )}
@@ -378,11 +342,11 @@ export default function VibeCodeAgents() {
                 Development Environment
               </div>
               <div className="flex gap-2">
-                {duration > 0 && (
+                {agents.length > 0 && (
                   <>
-                    <Button variant="outline" size="sm" onClick={exportVideo}>
+                    <Button variant="outline" size="sm">
                       <Download className="w-4 h-4 mr-1" />
-                      Export
+                      Export Code
                     </Button>
                     <Button variant="outline" size="sm">
                       <Share className="w-4 h-4 mr-1" />
@@ -451,31 +415,7 @@ export default function VibeCodeAgents() {
               </div>
             </div>
 
-            {/* Video Controls */}
-            {duration > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={playVideo}
-                  >
-                    {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                  </Button>
-                  
-                  <div className="flex-1">
-                    <Progress 
-                      value={(currentTime / duration) * 100} 
-                      className="h-3 bg-slate-700"
-                    />
-                  </div>
-                  
-                  <span className="text-sm text-muted-foreground">
-                    {formatTime(currentTime)} / {formatTime(duration)}
-                  </span>
-                </div>
-              </div>
-            )}
+            {/* Collaboration interface - removed old video controls */}
 
             {/* Agent Timeline */}
             {agents.length > 0 && (
@@ -553,28 +493,28 @@ export default function VibeCodeAgents() {
         </Card>
       </div>
 
-      {/* Stats Panel */}
-      {duration > 0 && (
+      {/* Collaboration Stats Panel */}
+      {agents.length > 0 && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Eye className="w-5 h-5" />
-              Video Statistics
+              Collaboration Statistics
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold">{formatTime(duration)}</div>
-                <div className="text-sm text-muted-foreground">Duration</div>
+                <div className="text-2xl font-bold">{agents.filter(a => a.status === 'completed').length}</div>
+                <div className="text-sm text-muted-foreground">Completed Tasks</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">{selectedAgents.length}</div>
                 <div className="text-sm text-muted-foreground">AI Agents</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold">{videoFrames.length}</div>
-                <div className="text-sm text-muted-foreground">Code Generations</div>
+                <div className="text-2xl font-bold">{agents.length}</div>
+                <div className="text-sm text-muted-foreground">Total Executions</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold">{language}</div>
