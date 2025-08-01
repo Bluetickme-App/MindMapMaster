@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code, Sparkles, Map, Zap, Monitor, ExternalLink } from "lucide-react";
+import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code, Sparkles, Map, Zap, Monitor, ExternalLink, Video } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function QuickActions() {
@@ -130,6 +130,15 @@ export default function QuickActions() {
       color: "purple-600",
       onClick: () => {
         setLocation('/claude-sdk');
+      },
+    },
+    {
+      title: "Video Code Agents",
+      description: "Multi-AI collaborative coding videos",
+      icon: Video,
+      color: "pink-600",
+      onClick: () => {
+        setLocation('/video-code-agents');
       },
     },
     {

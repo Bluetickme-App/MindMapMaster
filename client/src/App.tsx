@@ -35,6 +35,7 @@ import CreateStreamlined from "@/pages/create-streamlined";
 import DevUrls from "@/pages/DevUrls";
 import CodexEnhanced from "@/pages/CodexEnhanced";
 import ClaudeSDK from "@/pages/ClaudeSDK";
+import VideoCodeAgents from "@/pages/VideoCodeAgents";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -72,6 +73,7 @@ function Router() {
       <Route path="/dev-urls" component={DevUrls} />
       <Route path="/codex-enhanced" component={CodexEnhanced} />
       <Route path="/claude-sdk" component={ClaudeSDK} />
+      <Route path="/video-code-agents" component={VideoCodeAgents} />
       <Route component={NotFound} />
     </Switch>
   );
