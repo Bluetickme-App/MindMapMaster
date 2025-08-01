@@ -124,6 +124,15 @@ export default function QuickActions() {
       },
     },
     {
+      title: "Claude AI Agent",
+      description: "Latest Claude Sonnet 4.0 SDK",
+      icon: MessageSquare,
+      color: "purple-600",
+      onClick: () => {
+        setLocation('/claude-sdk');
+      },
+    },
+    {
       title: "Dev URLs",
       description: "Project development URLs",
       icon: ExternalLink,
