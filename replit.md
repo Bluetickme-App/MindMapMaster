@@ -14,11 +14,12 @@ Preferred communication style: Simple, everyday language.
 - Comprehensive development roadmaps with suggested features
 
 ### Project Vision
-- Multi-agent system where different roles (developers, designers) can collaborate
-- Integration with existing CodeCraft platform
-- Real-time team collaboration and communication features
-- Most advanced standards in today's market implementation
-- Internal hosting capability (Replit deployment ready)
+- Professional platform for building ambitious applications with AI collaboration
+- Emergent.sh-inspired interface with production-focused workflows
+- Multi-agent coordination between OpenAI Codex and Claude Sonnet for comprehensive development
+- Real-time collaboration visualization and intelligent task distribution
+- Production-ready code generation with live preview and AI reasoning transparency
+- Advanced standards matching current market leaders in AI-powered development
 
 ## System Architecture
 
@@ -40,7 +41,7 @@ Preferred communication style: Simple, everyday language.
 - **API Testing Console**: Provides comprehensive API testing with support for all HTTP methods, request/response logging, and performance metrics.
 - **Project Management**: Database-driven system for organizing, categorizing, and tracking development projects, linked with GitHub repositories.
 - **UI/UX Design System**: Consistent dark-themed interface, responsive design, accessible components, and interactive feedback.
-- **Multi-Agent Collaboration System**: Enables real-time collaboration between specialized AI agents (e.g., Senior Developer, Designer, DevOps) and human developers. It integrates multiple AI providers (OpenAI, Anthropic Claude, Google Gemini) for diverse task routing and consensus generation. Features include live chat, agent orchestration, project-based discussions, and intelligent task assignment.
+- **Build Ambitious Apps Platform**: Professional multi-agent AI collaboration system inspired by Emergent.sh, focusing on production-ready application development. Combines OpenAI Codex and Claude Sonnet 4.0 for intelligent code generation, architecture planning, and comprehensive app building. Features real-time agent coordination, live code preview, AI reasoning display, and production mode deployment.
 - **Enhanced Replit AI System**: Provides both Agent (complete app generation from natural language with transparent effort-based pricing) and Assistant (code help, bug fixes, feature implementation) capabilities, outperforming Replit's native AI through multi-provider intelligence and comprehensive checkpoints.
 - **Development Workspace**: A full-featured, Replit-like environment with a 3-panel layout including a file explorer, code editor (Monaco), live preview, terminal, and browser tabs, integrated with AI agents for collaborative coding. It supports real file system access and dynamic Dev URLs.
 - **Extension Management System**: A marketplace for downloadable tool functions (25+) categorized for development, database, DevOps, and more, allowing agents to perform complex operations.

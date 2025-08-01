@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code, Sparkles, Map, Zap, Monitor, ExternalLink } from "lucide-react";
+import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code, Map, Zap, Monitor, ExternalLink } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function QuickActions() {
@@ -117,7 +117,7 @@ export default function QuickActions() {
     {
       title: "Replit AI Enhanced",
       description: "Advanced AI Agent & Assistant",
-      icon: Sparkles,
+      icon: Zap,
       color: "indigo-500",
       onClick: () => {
         setLocation('/replit-ai-enhanced');
@@ -133,10 +133,10 @@ export default function QuickActions() {
       },
     },
     {
-      title: "Vibe Code Agents",
-      description: "Multi-AI collaborative coding with great vibes",
-      icon: Sparkles,
-      color: "pink-600",
+      title: "Build Ambitious Apps",
+      description: "Multi-agent AI collaboration for production apps",
+      icon: Rocket,
+      color: "blue-600",
       onClick: () => {
         setLocation('/vibe-code-agents');
       },
@@ -180,7 +180,7 @@ export default function QuickActions() {
     {
       title: "Multi-AI SDK Demo",
       description: "OpenAI, Claude & Gemini integration",
-      icon: Sparkles,
+      icon: Zap,
       color: "pink-500",
       onClick: () => {
         setLocation('/multi-ai-sdk-demo');

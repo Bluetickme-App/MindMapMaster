@@ -224,18 +224,27 @@ export default function VibeCodeAgents() {
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-          ✨ Vibe Code Agents Platform
+        <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-slate-100 via-blue-100 to-slate-100 bg-clip-text text-transparent">
+          Build Ambitious Apps
         </h1>
-        <p className="text-lg text-muted-foreground">
-          AI agents with great vibes collaborating to solve your coding challenges
+        <h2 className="text-2xl font-semibold mb-4 text-slate-300">
+          With Multi-Agent AI Collaboration
+        </h2>
+        <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+          Advanced AI agents working together to create production-ready applications. Combining OpenAI Codex, Claude Sonnet 4.0, and intelligent collaboration patterns.
         </p>
-        <div className="flex justify-center gap-2 mt-4">
+        <div className="flex justify-center gap-3 mt-6">
           {availableAgents.map(agent => (
-            <Badge key={agent.id} variant="secondary" className="flex items-center gap-1">
-              <div className={`w-2 h-2 rounded-full bg-${agent.color}`}></div>
-              {agent.name}
-            </Badge>
+            <div key={agent.id} className="flex items-center gap-2 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700">
+              <div className={`w-3 h-3 rounded-full ${
+                agent.color === 'green-500' ? 'bg-green-400' :
+                agent.color === 'purple-500' ? 'bg-purple-400' :
+                agent.color === 'blue-500' ? 'bg-blue-400' :
+                'bg-gray-400'
+              } shadow-lg shadow-current/50`}></div>
+              <span className="text-sm font-medium text-slate-300">{agent.name}</span>
+              <span className="text-xs text-slate-500">{agent.model}</span>
+            </div>
           ))}
         </div>
       </div>
@@ -246,18 +255,19 @@ export default function VibeCodeAgents() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5" />
-              Vibe Configuration
+              Project Configuration
             </CardTitle>
-            <CardDescription>Set up your AI agents for the perfect coding vibe</CardDescription>
+            <CardDescription>Configure AI agents for your application development</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <label className="text-sm font-medium mb-2 block">Coding Prompt</label>
+              <label className="text-sm font-medium mb-2 block">Application Requirements</label>
               <Textarea
-                placeholder="Enter your coding challenge (e.g., 'Create a React todo app with TypeScript')"
+                placeholder="Describe your ambitious app idea (e.g., 'Build a full-stack e-commerce platform with React, TypeScript, payment integration, and real-time inventory management')"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={4}
+                className="resize-none"
               />
             </div>
 
@@ -321,15 +331,15 @@ export default function VibeCodeAgents() {
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm">Show Live Code</span>
+                <span className="text-sm">Live Code Preview</span>
                 <Switch checked={showLiveCode} onCheckedChange={setShowLiveCode} />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm">Show Explanations</span>
+                <span className="text-sm">AI Reasoning</span>
                 <Switch checked={showExplanations} onCheckedChange={setShowExplanations} />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm">Auto-Generate</span>
+                <span className="text-sm">Production Mode</span>
                 <Switch checked={autoGenerate} onCheckedChange={setAutoGenerate} />
               </div>
             </div>
@@ -337,22 +347,22 @@ export default function VibeCodeAgents() {
             <Button 
               onClick={startVibeCollaboration} 
               disabled={loading || collaborating || selectedAgents.length === 0}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              className="w-full bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white font-semibold py-3"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Setting the vibe...
+                  Initializing AI Agents...
                 </>
               ) : collaborating ? (
                 <>
-                  <Sparkles className="w-4 h-4 mr-2 animate-pulse" />
-                  Collaborating with great vibes...
+                  <Users className="w-4 h-4 mr-2 animate-pulse" />
+                  Building Application...
                 </>
               ) : (
                 <>
-                  <Zap className="w-4 h-4 mr-2" />
-                  Start Vibe Collaboration
+                  <Rocket className="w-4 h-4 mr-2" />
+                  Start Building
                 </>
               )}
             </Button>
@@ -364,8 +374,8 @@ export default function VibeCodeAgents() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5" />
-                AI Collaboration Space
+                <Code className="w-5 h-5" />
+                Development Environment
               </div>
               <div className="flex gap-2">
                 {duration > 0 && (
@@ -391,12 +401,17 @@ export default function VibeCodeAgents() {
                 {collaborating ? (
                   <div className="text-center">
                     <div className="relative">
-                      <div className="animate-bounce">
-                        <Sparkles className="w-16 h-16 mx-auto mb-4 text-purple-400" />
+                      <div className="flex justify-center mb-4">
+                        <div className="relative">
+                          <Code className="w-16 h-16 text-blue-400 animate-pulse" />
+                          <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                            <Users className="w-3 h-3 text-white" />
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <p className="text-white text-xl font-semibold mb-2">AI Agents are vibing together! ✨</p>
-                    <p className="text-slate-300">Creating amazing code with collaborative energy</p>
+                    <p className="text-white text-xl font-semibold mb-2">AI Agents Collaborating</p>
+                    <p className="text-slate-300">Building production-ready application architecture</p>
                   </div>
                 ) : agents.length > 0 ? (
                   <div className="text-center text-white">
@@ -417,9 +432,9 @@ export default function VibeCodeAgents() {
                         );
                       })}
                     </div>
-                    <p className="text-xl font-bold mb-2">Collaboration Complete! 🎉</p>
+                    <p className="text-xl font-bold mb-2">Application Generated Successfully</p>
                     <p className="text-slate-300">
-                      {agents.length} agents brought the best vibes to your code
+                      {agents.length} AI agents collaborated to build your application
                     </p>
                   </div>
                 ) : (
@@ -429,8 +444,8 @@ export default function VibeCodeAgents() {
                       <Users className="w-16 h-16 mx-2 text-slate-500" />
                       <Code className="w-16 h-16 mx-2 text-slate-500" />
                     </div>
-                    <p className="text-xl font-semibold mb-2">Ready for some coding vibes</p>
-                    <p className="text-slate-500">Configure your agents and start the collaboration</p>
+                    <p className="text-xl font-semibold mb-2">Ready to Build</p>
+                    <p className="text-slate-500">Configure your project requirements and deploy AI agents</p>
                   </div>
                 )}
               </div>
