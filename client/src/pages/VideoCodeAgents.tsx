@@ -158,7 +158,28 @@ export default function VibeCodeAgents() {
     });
     
     if (!response.ok) throw new Error('OpenAI API failed');
-    return await response.json();
+    const result = await response.json();
+    
+    // Parse the nested JSON code structure
+    let parsedCode = result.code;
+    let parsedExplanation = result.explanation;
+    
+    if (typeof parsedCode === 'string' && parsedCode.startsWith('```json')) {
+      try {
+        // Extract JSON from markdown code block
+        const jsonStr = parsedCode.replace(/```json\n/, '').replace(/\n```$/, '');
+        const parsed = JSON.parse(jsonStr);
+        parsedCode = parsed.code;
+        parsedExplanation = parsed.explanation;
+      } catch (e) {
+        console.log('Could not parse nested JSON, using raw response');
+      }
+    }
+    
+    return {
+      code: parsedCode,
+      explanation: parsedExplanation
+    };
   };
 
   const callClaude = async (prompt: string, language: string, framework: string) => {
@@ -169,7 +190,28 @@ export default function VibeCodeAgents() {
     });
     
     if (!response.ok) throw new Error('Claude API failed');
-    return await response.json();
+    const result = await response.json();
+    
+    // Parse the nested JSON code structure
+    let parsedCode = result.code;
+    let parsedExplanation = result.explanation;
+    
+    if (typeof parsedCode === 'string' && parsedCode.startsWith('```json')) {
+      try {
+        // Extract JSON from markdown code block
+        const jsonStr = parsedCode.replace(/```json\n/, '').replace(/\n```$/, '');
+        const parsed = JSON.parse(jsonStr);
+        parsedCode = parsed.code;
+        parsedExplanation = parsed.explanation;
+      } catch (e) {
+        console.log('Could not parse nested JSON, using raw response');
+      }
+    }
+    
+    return {
+      code: parsedCode,
+      explanation: parsedExplanation
+    };
   };
 
   const callGemini = async (prompt: string, language: string, framework: string) => {
@@ -475,8 +517,12 @@ export default function VibeCodeAgents() {
                               )}
                               {showLiveCode && agent.code && (
                                 <div className="bg-slate-900 border border-slate-700 p-4 rounded-lg overflow-x-auto">
-                                  <pre className="text-sm text-green-400 font-mono leading-relaxed whitespace-pre-wrap">
-                                    {agent.code.substring(0, 300)}...
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs text-slate-400 font-medium">Generated Code:</span>
+                                    <Badge variant="outline" className="text-xs">{language}</Badge>
+                                  </div>
+                                  <pre className="text-sm text-green-400 font-mono leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto">
+                                    {agent.code}
                                   </pre>
                                 </div>
                               )}
