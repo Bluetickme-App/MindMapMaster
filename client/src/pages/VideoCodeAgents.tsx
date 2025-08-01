@@ -397,27 +397,47 @@ export default function VideoCodeAgents() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Video Display Area */}
-            <div className="bg-gray-900 rounded-lg p-6 min-h-[300px] flex items-center justify-center">
-              {recording ? (
-                <div className="text-center">
-                  <div className="animate-pulse bg-red-500 w-4 h-4 rounded-full mx-auto mb-4"></div>
-                  <p className="text-white text-lg">Recording AI Agents...</p>
-                </div>
-              ) : duration > 0 ? (
-                <div className="text-center text-white">
-                  <Bot className="w-16 h-16 mx-auto mb-4" />
-                  <p className="text-lg">Video Ready - {formatTime(duration)}</p>
-                  <p className="text-sm text-gray-300">
-                    {videoFrames.length} agent interactions recorded
-                  </p>
-                </div>
-              ) : (
-                <div className="text-center text-gray-400">
-                  <Video className="w-16 h-16 mx-auto mb-4" />
-                  <p className="text-lg">No video generated yet</p>
-                  <p className="text-sm">Configure agents and click "Start Video Generation"</p>
-                </div>
-              )}
+            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700 rounded-xl p-8 min-h-[300px] flex items-center justify-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-transparent to-purple-500/5"></div>
+              <div className="relative z-10">
+                {recording ? (
+                  <div className="text-center">
+                    <div className="relative">
+                      <div className="animate-ping bg-red-500 w-6 h-6 rounded-full mx-auto mb-4 opacity-75"></div>
+                      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-red-500 w-4 h-4 rounded-full"></div>
+                    </div>
+                    <p className="text-white text-xl font-semibold mb-2">Recording AI Agents...</p>
+                    <p className="text-slate-300">Capturing real-time collaboration</p>
+                  </div>
+                ) : duration > 0 ? (
+                  <div className="text-center text-white">
+                    <Bot className="w-20 h-20 mx-auto mb-4 text-blue-400" />
+                    <p className="text-xl font-bold mb-2">Video Ready - {formatTime(duration)}</p>
+                    <p className="text-slate-300">
+                      {videoFrames.length} agent interactions recorded
+                    </p>
+                    <div className="flex justify-center gap-2 mt-4">
+                      {selectedAgents.map(agentId => {
+                        const agent = getAgentByType(agentId);
+                        return (
+                          <div key={agentId} className={`w-3 h-3 rounded-full ${
+                            agent?.color === 'green-500' ? 'bg-green-500' :
+                            agent?.color === 'purple-500' ? 'bg-purple-500' :
+                            agent?.color === 'blue-500' ? 'bg-blue-500' :
+                            'bg-gray-500'
+                          }`}></div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center text-slate-400">
+                    <Video className="w-20 h-20 mx-auto mb-4 text-slate-500" />
+                    <p className="text-xl font-semibold mb-2">No video generated yet</p>
+                    <p className="text-slate-500">Configure agents and click "Start Video Generation"</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Video Controls */}
@@ -433,7 +453,10 @@ export default function VideoCodeAgents() {
                   </Button>
                   
                   <div className="flex-1">
-                    <Progress value={(currentTime / duration) * 100} className="h-2" />
+                    <Progress 
+                      value={(currentTime / duration) * 100} 
+                      className="h-3 bg-slate-700"
+                    />
                   </div>
                   
                   <span className="text-sm text-muted-foreground">
@@ -446,45 +469,64 @@ export default function VideoCodeAgents() {
             {/* Agent Timeline */}
             {agents.length > 0 && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Users className="w-5 h-5" />
+                <h3 className="text-lg font-semibold flex items-center gap-2 text-white">
+                  <Users className="w-5 h-5 text-blue-400" />
                   Agent Execution Timeline
                 </h3>
-                <ScrollArea className="h-64 border rounded-lg p-4">
+                <ScrollArea className="h-64 bg-slate-900/30 border border-slate-700 rounded-lg p-4">
                   <div className="space-y-4">
                     {agents.map((agent, index) => {
                       const agentInfo = getAgentByType(agent.agent);
                       return (
-                        <div key={agent.id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-3 h-3 rounded-full bg-${agentInfo?.color}`}></div>
-                              <span className="font-medium">{agentInfo?.name}</span>
-                              <Badge variant={
-                                agent.status === 'completed' ? 'default' :
-                                agent.status === 'running' ? 'secondary' :
-                                agent.status === 'error' ? 'destructive' : 'outline'
-                              }>
+                        <div key={agent.id} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-4 h-4 rounded-full ${
+                                agentInfo?.color === 'green-500' ? 'bg-green-500' :
+                                agentInfo?.color === 'purple-500' ? 'bg-purple-500' :
+                                agentInfo?.color === 'blue-500' ? 'bg-blue-500' :
+                                'bg-gray-500'
+                              } shadow-lg`}></div>
+                              <span className="font-semibold text-white">{agentInfo?.name}</span>
+                              <Badge 
+                                variant={
+                                  agent.status === 'completed' ? 'default' :
+                                  agent.status === 'running' ? 'secondary' :
+                                  agent.status === 'error' ? 'destructive' : 'outline'
+                                }
+                                className={
+                                  agent.status === 'completed' ? 'bg-green-600 hover:bg-green-600' :
+                                  agent.status === 'running' ? 'bg-blue-600 hover:bg-blue-600 animate-pulse' :
+                                  ''
+                                }
+                              >
                                 {agent.status}
                               </Badge>
                             </div>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-sm font-medium text-slate-300">
                               {agent.progress}%
                             </span>
                           </div>
                           
-                          <Progress value={agent.progress} className="h-1 mb-3" />
+                          <Progress 
+                            value={agent.progress} 
+                            className="h-2 mb-4 bg-slate-700" 
+                          />
                           
                           {agent.status === 'completed' && (
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                               {showExplanations && (
-                                <p className="text-sm text-muted-foreground">
-                                  {agent.explanation}
-                                </p>
+                                <div className="bg-slate-900/50 border border-slate-600 rounded-lg p-3">
+                                  <p className="text-sm text-slate-300 leading-relaxed">
+                                    <span className="text-slate-400 font-medium">Analysis:</span> {agent.explanation}
+                                  </p>
+                                </div>
                               )}
                               {showLiveCode && agent.code && (
-                                <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs font-mono overflow-x-auto">
-                                  <pre>{agent.code.substring(0, 200)}...</pre>
+                                <div className="bg-slate-900 border border-slate-700 p-4 rounded-lg overflow-x-auto">
+                                  <pre className="text-sm text-green-400 font-mono leading-relaxed whitespace-pre-wrap">
+                                    {agent.code.substring(0, 300)}...
+                                  </pre>
                                 </div>
                               )}
                             </div>
