@@ -32,13 +32,9 @@ interface VideoFrame {
   explanation: string;
 }
 
-export default function VideoCodeAgents() {
-  const [recording, setRecording] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+export default function VibeCodeAgents() {
+  const [collaborating, setCollaborating] = useState(false);
   const [agents, setAgents] = useState<AgentExecution[]>([]);
-  const [videoFrames, setVideoFrames] = useState<VideoFrame[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -77,17 +73,15 @@ export default function VideoCodeAgents() {
     }
   }, [playing, duration]);
 
-  const startVideoGeneration = async () => {
+  const startVibeCollaboration = async () => {
     if (!prompt.trim()) {
       toast({ title: "Error", description: "Please enter a coding prompt", variant: "destructive" });
       return;
     }
 
     setLoading(true);
-    setRecording(true);
+    setCollaborating(true);
     setAgents([]);
-    setVideoFrames([]);
-    setCurrentTime(0);
 
     try {
       // Create agent execution tasks
@@ -141,34 +135,28 @@ export default function VideoCodeAgents() {
           } : a
         ));
 
-        // Add video frame
-        const frame: VideoFrame = {
-          timestamp: Date.now() - agentTasks[0].timestamp,
-          agentId: agent.id,
-          action: `Generated ${language} code`,
-          code: result.code,
-          explanation: result.explanation
-        };
-
-        setVideoFrames(prev => [...prev, frame]);
+        // Update UI for collaboration vibe
+        toast({
+          title: `${agentInfo?.name} is vibing!`,
+          description: `Generated ${language} code with great energy`,
+        });
       }
 
-      setDuration(Date.now() - agentTasks[0].timestamp);
-      setRecording(false);
+      setCollaborating(false);
 
       toast({
-        title: "Video Generation Complete!",
-        description: `Created coding video with ${selectedAgents.length} AI agents`,
+        title: "Collaboration Complete! ✨",
+        description: `Amazing vibes from ${selectedAgents.length} AI agents working together`,
       });
 
     } catch (error) {
-      console.error('Video generation error:', error);
+      console.error('Vibe collaboration error:', error);
       toast({
         title: "Error",
-        description: "Failed to generate coding video",
+        description: "The vibe got disrupted - please try again",
         variant: "destructive",
       });
-      setRecording(false);
+      setCollaborating(false);
     } finally {
       setLoading(false);
     }
@@ -237,10 +225,10 @@ export default function VideoCodeAgents() {
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-          🎬 AI Video Coding Agents Platform
+          ✨ Vibe Code Agents Platform
         </h1>
         <p className="text-lg text-muted-foreground">
-          Watch AI agents collaborate in real-time to solve coding challenges
+          AI agents with great vibes collaborating to solve your coding challenges
         </p>
         <div className="flex justify-center gap-2 mt-4">
           {availableAgents.map(agent => (
@@ -258,9 +246,9 @@ export default function VideoCodeAgents() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5" />
-              Video Configuration
+              Vibe Configuration
             </CardTitle>
-            <CardDescription>Configure your AI coding agents video</CardDescription>
+            <CardDescription>Set up your AI agents for the perfect coding vibe</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
@@ -347,37 +335,37 @@ export default function VideoCodeAgents() {
             </div>
 
             <Button 
-              onClick={startVideoGeneration} 
-              disabled={loading || recording || selectedAgents.length === 0}
-              className="w-full"
+              onClick={startVibeCollaboration} 
+              disabled={loading || collaborating || selectedAgents.length === 0}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Generating Video...
+                  Setting the vibe...
                 </>
-              ) : recording ? (
+              ) : collaborating ? (
                 <>
-                  <Video className="w-4 h-4 mr-2" />
-                  Recording...
+                  <Sparkles className="w-4 h-4 mr-2 animate-pulse" />
+                  Collaborating with great vibes...
                 </>
               ) : (
                 <>
-                  <Play className="w-4 h-4 mr-2" />
-                  Start Video Generation
+                  <Zap className="w-4 h-4 mr-2" />
+                  Start Vibe Collaboration
                 </>
               )}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Video Player & Agent Timeline */}
+        {/* Collaboration Space & Agent Timeline */}
         <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Video className="w-5 h-5" />
-                AI Coding Video
+                <Sparkles className="w-5 h-5" />
+                AI Collaboration Space
               </div>
               <div className="flex gap-2">
                 {duration > 0 && (
@@ -396,45 +384,53 @@ export default function VideoCodeAgents() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Video Display Area */}
+            {/* Collaboration Display Area */}
             <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700 rounded-xl p-8 min-h-[300px] flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-transparent to-purple-500/5"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-transparent to-pink-500/10"></div>
               <div className="relative z-10">
-                {recording ? (
+                {collaborating ? (
                   <div className="text-center">
                     <div className="relative">
-                      <div className="animate-ping bg-red-500 w-6 h-6 rounded-full mx-auto mb-4 opacity-75"></div>
-                      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-red-500 w-4 h-4 rounded-full"></div>
+                      <div className="animate-bounce">
+                        <Sparkles className="w-16 h-16 mx-auto mb-4 text-purple-400" />
+                      </div>
                     </div>
-                    <p className="text-white text-xl font-semibold mb-2">Recording AI Agents...</p>
-                    <p className="text-slate-300">Capturing real-time collaboration</p>
+                    <p className="text-white text-xl font-semibold mb-2">AI Agents are vibing together! ✨</p>
+                    <p className="text-slate-300">Creating amazing code with collaborative energy</p>
                   </div>
-                ) : duration > 0 ? (
+                ) : agents.length > 0 ? (
                   <div className="text-center text-white">
-                    <Bot className="w-20 h-20 mx-auto mb-4 text-blue-400" />
-                    <p className="text-xl font-bold mb-2">Video Ready - {formatTime(duration)}</p>
-                    <p className="text-slate-300">
-                      {videoFrames.length} agent interactions recorded
-                    </p>
-                    <div className="flex justify-center gap-2 mt-4">
-                      {selectedAgents.map(agentId => {
+                    <div className="flex justify-center mb-4">
+                      {selectedAgents.map((agentId, index) => {
                         const agent = getAgentByType(agentId);
                         return (
-                          <div key={agentId} className={`w-3 h-3 rounded-full ${
-                            agent?.color === 'green-500' ? 'bg-green-500' :
-                            agent?.color === 'purple-500' ? 'bg-purple-500' :
-                            agent?.color === 'blue-500' ? 'bg-blue-500' :
-                            'bg-gray-500'
-                          }`}></div>
+                          <Bot 
+                            key={agentId} 
+                            className={`w-12 h-12 mx-1 ${
+                              agent?.color === 'green-500' ? 'text-green-400' :
+                              agent?.color === 'purple-500' ? 'text-purple-400' :
+                              agent?.color === 'blue-500' ? 'text-blue-400' :
+                              'text-gray-400'
+                            } animate-pulse`}
+                            style={{ animationDelay: `${index * 200}ms` }}
+                          />
                         );
                       })}
                     </div>
+                    <p className="text-xl font-bold mb-2">Collaboration Complete! 🎉</p>
+                    <p className="text-slate-300">
+                      {agents.length} agents brought the best vibes to your code
+                    </p>
                   </div>
                 ) : (
                   <div className="text-center text-slate-400">
-                    <Video className="w-20 h-20 mx-auto mb-4 text-slate-500" />
-                    <p className="text-xl font-semibold mb-2">No video generated yet</p>
-                    <p className="text-slate-500">Configure agents and click "Start Video Generation"</p>
+                    <div className="flex justify-center mb-4">
+                      <Bot className="w-16 h-16 mx-2 text-slate-500" />
+                      <Users className="w-16 h-16 mx-2 text-slate-500" />
+                      <Code className="w-16 h-16 mx-2 text-slate-500" />
+                    </div>
+                    <p className="text-xl font-semibold mb-2">Ready for some coding vibes</p>
+                    <p className="text-slate-500">Configure your agents and start the collaboration</p>
                   </div>
                 )}
               </div>

@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code, Sparkles, Map, Zap, Monitor, ExternalLink, Video } from "lucide-react";
+import { Wand2, Bug, Github, Rocket, Users, Plus, Globe, MessageSquare, Building, Code, Sparkles, Map, Zap, Monitor, ExternalLink } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function QuickActions() {
@@ -133,12 +133,12 @@ export default function QuickActions() {
       },
     },
     {
-      title: "Video Code Agents",
-      description: "Multi-AI collaborative coding videos",
-      icon: Video,
+      title: "Vibe Code Agents",
+      description: "Multi-AI collaborative coding with great vibes",
+      icon: Sparkles,
       color: "pink-600",
       onClick: () => {
-        setLocation('/video-code-agents');
+        setLocation('/vibe-code-agents');
       },
     },
     {
