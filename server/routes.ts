@@ -431,31 +431,55 @@ This project was created with AI-powered development tools and includes:
   // ==================== AGENTS ROUTE ====================
   app.get("/api/agents", async (req, res) => {
     try {
-      // Return available AI agents for collaboration
+      // Return specialized development team agents
       const agents = [
         { 
-          id: "openai", 
-          name: "OpenAI Codex", 
+          id: "project-manager", 
+          name: "Jordan - Project Manager", 
           model: "gpt-4o", 
-          specialty: "Code Generation",
+          specialty: "Project Management & Planning",
           status: "online",
-          capabilities: ["code_generation", "debugging", "optimization"]
+          capabilities: ["roadmap_planning", "task_coordination", "timeline_management", "team_leadership"]
         },
         { 
-          id: "claude", 
-          name: "Claude AI", 
+          id: "ui-designer", 
+          name: "Maya - UI/UX Designer", 
           model: "claude-sonnet-4-20250514", 
-          specialty: "Analysis & Documentation",
+          specialty: "UI/UX Design & User Experience",
           status: "online",
-          capabilities: ["code_analysis", "documentation", "architecture"]
+          capabilities: ["design_systems", "user_research", "prototyping", "accessibility"]
         },
         { 
-          id: "gemini", 
-          name: "Google Gemini", 
-          model: "gemini-pro", 
-          specialty: "Multi-modal Processing",
+          id: "backend-dev", 
+          name: "Sam - Backend Developer", 
+          model: "gpt-4o", 
+          specialty: "Backend Development & APIs",
           status: "online",
-          capabilities: ["multimodal", "reasoning", "integration"]
+          capabilities: ["api_design", "database_architecture", "security", "performance"]
+        },
+        { 
+          id: "frontend-dev", 
+          name: "Alex - Frontend Developer", 
+          model: "claude-sonnet-4-20250514", 
+          specialty: "Frontend Development & React",
+          status: "online",
+          capabilities: ["react_development", "responsive_design", "state_management", "ui_implementation"]
+        },
+        { 
+          id: "fullstack-dev", 
+          name: "Casey - Full-Stack Developer", 
+          model: "gemini-2.5-flash", 
+          specialty: "Full-Stack Development",
+          status: "online",
+          capabilities: ["end_to_end_development", "system_integration", "deployment", "debugging"]
+        },
+        { 
+          id: "devops-specialist", 
+          name: "Taylor - DevOps Engineer", 
+          model: "gpt-4o", 
+          specialty: "DevOps & Infrastructure",
+          status: "online",
+          capabilities: ["deployment", "ci_cd", "monitoring", "scaling"]
         }
       ];
       res.json(agents);
@@ -1635,6 +1659,51 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
   });
 
   // ==================== AGENT COLLABORATION ROUTES ====================
+  
+  // Team conversation creation route  
+  app.post('/api/projects/:projectId/team-conversation', async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const { agentIds } = req.body;
+      
+      if (!agentIds || !Array.isArray(agentIds)) {
+        return res.status(400).json({ message: 'Agent IDs are required' });
+      }
+      
+      // Validate agent IDs against available agents
+      const availableAgentIds = ['project-manager', 'ui-designer', 'backend-dev', 'frontend-dev', 'fullstack-dev', 'devops-specialist'];
+      const validAgentIds = agentIds.filter(id => availableAgentIds.includes(id));
+      
+      if (validAgentIds.length === 0) {
+        return res.status(400).json({ message: 'No valid agent IDs provided' });
+      }
+      
+      const conversationId = `conv_${Date.now()}`;
+      const participants = validAgentIds.map(id => {
+        const agentMap = {
+          'project-manager': 'Jordan - Project Manager',
+          'ui-designer': 'Maya - UI/UX Designer', 
+          'backend-dev': 'Sam - Backend Developer',
+          'frontend-dev': 'Alex - Frontend Developer',
+          'fullstack-dev': 'Casey - Full-Stack Developer',
+          'devops-specialist': 'Taylor - DevOps Engineer'
+        };
+        return { id, name: agentMap[id] };
+      });
+      
+      console.log(`Team conversation created for project ${projectId} with agents:`, participants);
+      
+      res.json({
+        success: true,
+        conversationId,
+        participants,
+        message: `Team conversation created with ${participants.length} specialists`
+      });
+    } catch (error) {
+      console.error('Error creating team conversation:', error);
+      res.status(500).json({ message: 'Failed to create team conversation' });
+    }
+  });
   
   // Start agent communication
   app.post('/api/enhanced-agents/start-communication', async (req, res) => {
