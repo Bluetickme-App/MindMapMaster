@@ -296,7 +296,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== AGENTS ROUTE ====================
   app.get("/api/agents", async (req, res) => {
     try {
-      const agents = await storage.getAgents();
+      // Return available AI agents for collaboration
+      const agents = [
+        { 
+          id: "openai", 
+          name: "OpenAI Codex", 
+          model: "gpt-4o", 
+          specialty: "Code Generation",
+          status: "online",
+          capabilities: ["code_generation", "debugging", "optimization"]
+        },
+        { 
+          id: "claude", 
+          name: "Claude AI", 
+          model: "claude-sonnet-4-20250514", 
+          specialty: "Analysis & Documentation",
+          status: "online",
+          capabilities: ["code_analysis", "documentation", "architecture"]
+        },
+        { 
+          id: "gemini", 
+          name: "Google Gemini", 
+          model: "gemini-pro", 
+          specialty: "Multi-modal Processing",
+          status: "online",
+          capabilities: ["multimodal", "reasoning", "integration"]
+        }
+      ];
       res.json(agents);
     } catch (error) {
       console.error("Error fetching agents:", error);
