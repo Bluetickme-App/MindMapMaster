@@ -298,6 +298,105 @@ Focus on:
   }
 }
 
+export async function generateFullAppWithClaude(prompt: string, language: string = "javascript", framework: string = "react") {
+  try {
+    const systemPrompt = `You are an expert full-stack developer specializing in creating complete, production-ready applications. Your task is to build entire applications, not just code snippets.
+
+CRITICAL REQUIREMENTS:
+1. Create a COMPLETE APPLICATION with all necessary files
+2. Include proper project structure and file organization  
+3. Add all required dependencies and package configurations
+4. Implement full functionality, not just basic examples
+5. Include error handling, validation, and best practices
+6. Provide setup instructions and deployment guidance
+
+RESPONSE FORMAT - Return valid JSON:
+{
+  "projectName": "descriptive-project-name",
+  "description": "Brief description of the application",
+  "structure": {
+    "mainFiles": [
+      {
+        "path": "src/App.jsx", 
+        "content": "complete file content here",
+        "description": "Main application component"
+      }
+    ],
+    "configFiles": [
+      {
+        "path": "package.json",
+        "content": "complete package.json with all dependencies", 
+        "description": "Project configuration"
+      }
+    ],
+    "styleFiles": [
+      {
+        "path": "src/styles.css",
+        "content": "complete CSS styling",
+        "description": "Application styles"
+      }
+    ]
+  },
+  "dependencies": {
+    "main": ["react", "react-dom"],
+    "dev": ["vite", "@vitejs/plugin-react"]
+  },
+  "setupInstructions": [
+    "npm install",
+    "npm run dev"
+  ],
+  "features": ["list of implemented features"],
+  "architecture": "explanation of the application architecture"
+}`;
+
+    const enhancedPrompt = `Build a complete ${framework} application in ${language}.
+
+PROJECT REQUIREMENTS:
+${prompt}
+
+TECHNICAL SPECIFICATIONS:
+- Language: ${language}
+- Framework: ${framework}
+- Create a fully functional application
+- Include all necessary files and configurations
+- Implement proper component structure
+- Add styling and responsive design
+- Include state management if needed
+- Add proper error handling
+- Provide clear documentation
+
+Make this a production-ready application that can be immediately deployed and used.`;
+
+    const message = await anthropic.messages.create({
+      model: DEFAULT_MODEL_STR,
+      max_tokens: 8000,
+      system: systemPrompt,
+      messages: [
+        {
+          role: "user",
+          content: enhancedPrompt
+        }
+      ],
+    });
+
+    const content = message.content[0];
+    if (content.type === "text") {
+      return {
+        code: content.text,
+        explanation: `Claude generated complete ${language} application using ${framework}`,
+        language,
+        framework,
+        type: "full-application"
+      };
+    }
+
+    throw new Error("Unexpected response format from Claude");
+  } catch (error) {
+    console.error("Claude API error:", error);
+    throw new Error(`Failed to generate application with Claude: ${error.message}`);
+  }
+}
+
 export async function testConnection(): Promise<boolean> {
   try {
     const message = await anthropic.messages.create({

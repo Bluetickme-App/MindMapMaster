@@ -85,11 +85,11 @@ export default function SimpleCodeGenerator() {
     setResults(newResults);
 
     try {
-      // Generate with OpenAI
+      // Generate with OpenAI (Full App)
       const openaiPromise = fetch('/api/generate-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, language: 'javascript', framework: 'react' }),
+        body: JSON.stringify({ prompt: `Create a complete web application: ${prompt}`, language: 'javascript', framework: 'react' }),
       }).then(async (res) => {
         const data = await res.json();
         let code = data.code;
@@ -114,11 +114,11 @@ export default function SimpleCodeGenerator() {
         ));
       });
 
-      // Generate with Claude
-      const claudePromise = fetch('/api/claude/code', {
+      // Generate with Claude (Full App)
+      const claudePromise = fetch('/api/claude/full-app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, language: 'javascript', framework: 'react' }),
+        body: JSON.stringify({ prompt: `Build a comprehensive application: ${prompt}`, language: 'javascript', framework: 'react' }),
       }).then(async (res) => {
         const data = await res.json();
         let code = data.code;
@@ -146,8 +146,8 @@ export default function SimpleCodeGenerator() {
       await Promise.all([openaiPromise, claudePromise]);
 
       toast({
-        title: "Code Generated!",
-        description: "Both AI agents have created code for you",
+        title: "Applications Generated!",
+        description: "Both AI development team members have created complete applications for you",
       });
 
     } catch (error) {

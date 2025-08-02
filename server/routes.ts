@@ -1130,6 +1130,23 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
     }
   });
 
+  app.post('/api/claude/full-app', async (req, res) => {
+    try {
+      const { prompt, language = 'javascript', framework = 'react' } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ message: 'Prompt is required' });
+      }
+      
+      const result = await anthropicService.generateFullAppWithClaude(prompt, language, framework);
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error with Claude full app generation:', error);
+      res.status(500).json({ message: 'Failed to generate full application with Claude' });
+    }
+  });
+
   // ==================== VIDEO CODE AGENTS PLATFORM ====================
   app.post('/api/video-agents/generate', async (req, res) => {
     try {
