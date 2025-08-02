@@ -187,16 +187,32 @@ export class EnhancedAgentsTeam {
     
     this.collaborations.set(collaboration.id, collaboration);
     
-    // Start with initial planning message
-    await this.addInitialPlanningMessage(collaboration);
+    // Start automatic collaboration between agents
+    await this.initiateAgentCollaboration(collaboration);
     
     return collaboration;
   }
   
-  private async addInitialPlanningMessage(collaboration: TeamCollaboration): Promise<void> {
+  private async initiateAgentCollaboration(collaboration: TeamCollaboration): Promise<void> {
+    // Phase 1: Lead agent creates initial plan
     const leadAgent = collaboration.participants.find(agent => 
       agent.role === 'Backend Developer' || agent.role === 'Frontend Developer'
     ) || collaboration.participants[0];
+    
+    await this.addAgentPlanningMessage(collaboration, leadAgent);
+    
+    // Phase 2: Other agents respond to the plan
+    for (const agent of collaboration.participants) {
+      if (agent.id !== leadAgent.id) {
+        await this.addAgentCollaborationResponse(collaboration, agent, leadAgent);
+      }
+    }
+    
+    // Phase 3: Lead agent creates implementation roadmap
+    await this.addImplementationRoadmap(collaboration, leadAgent);
+  }
+
+  private async addAgentPlanningMessage(collaboration: TeamCollaboration, leadAgent: TeamAgent): Promise<void> {
     
     const planningPrompt = `
     Project Objective: ${collaboration.objective}
@@ -248,6 +264,117 @@ export class EnhancedAgentsTeam {
     
     collaboration.messages.push(message);
   }
+
+  private async addAgentCollaborationResponse(collaboration: TeamCollaboration, agent: TeamAgent, leadAgent: TeamAgent): Promise<void> {
+    const lastMessage = collaboration.messages[collaboration.messages.length - 1];
+    const responsePrompt = `
+    ${agent.systemPrompt}
+    
+    Project: ${collaboration.objective}
+    
+    ${leadAgent.name} just shared this plan:
+    "${lastMessage?.content || 'Initial project planning'}"
+    
+    As ${agent.name} (${agent.role}), please:
+    1. Review the plan from your expertise perspective
+    2. Suggest improvements or additions specific to your role
+    3. Identify potential challenges you can help solve
+    4. Propose specific tasks you can handle
+    5. Ask questions or provide recommendations to the team
+    
+    Be collaborative and constructive. Address the team directly.
+    `;
+
+    let response: string;
+    
+    try {
+      if (agent.provider === 'claude') {
+        const result = await anthropicService.generateFullApp(responsePrompt);
+        response = result.explanation || `As ${agent.name}, I'm ready to contribute to this project with my ${agent.specialization} expertise.`;
+      } else if (agent.provider === 'openai') {
+        const result = await multiAIService.generateCode({
+          prompt: responsePrompt,
+          language: 'collaboration',
+          framework: 'team-discussion'
+        });
+        response = result.explanation || result.code || `${agent.name} here - I can help with ${agent.specialization} aspects of this project.`;
+      } else {
+        response = `Hi team! ${agent.name} here. Based on the plan, I can contribute with ${agent.specialization}. Let me know how I can help make this project successful!`;
+      }
+    } catch (error) {
+      console.error(`Error getting response from ${agent.name}:`, error);
+      response = `${agent.name} here! I'm excited to work on this project. My ${agent.specialization} skills will be valuable for achieving our objective.`;
+    }
+
+    const message: AgentMessage = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      agentId: agent.id,
+      content: response,
+      timestamp: new Date(),
+      type: 'message',
+      metadata: { phase: 'collaboration', role: agent.role, respondingTo: leadAgent.id }
+    };
+
+    collaboration.messages.push(message);
+    
+    // Small delay to make the conversation feel more natural
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+
+  private async addImplementationRoadmap(collaboration: TeamCollaboration, leadAgent: TeamAgent): Promise<void> {
+    const teamResponses = collaboration.messages.slice(1); // Skip the initial planning message
+    const roadmapPrompt = `
+    ${leadAgent.systemPrompt}
+    
+    Project: ${collaboration.objective}
+    
+    The team has provided their input:
+    ${teamResponses.map(msg => {
+      const agent = collaboration.participants.find(a => a.id === msg.agentId);
+      return `${agent?.name}: ${msg.content}`;
+    }).join('\n\n')}
+    
+    As the lead ${leadAgent.role}, create a comprehensive implementation roadmap that:
+    1. Incorporates all team feedback and suggestions
+    2. Defines clear phases and milestones
+    3. Assigns specific tasks to each team member based on their expertise
+    4. Sets realistic timelines
+    5. Identifies dependencies between tasks
+    
+    Make this actionable and specific. The team is ready to start building!
+    `;
+
+    let roadmap: string;
+    
+    try {
+      if (leadAgent.provider === 'claude') {
+        const result = await anthropicService.generateFullApp(roadmapPrompt);
+        roadmap = result.explanation || 'Implementation roadmap created. The team can now begin development with clear tasks and timelines.';
+      } else {
+        const result = await multiAIService.generateCode({
+          prompt: roadmapPrompt,
+          language: 'roadmap',
+          framework: 'project-planning'
+        });
+        roadmap = result.explanation || result.code || 'Roadmap ready - let\'s build this together!';
+      }
+    } catch (error) {
+      console.error(`Error creating roadmap:`, error);
+      roadmap = `Team roadmap ready! Based on everyone's input, we have a clear path forward. Each team member has specific tasks aligned with their expertise.`;
+    }
+
+    const message: AgentMessage = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      agentId: leadAgent.id,
+      content: roadmap,
+      timestamp: new Date(),
+      type: 'decision',
+      metadata: { phase: 'implementation', role: leadAgent.role, type: 'roadmap' }
+    };
+
+    collaboration.messages.push(message);
+    collaboration.currentPhase = 'implementation';
+  }
   
   async addMessage(collaborationId: string, agentId: string, content: string, type: 'message' | 'code' | 'suggestion' | 'decision' = 'message'): Promise<AgentMessage> {
     const collaboration = this.collaborations.get(collaborationId);
@@ -285,7 +412,7 @@ export class EnhancedAgentsTeam {
     }
     
     const context = this.buildContextForAgent(collaboration, agent);
-    const prompt = `${context}\n\nUser Message: ${userMessage}\n\nPlease respond as ${agent.name} (${agent.role}):`;
+    const prompt = `${context}\n\nUser Message: ${userMessage}\n\nPlease respond as ${agent.name} (${agent.role}) and coordinate with your team:`;
     
     let response: string;
     
@@ -311,7 +438,67 @@ export class EnhancedAgentsTeam {
     // Add the response as a message
     await this.addMessage(collaborationId, agentId, response, 'message');
     
+    // Trigger team collaboration response
+    setTimeout(() => {
+      this.triggerTeamResponse(collaborationId, agentId, userMessage, response);
+    }, 3000);
+    
     return response;
+  }
+
+  private async triggerTeamResponse(collaborationId: string, triggeringAgentId: string, userMessage: string, agentResponse: string): Promise<void> {
+    const collaboration = this.collaborations.get(collaborationId);
+    if (!collaboration) return;
+    
+    // Find other agents who might have relevant input
+    const otherAgents = collaboration.participants.filter(a => a.id !== triggeringAgentId);
+    const triggeringAgent = collaboration.participants.find(a => a.id === triggeringAgentId);
+    
+    // Randomly select 1-2 other agents to respond
+    const respondingAgents = otherAgents.sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 2) + 1);
+    
+    for (const agent of respondingAgents) {
+      const teamPrompt = `
+      ${agent.systemPrompt}
+      
+      Project: ${collaboration.objective}
+      
+      User just asked: "${userMessage}"
+      ${triggeringAgent?.name} responded: "${agentResponse}"
+      
+      As ${agent.name} (${agent.role}), provide a brief, helpful response that:
+      1. Supports or builds on ${triggeringAgent?.name}'s response
+      2. Adds your expertise perspective
+      3. Suggests next steps or offers assistance
+      
+      Keep it concise and collaborative.
+      `;
+
+      try {
+        let teamResponse: string;
+        
+        if (agent.provider === 'claude') {
+          const result = await anthropicService.generateFullApp(teamPrompt);
+          teamResponse = result.explanation || `Great point, ${triggeringAgent?.name}! I can help with the ${agent.specialization} aspects.`;
+        } else if (agent.provider === 'openai') {
+          const result = await multiAIService.generateCode({
+            prompt: teamPrompt,
+            language: 'collaboration',
+            framework: 'team-response'
+          });
+          teamResponse = result.explanation || result.code || `I agree with ${triggeringAgent?.name}. Let me contribute with ${agent.specialization}.`;
+        } else {
+          teamResponse = `Good approach, ${triggeringAgent?.name}! I can support this with my ${agent.specialization} expertise.`;
+        }
+
+        await this.addMessage(collaborationId, agent.id, teamResponse, 'message');
+        
+        // Stagger responses to feel more natural
+        await new Promise(resolve => setTimeout(resolve, 4000));
+      } catch (error) {
+        console.error(`Error getting team response from ${agent.name}:`, error);
+      }
+    }
   }
   
   private buildContextForAgent(collaboration: TeamCollaboration, agent: TeamAgent): string {
