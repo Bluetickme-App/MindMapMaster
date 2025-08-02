@@ -131,9 +131,60 @@ export default function WorkspacePage() {
     }
   };
   
-  const getAgentName = (agentId: number) => {
+  const getAgentName = (agentId: string) => {
     const agent = agentsQuery.data?.find((a: Agent) => a.id === agentId);
     return agent?.name || `Agent ${agentId}`;
+  };
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async (data: { content: string }) => {
+      if (!conversationId) {
+        throw new Error('No active conversation');
+      }
+      
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: data.content }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      setChatCommand('');
+      // Refresh messages immediately
+      fetchConversationMessages();
+    },
+    onError: (error: any) => {
+      console.error('Failed to send message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleChatCommand = () => {
+    if (!chatCommand.trim()) return;
+    
+    if (!conversationId) {
+      toast({
+        title: "Error",
+        description: "Please create a team conversation first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    sendMessageMutation.mutate({ content: chatCommand.trim() });
   };
   
   // Poll for new messages periodically when conversation is active
@@ -249,58 +300,7 @@ export default function WorkspacePage() {
     }
   }, [selectedProject, queryClient]);
 
-  const handleChatCommand = async () => {
-    if (!chatCommand.trim()) return;
-    
-    if (!conversationId) {
-      toast({
-        title: "No conversation",
-        description: "Please create a team conversation first",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    const newMessage: ConsoleMessage = {
-      id: Date.now().toString(),
-      type: 'info',
-      message: chatCommand,
-      timestamp: new Date().toLocaleTimeString(),
-    };
-
-    setMessages(prev => [...prev, newMessage]);
-    
-    try {
-      // Send message to the team conversation
-      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          content: chatCommand,
-          messageType: 'text'
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-      
-      // Poll for agent responses after a short delay
-      setTimeout(() => {
-        fetchConversationMessages();
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive",
-      });
-    }
-    
-    setChatCommand('');
-  };
 
   const handleFileSelect = async (node: FileNode) => {
     if (node.type === 'file') {

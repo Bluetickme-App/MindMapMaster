@@ -1666,6 +1666,159 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
 
   // ==================== AGENT COLLABORATION ROUTES ====================
   
+  // In-memory storage for conversations (in production, use database)
+  const conversations = new Map();
+  const conversationMessages = new Map();
+  
+  // Get all conversations
+  app.get('/api/conversations', async (req, res) => {
+    try {
+      const conversationsList = Array.from(conversations.values());
+      res.json(conversationsList);
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      res.status(500).json({ message: 'Failed to fetch conversations' });
+    }
+  });
+
+  // Get messages for a specific conversation
+  app.get('/api/conversations/:conversationId/messages', async (req, res) => {
+    try {
+      const { conversationId } = req.params;
+      const messages = conversationMessages.get(conversationId) || [];
+      res.json(messages);
+    } catch (error) {
+      console.error('Error fetching conversation messages:', error);
+      res.status(500).json({ message: 'Failed to fetch messages' });
+    }
+  });
+
+  // Send message to conversation (user message + trigger agent responses)
+  app.post('/api/conversations/:conversationId/messages', async (req, res) => {
+    try {
+      const { conversationId } = req.params;
+      const { content, senderType = 'user', senderId = 'user' } = req.body;
+      
+      if (!content) {
+        return res.status(400).json({ message: 'Message content is required' });
+      }
+
+      // Get existing messages or create new array
+      let messages = conversationMessages.get(conversationId) || [];
+      
+      // Add user message
+      const userMessage = {
+        id: Date.now(),
+        conversationId,
+        content,
+        senderType,
+        senderId,
+        timestamp: new Date().toISOString()
+      };
+      
+      messages.push(userMessage);
+      conversationMessages.set(conversationId, messages);
+
+      // Get conversation participants to trigger agent responses
+      const conversation = conversations.get(conversationId);
+      if (conversation && conversation.participants) {
+        // Trigger agent responses after a delay
+        setTimeout(async () => {
+          await triggerAgentResponses(conversationId, content, conversation.participants);
+        }, 2000);
+      }
+
+      res.json(userMessage);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      res.status(500).json({ message: 'Failed to send message' });
+    }
+  });
+
+  // Function to trigger agent responses using AI services
+  async function triggerAgentResponses(conversationId, userMessage, participants) {
+    try {
+      // Select 1-2 random agents to respond
+      const respondingAgents = participants
+        .sort(() => 0.5 - Math.random())
+        .slice(0, Math.min(2, participants.length));
+
+      for (let i = 0; i < respondingAgents.length; i++) {
+        const agent = respondingAgents[i];
+        const delay = (i + 1) * 3000; // Stagger responses
+
+        setTimeout(async () => {
+          try {
+            let agentResponse = '';
+            const agentPrompt = `You are ${agent.name}. The user said: "${userMessage}". Respond professionally as your role would, offering relevant insights and next steps. Keep it concise (2-3 sentences).`;
+
+            // Use different AI services based on agent
+            if (agent.id === 'ui-designer') {
+              // Maya uses Claude
+              const result = await anthropicService.generateText({
+                prompt: agentPrompt,
+                maxTokens: 200,
+                temperature: 0.7
+              });
+              agentResponse = result.content;
+            } else if (agent.id === 'backend-dev') {
+              // Sam uses OpenAI
+              const result = await openaiService.generateText({
+                prompt: agentPrompt,
+                maxTokens: 200,
+                temperature: 0.7
+              });
+              agentResponse = result.choices[0].message.content;
+            } else {
+              // Default response for other agents
+              const roleResponses = {
+                'project-manager': `As the project manager, I think "${userMessage}" raises important considerations. Let me coordinate with the team to ensure we address this properly and stay on track with our timeline.`,
+                'frontend-dev': `From a frontend perspective, "${userMessage}" is something we can definitely implement. I'll need to consider the user experience and make sure the interface is intuitive and responsive.`,
+                'fullstack-dev': `Looking at this from both frontend and backend angles, "${userMessage}" requires careful planning. I can help bridge the gap between our UI needs and server-side requirements.`,
+                'devops-specialist': `For the DevOps side, "${userMessage}" has implications for our deployment and infrastructure. I'll make sure our CI/CD pipeline and scaling strategy can handle these requirements.`
+              };
+              agentResponse = roleResponses[agent.id] || `As ${agent.name}, I think "${userMessage}" is a great point! Let me contribute my expertise to help move this forward.`;
+            }
+
+            // Add agent response to conversation
+            let messages = conversationMessages.get(conversationId) || [];
+            const agentMessage = {
+              id: Date.now() + Math.random(),
+              conversationId,
+              content: agentResponse,
+              senderType: 'agent',
+              senderId: agent.id,
+              timestamp: new Date().toISOString()
+            };
+            
+            messages.push(agentMessage);
+            conversationMessages.set(conversationId, messages);
+            
+            console.log(`Agent ${agent.name} responded:`, agentResponse);
+          } catch (error) {
+            console.error(`Error generating response from ${agent.name}:`, error);
+            
+            // Fallback response if AI service fails
+            let messages = conversationMessages.get(conversationId) || [];
+            const fallbackMessage = {
+              id: Date.now() + Math.random(),
+              conversationId,
+              content: `Hi team! I'm ${agent.name}. I'm ready to help with this project. What specific tasks should I focus on?`,
+              senderType: 'agent',
+              senderId: agent.id,
+              timestamp: new Date().toISOString()
+            };
+            
+            messages.push(fallbackMessage);
+            conversationMessages.set(conversationId, messages);
+          }
+        }, delay);
+      }
+    } catch (error) {
+      console.error('Error triggering agent responses:', error);
+    }
+  }
+  
   // Team conversation creation route  
   app.post('/api/projects/:projectId/team-conversation', async (req, res) => {
     try {
@@ -1696,6 +1849,15 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
         };
         return { id, name: agentMap[id] };
       });
+      
+      // Store conversation in memory
+      const conversation = {
+        id: conversationId,
+        projectId,
+        participants,
+        createdAt: new Date().toISOString()
+      };
+      conversations.set(conversationId, conversation);
       
       console.log(`Team conversation created for project ${projectId} with agents:`, participants);
       
