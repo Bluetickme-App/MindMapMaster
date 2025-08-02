@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from 'ws';
 import { storage } from "./storage";
+import { agentOrchestrator } from "./agents/agent-orchestrator";
 import { GitHubService } from "./services/github";
 import { multiAIService } from "./services/multi-ai-provider";
 import { WebSocketManager } from "./services/websocket-manager";
@@ -2071,6 +2072,54 @@ Let's discuss our approach and divide the work. Who wants to start with the plan
     } catch (error) {
       console.error('Error triggering agent responses:', error);
       res.status(500).json({ message: 'Failed to trigger agent responses' });
+    }
+  });
+
+  // ==================== AGENT ORCHESTRATION ROUTES ====================
+  
+  // Execute specific agent task with tools
+  app.post('/api/agents/:agentId/execute', async (req, res) => {
+    try {
+      const { agentId } = req.params;
+      const { task, context } = req.body;
+      
+      if (!task) {
+        return res.status(400).json({ message: 'Task is required' });
+      }
+      
+      const result = await agentOrchestrator.executeAgentTask(agentId, task, context);
+      res.json(result);
+    } catch (error) {
+      console.error('Error executing agent task:', error);
+      res.status(500).json({ message: 'Failed to execute agent task', error: error.message });
+    }
+  });
+
+  // Orchestrate team collaboration
+  app.post('/api/agents/orchestrate-team', async (req, res) => {
+    try {
+      const { projectId, objective, participants } = req.body;
+      
+      if (!projectId || !objective || !participants?.length) {
+        return res.status(400).json({ message: 'Project ID, objective, and participants are required' });
+      }
+      
+      const result = await agentOrchestrator.orchestrateTeam(projectId, objective, participants);
+      res.json(result);
+    } catch (error) {
+      console.error('Error orchestrating team:', error);
+      res.status(500).json({ message: 'Failed to orchestrate team', error: error.message });
+    }
+  });
+
+  // Get available agents with tools and capabilities
+  app.get('/api/agents/enhanced', async (req, res) => {
+    try {
+      const agents = agentOrchestrator.getAvailableAgents();
+      res.json(agents);
+    } catch (error) {
+      console.error('Error getting enhanced agents:', error);
+      res.status(500).json({ message: 'Failed to get enhanced agents' });
     }
   });
 
