@@ -1513,11 +1513,28 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
         return res.status(400).json({ message: 'File path is required' });
       }
       
-      const content = await fileSystemService.readFile(filePath as string);
-      res.type('text/plain').send(content);
+      console.log(`Reading file: ${filePath}`);
+      
+      // Read file directly using Node.js fs for better reliability
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      
+      let fullPath = filePath as string;
+      
+      // Handle relative paths from project root
+      if (!fullPath.startsWith('/')) {
+        fullPath = path.resolve(process.cwd(), fullPath);
+      } else {
+        fullPath = path.resolve(process.cwd(), fullPath.slice(1));
+      }
+      
+      const content = await fs.readFile(fullPath, 'utf-8');
+      console.log(`Successfully read file: ${fullPath}`);
+      
+      res.json({ content, path: filePath });
     } catch (error) {
       console.error('Error reading file:', error);
-      res.status(500).json({ message: 'Failed to read file', error: error.message });
+      res.status(404).json({ message: 'File not found', error: error.message });
     }
   });
 

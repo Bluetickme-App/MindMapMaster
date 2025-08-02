@@ -134,12 +134,15 @@ export default function ReplitWorkspace() {
     mutationFn: async (filePath: string) => {
       const response = await fetch(`/api/files/content?path=${encodeURIComponent(filePath)}`);
       if (!response.ok) throw new Error('Failed to load file content');
-      return response.text();
+      const data = await response.json();
+      return data.content || '';
     },
     onSuccess: (content) => {
       setFileContent(content);
     },
     onError: (error) => {
+      console.error('File loading error:', error);
+      setFileContent('// Failed to load file content\n// Please try selecting another file');
       toast({
         title: "Error Loading File",
         description: "Failed to load file content",
