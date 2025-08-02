@@ -6,6 +6,7 @@ import { GitHubService } from "./services/github";
 import { multiAIService } from "./services/multi-ai-provider";
 import { WebSocketManager } from "./services/websocket-manager";
 import { debugCode } from "./services/openai";
+import * as openaiService from "./services/openai";
 import * as anthropicService from "./services/anthropic";
 import { initializeDevTeamAgents } from "./services/team-agents";
 import { DevUrlConstructor } from "./services/dev-url-constructor";
@@ -1147,60 +1148,21 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
         return res.status(400).json({ message: 'Prompt is required' });
       }
       
-      // Generate complete application structure using OpenAI instead (faster)
-      const enhancedPrompt = `Create a complete, production-ready ${framework} application for: "${prompt}". 
-
-Include:
-- Complete file structure
-- Main App component with routing
-- All necessary components
-- Styling (CSS/Tailwind)
-- State management
-- Error handling
-- Package.json with dependencies
-- README with setup instructions
-
-Make it a professional, deployable application.`;
+      // Use Claude for comprehensive application generation
+      const result = await anthropicService.generateFullApp(prompt);
       
-      const result = await openaiService.generateCode(enhancedPrompt, language, framework);
-      
-      // Enhanced result for full applications
+      // Enhanced result for full applications  
       const enhancedResult = {
-        code: `# Complete ${prompt} Application
-
-## Project Structure
-\`\`\`
-${prompt.toLowerCase().replace(/\s+/g, '-')}-app/
-├── public/
-│   └── index.html
-├── src/
-│   ├── components/
-│   ├── pages/
-│   ├── styles/
-│   ├── App.jsx
-│   └── main.jsx
-├── package.json
-└── README.md
-\`\`\`
-
-## Generated Application Code
-
-${result.code}
-
-## Setup Instructions
-1. \`npm install\`
-2. \`npm run dev\`
-3. Open http://localhost:3000
-
-## Features Included
-- Modern React ${framework} architecture
-- Responsive design
-- Component-based structure
-- Production-ready setup`,
-        explanation: `Maya built a complete ${framework} application for "${prompt}" with full project structure, components, styling, and deployment configuration`,
+        code: result.code || `# Complete ${prompt} Application\n\n${result.explanation || 'Application generated successfully'}`,
+        explanation: result.explanation || `Maya built a complete ${framework} application for "${prompt}"`,
         language,
         framework,
-        type: 'full-application'
+        type: 'full-application',
+        projectData: {
+          projectName: prompt,
+          framework,
+          language
+        }
       };
       
       res.json(enhancedResult);
@@ -1228,7 +1190,7 @@ ${result.code}
         let result;
         
         if (agentType === 'openai') {
-          result = await aiService.generateCode(prompt, language, framework);
+          result = await multiAIService.generateCode({ prompt, language, framework });
           result.agent = 'OpenAI Codex';
           result.model = 'gpt-4o';
         } else if (agentType === 'claude') {
