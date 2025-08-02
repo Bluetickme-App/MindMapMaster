@@ -287,12 +287,13 @@ export default function WorkspacePage() {
       queryClient.invalidateQueries({ queryKey: ['/api/files'] });
       
       // Check if project has an existing conversation
-      fetch(`/api/conversations?projectId=${selectedProject.id}`)
+      fetch(`/api/conversations`)
         .then(res => res.json())
         .then(conversations => {
-          if (conversations && conversations.length > 0) {
-            setConversationId(conversations[0].id);
-            setSelectedAgents(conversations[0].participants || []);
+          const projectConversation = conversations.find(c => c.projectId == selectedProject.id);
+          if (projectConversation) {
+            setConversationId(projectConversation.id);
+            setSelectedAgents(projectConversation.participants || []);
             fetchConversationMessages();
           }
         })

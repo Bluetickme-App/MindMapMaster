@@ -428,6 +428,95 @@ This project was created with AI-powered development tools and includes:
     }
   });
 
+  // ==================== CONVERSATION ROUTES ====================
+  app.get("/api/conversations", async (req, res) => {
+    try {
+      const { projectId, participantId } = req.query;
+      let conversations;
+      
+      if (projectId) {
+        conversations = memStorage.conversations.filter(c => c.projectId === parseInt(projectId as string));
+      } else if (participantId) {
+        conversations = memStorage.conversations.filter(c => 
+          c.participants && c.participants.includes(participantId as string)
+        );
+      } else {
+        conversations = memStorage.conversations;
+      }
+      
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  app.post("/api/conversations", async (req, res) => {
+    try {
+      const { projectId, name, type, participants } = req.body;
+      
+      const conversation = {
+        id: Date.now(),
+        projectId: projectId || null,
+        name: name || "New Conversation",
+        type: type || "project",
+        participants: participants || [],
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      memStorage.conversations.push(conversation);
+      res.json(conversation);
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      res.status(500).json({ message: "Failed to create conversation" });
+    }
+  });
+
+  app.get("/api/conversations/:id/messages", async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const messages = memStorage.messages.filter(m => m.conversationId === conversationId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/conversations/:id/messages", async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const { content, messageType } = req.body;
+      
+      const message = {
+        id: Date.now().toString(),
+        conversationId,
+        content,
+        senderType: "user",
+        senderId: "user",
+        timestamp: new Date().toISOString()
+      };
+      
+      memStorage.messages.push(message);
+      
+      // Get conversation participants for AI responses
+      const conversation = memStorage.conversations.find(c => c.id === conversationId);
+      if (conversation && conversation.participants) {
+        // Trigger AI agent responses after a delay
+        setTimeout(async () => {
+          await generateAgentResponses(conversationId, content, conversation.participants);
+        }, 2000);
+      }
+      
+      res.json(message);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
   // ==================== AGENTS ROUTE ====================
   app.get("/api/agents", async (req, res) => {
     try {
@@ -2010,5 +2099,41 @@ Let's discuss our approach and divide the work. Who wants to start with the plan
   }
 
   // Return existing HTTP server
+  // ==================== MEMORY STORAGE ====================
+  const memStorage = {
+    conversations: [] as any[],
+    messages: [] as any[]
+  };
+
+  // ==================== AI AGENT RESPONSE FUNCTION ====================
+  async function generateAgentResponses(conversationId: any, userMessage: any, participants: any) {
+    const agentResponses = {
+      'project-manager': 'I\'ll coordinate this task and break it down into manageable components. Let me create a development roadmap and assign specific responsibilities to each team member.',
+      'ui-designer': 'I\'m analyzing the user experience requirements and will create wireframes and design mockups. I\'ll focus on creating an intuitive interface that matches modern fitness app standards.',
+      'backend-dev': 'I\'ll design the database schema and API architecture. For a fitness platform like Glofox, we need robust member management, payment processing, and real-time booking systems.',
+      'frontend-dev': 'I\'ll implement the React components with responsive design. I\'ll ensure the UI is mobile-first since fitness apps are primarily used on mobile devices.',
+      'fullstack-dev': 'I\'ll handle the end-to-end integration and ensure all systems work together seamlessly. I\'ll also set up the deployment pipeline and testing framework.',
+      'devops-specialist': 'I\'ll set up the infrastructure, CI/CD pipeline, and monitoring systems. For a fitness platform, we need high availability and scalable architecture.'
+    };
+
+    for (const participant of participants) {
+      if (participant !== 'user') {
+        const agentId = participant.toLowerCase().replace(/[^a-z-]/g, '');
+        const responseText = agentResponses[agentId] || `I'm ${participant} and I'm ready to contribute to this Glofox clone project. Let me know what specific tasks you'd like me to focus on.`;
+
+        const agentMessage = {
+          id: (Date.now() + Math.random()).toString(),
+          conversationId,
+          content: responseText,
+          senderType: "agent",
+          senderId: participant,
+          timestamp: new Date().toISOString()
+        };
+
+        memStorage.messages.push(agentMessage);
+      }
+    }
+  }
+
   return httpServer;
 }
