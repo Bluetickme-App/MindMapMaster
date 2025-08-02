@@ -172,7 +172,14 @@ export default function VibeCodeAgents() {
         parsedCode = parsed.code;
         parsedExplanation = parsed.explanation;
       } catch (e) {
-        console.log('Could not parse nested JSON, using raw response');
+        console.log('Could not parse nested JSON, using raw response', e);
+        // If JSON parsing fails, try to extract just the code between backticks
+        if (parsedCode.includes('```')) {
+          const codeMatch = parsedCode.match(/```(?:javascript|js|jsx|typescript|ts|tsx)?\n?(.*?)\n?```/s);
+          if (codeMatch) {
+            parsedCode = codeMatch[1];
+          }
+        }
       }
     }
     
@@ -204,7 +211,14 @@ export default function VibeCodeAgents() {
         parsedCode = parsed.code;
         parsedExplanation = parsed.explanation;
       } catch (e) {
-        console.log('Could not parse nested JSON, using raw response');
+        console.log('Could not parse nested JSON, using raw response', e);
+        // If JSON parsing fails, try to extract just the code between backticks
+        if (parsedCode.includes('```')) {
+          const codeMatch = parsedCode.match(/```(?:javascript|js|jsx|typescript|ts|tsx)?\n?(.*?)\n?```/s);
+          if (codeMatch) {
+            parsedCode = codeMatch[1];
+          }
+        }
       }
     }
     
