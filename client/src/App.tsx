@@ -37,6 +37,7 @@ import CodexEnhanced from "@/pages/CodexEnhanced";
 import ClaudeSDK from "@/pages/ClaudeSDK";
 import VibeCodeAgents from "@/pages/VideoCodeAgents";
 import SimpleCodeGenerator from "@/pages/SimpleCodeGenerator";
+import EnhancedCollaboration from "@/pages/enhanced-collaboration";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -76,6 +77,7 @@ function Router() {
       <Route path="/claude-sdk" component={ClaudeSDK} />
       <Route path="/vibe-code-agents" component={VibeCodeAgents} />
       <Route path="/simple-generator" component={SimpleCodeGenerator} />
+      <Route path="/enhanced-collaboration" component={EnhancedCollaboration} />
       <Route component={NotFound} />
     </Switch>
   );

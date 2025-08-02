@@ -30,7 +30,7 @@ export default function QuickActions() {
       icon: Users,
       color: "purple-500",
       onClick: () => {
-        setLocation('/collaboration');
+        setLocation('/enhanced-collaboration');
       },
     },
     {

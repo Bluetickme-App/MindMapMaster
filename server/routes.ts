@@ -10,6 +10,7 @@ import * as anthropicService from "./services/anthropic";
 import { initializeDevTeamAgents } from "./services/team-agents";
 import { DevUrlConstructor } from "./services/dev-url-constructor";
 import { codexEnhanced } from "./services/codex-enhanced";
+import { enhancedAgentsTeam, ENHANCED_TEAM_AGENTS } from "./services/enhanced-agents-team";
 import { 
   insertCodeGenerationSchema, insertProjectSchema, insertApiTestSchema
 } from "@shared/schema";
@@ -1260,6 +1261,134 @@ ${result.code}
     } catch (error) {
       console.error('Video agents error:', error);
       res.status(500).json({ message: 'Failed to generate with video agents' });
+    }
+  });
+
+  // ==================== ENHANCED AGENTS TEAM ROUTES ====================
+  app.get('/api/enhanced-agents', (req, res) => {
+    res.json({
+      agents: ENHANCED_TEAM_AGENTS,
+      totalAgents: ENHANCED_TEAM_AGENTS.length,
+      activeAgents: ENHANCED_TEAM_AGENTS.filter(a => a.active).length
+    });
+  });
+
+  app.post('/api/enhanced-agents/collaborate', async (req, res) => {
+    try {
+      const { objective, agentIds } = req.body;
+      
+      if (!objective || !agentIds || !Array.isArray(agentIds)) {
+        return res.status(400).json({ 
+          message: 'Objective and agentIds array are required' 
+        });
+      }
+
+      const collaboration = await enhancedAgentsTeam.startCollaboration(objective, agentIds);
+      
+      res.json({
+        success: true,
+        collaboration: {
+          id: collaboration.id,
+          objective: collaboration.objective,
+          participants: collaboration.participants.map(p => ({
+            id: p.id,
+            name: p.name,
+            role: p.role,
+            specialization: p.specialization
+          })),
+          status: collaboration.status,
+          currentPhase: collaboration.currentPhase,
+          createdAt: collaboration.createdAt
+        }
+      });
+    } catch (error) {
+      console.error('Enhanced agents collaboration error:', error);
+      res.status(500).json({ 
+        message: 'Failed to start collaboration',
+        error: error.message 
+      });
+    }
+  });
+
+  app.get('/api/enhanced-agents/collaborations', (req, res) => {
+    try {
+      const collaborations = enhancedAgentsTeam.getAllCollaborations();
+      
+      res.json({
+        collaborations: collaborations.map(c => ({
+          id: c.id,
+          objective: c.objective,
+          participants: c.participants.map(p => ({
+            id: p.id,
+            name: p.name,
+            role: p.role
+          })),
+          status: c.status,
+          currentPhase: c.currentPhase,
+          messageCount: c.messages.length,
+          createdAt: c.createdAt,
+          completedAt: c.completedAt
+        }))
+      });
+    } catch (error) {
+      console.error('Get collaborations error:', error);
+      res.status(500).json({ message: 'Failed to get collaborations' });
+    }
+  });
+
+  app.get('/api/enhanced-agents/collaborations/:id', (req, res) => {
+    try {
+      const { id } = req.params;
+      const collaboration = enhancedAgentsTeam.getCollaboration(id);
+      
+      if (!collaboration) {
+        return res.status(404).json({ message: 'Collaboration not found' });
+      }
+
+      res.json({
+        collaboration: {
+          ...collaboration,
+          messages: collaboration.messages.map(m => ({
+            id: m.id,
+            content: m.content,
+            agentName: collaboration.participants.find(p => p.id === m.agentId)?.name || 'Unknown',
+            agentRole: collaboration.participants.find(p => p.id === m.agentId)?.role || 'Unknown',
+            timestamp: m.timestamp,
+            type: m.type
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Get collaboration error:', error);
+      res.status(500).json({ message: 'Failed to get collaboration' });
+    }
+  });
+
+  app.post('/api/enhanced-agents/collaborations/:id/message', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { message, agentId } = req.body;
+      
+      if (!message || !agentId) {
+        return res.status(400).json({ 
+          message: 'Message content and agentId are required' 
+        });
+      }
+
+      const response = await enhancedAgentsTeam.getAgentResponse(id, agentId, message);
+      
+      res.json({
+        success: true,
+        response,
+        agentId,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Agent message error:', error);
+      res.status(500).json({ 
+        message: 'Failed to get agent response',
+        error: error.message 
+      });
     }
   });
 
