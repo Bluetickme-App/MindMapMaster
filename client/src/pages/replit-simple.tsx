@@ -11,10 +11,13 @@ import { Link } from 'wouter';
 import { Github, Bot, Globe, Zap, Users, Code2 } from 'lucide-react';
 
 interface Agent {
-  id: number;
+  id: string;
   name: string;
   specialization: string;
-  aiProvider: string;
+  specialty?: string;
+  aiProvider?: string;
+  model?: string;
+  status?: string;
 }
 
 export default function ReplitSimple() {
@@ -24,7 +27,7 @@ export default function ReplitSimple() {
   const [githubToken, setGithubToken] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [brandName, setBrandName] = useState('');
-  const [selectedAgents, setSelectedAgents] = useState<number[]>([]);
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [useTeam, setUseTeam] = useState(false);
   const [error, setError] = useState('');
   const queryClient = useQueryClient();
@@ -70,7 +73,7 @@ export default function ReplitSimple() {
     createProjectMutation.mutate(projectData);
   };
 
-  const toggleAgent = (agentId: number) => {
+  const toggleAgent = (agentId: string) => {
     setSelectedAgents(prev => 
       prev.includes(agentId) 
         ? prev.filter(id => id !== agentId)
