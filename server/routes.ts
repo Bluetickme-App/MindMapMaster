@@ -1138,7 +1138,27 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
         return res.status(400).json({ message: 'Prompt is required' });
       }
       
-      const result = await anthropicService.generateFullAppWithClaude(prompt, language, framework);
+      // Use simplified prompt for faster response
+      const enhancedPrompt = `Create a complete ${framework} ${language} application: ${prompt}
+
+Requirements:
+- Full working application with all files
+- Modern UI design with proper styling  
+- All necessary components and logic
+- Production-ready code structure
+- Include package.json with dependencies
+
+Provide the complete application code with proper file structure.`;
+      
+      const result = await anthropicService.generateCode({
+        prompt: enhancedPrompt,
+        language,
+        framework
+      });
+      
+      // Mark as full application type
+      result.type = 'full-application';
+      result.explanation = `Maya generated a complete ${framework} application: ${result.explanation}`;
       
       res.json(result);
     } catch (error) {

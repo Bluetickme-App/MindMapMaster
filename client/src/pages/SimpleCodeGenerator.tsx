@@ -95,13 +95,13 @@ export default function SimpleCodeGenerator() {
         let code = data.code;
         let explanation = data.explanation;
 
-        // Parse nested JSON if needed
+        // Handle OpenAI response parsing
         if (typeof code === 'string' && code.startsWith('```json')) {
           try {
             const jsonStr = code.replace(/```json\n/, '').replace(/\n```$/, '');
             const parsed = JSON.parse(jsonStr);
-            code = parsed.code;
-            explanation = parsed.explanation;
+            code = parsed.code || code;
+            explanation = parsed.explanation || explanation;
           } catch (e) {
             console.log('Using raw response');
           }
@@ -124,13 +124,16 @@ export default function SimpleCodeGenerator() {
         let code = data.code;
         let explanation = data.explanation;
 
-        // Parse nested JSON if needed
-        if (typeof code === 'string' && code.startsWith('```json')) {
+        // Handle structured application response
+        if (data.type === 'full-application' && data.projectData) {
+          code = `🚀 Complete Application Generated!\n\n${code}`;
+          explanation = `Maya built: ${data.projectData.projectName || 'Full Application'} - ${explanation}`;
+        } else if (typeof code === 'string' && code.startsWith('```json')) {
           try {
             const jsonStr = code.replace(/```json\n/, '').replace(/\n```$/, '');
             const parsed = JSON.parse(jsonStr);
-            code = parsed.code;
-            explanation = parsed.explanation;
+            code = parsed.code || code;
+            explanation = parsed.explanation || explanation;
           } catch (e) {
             console.log('Using raw response');
           }
