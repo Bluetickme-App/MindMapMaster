@@ -57,15 +57,17 @@ interface ConsoleMessage {
 }
 
 interface Agent {
-  id: number;
+  id: string;
   name: string;
-  type: string;
-  description: string;
-  specialization: string;
-  capabilities: string[];
-  status: 'active' | 'busy' | 'offline';
-  aiProvider: 'openai' | 'claude' | 'gemini';
-  experienceLevel: 'expert' | 'senior' | 'junior';
+  type?: string;
+  description?: string;
+  specialty?: string;
+  specialization?: string;
+  capabilities?: string[];
+  status?: 'active' | 'busy' | 'offline' | 'online';
+  aiProvider?: 'openai' | 'claude' | 'gemini';
+  model?: string;
+  experienceLevel?: 'expert' | 'senior' | 'junior';
 }
 
 export default function WorkspacePage() {
@@ -78,7 +80,7 @@ export default function WorkspacePage() {
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['src', 'components']));
   const [conversationId, setConversationId] = useState<number | null>(null);
-  const [agentCheckboxes, setAgentCheckboxes] = useState<Record<number, boolean>>({});
+  const [agentCheckboxes, setAgentCheckboxes] = useState<Record<string, boolean>>({});
   const [fileContent, setFileContent] = useState<string>('');
   const [openFiles, setOpenFiles] = useState<FileNode[]>([]);
   const [activeTab, setActiveTab] = useState<string>('preview');
@@ -146,7 +148,7 @@ export default function WorkspacePage() {
   }, [conversationId]);
 
   const createConversationMutation = useMutation({
-    mutationFn: async (data: { agentIds: number[] }) => {
+    mutationFn: async (data: { agentIds: string[] }) => {
       if (!selectedProject?.id) {
         throw new Error('No project selected');
       }
@@ -169,14 +171,14 @@ export default function WorkspacePage() {
       setConversationId(data.conversationId);
       
       // Update selected agents from the response
-      if (data.agents) {
-        setSelectedAgents(data.agents);
+      if (data.participants) {
+        setSelectedAgents(data.participants);
       }
       
       setMessages([{
         id: Date.now().toString(),
         type: 'success',
-        message: `Team conversation created with ${data.agents?.length || 0} agents`,
+        message: `Team conversation created with ${data.participants?.length || 0} agents`,
         timestamp: new Date().toLocaleTimeString()
       }]);
       setShowAgentSelection(false);
@@ -358,7 +360,7 @@ export default function WorkspacePage() {
 
 
 
-  const handleAgentToggle = (agentId: number, checked: boolean) => {
+  const handleAgentToggle = (agentId: string, checked: boolean) => {
     setAgentCheckboxes(prev => ({
       ...prev,
       [agentId]: checked
@@ -368,7 +370,7 @@ export default function WorkspacePage() {
   const handleCreateTeamConversation = () => {
     const selectedAgentIds = Object.entries(agentCheckboxes)
       .filter(([_, checked]) => checked)
-      .map(([id]) => parseInt(id));
+      .map(([id]) => id);
     
     if (selectedAgentIds.length === 0) {
       toast({
@@ -772,7 +774,10 @@ export default function WorkspacePage() {
                             <Checkbox
                               id={`agent-${agent.id}`}
                               checked={agentCheckboxes[agent.id] || false}
-                              onCheckedChange={(checked) => handleAgentToggle(agent.id, checked as boolean)}
+                              onCheckedChange={(checked) => {
+                                console.log('Agent checkbox changed:', agent.id, checked);
+                                handleAgentToggle(agent.id, checked as boolean);
+                              }}
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center space-x-2 mb-1">
