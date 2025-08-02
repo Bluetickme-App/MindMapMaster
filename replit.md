@@ -5,6 +5,7 @@ CodeCraft is an AI-powered development assistant designed to streamline the deve
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
+Interface preference: Clean, focused dashboard with only essential working functions.
 
 ### Development Preferences
 - Multi-agent capabilities similar to LangChain model
@@ -44,6 +45,7 @@ Preferred communication style: Simple, everyday language.
 - **Build Ambitious Apps Platform**: Professional multi-agent AI collaboration system inspired by Emergent.sh, focusing on production-ready application development. Combines OpenAI Codex and Claude Sonnet 4.0 for intelligent code generation, architecture planning, and comprehensive app building. Features real-time agent coordination, live code preview, AI reasoning display, and production mode deployment.
 - **Enhanced Replit AI System**: Provides both Agent (complete app generation from natural language with transparent effort-based pricing) and Assistant (code help, bug fixes, feature implementation) capabilities, outperforming Replit's native AI through multi-provider intelligence and comprehensive checkpoints.
 - **Full Application Generation System**: Implements `/api/claude/full-app` endpoint for comprehensive application creation. Maya (Claude-powered agent) generates complete React applications with project structure, components, styling, setup instructions, and deployment configuration using enhanced OpenAI backend for reliability.
+- **Streamlined Dashboard**: Cleaned up QuickActions grid to show only 6 essential, working functions: Simple Generator (full app creation), Create Project, Multi-Agent Collaboration, Generate Code, GitHub Sync, and Dev URLs. Removed 16+ non-functional or redundant items for a focused user experience.
 - **Development Workspace**: A full-featured, Replit-like environment with a 3-panel layout including a file explorer, code editor (Monaco), live preview, terminal, and browser tabs, integrated with AI agents for collaborative coding. It supports real file system access and dynamic Dev URLs.
 - **Extension Management System**: A marketplace for downloadable tool functions (25+) categorized for development, database, DevOps, and more, allowing agents to perform complex operations.
 - **Agent Server Access System**: Allows AI agents to interact directly with the server environment, including NPM dependency management, deep debugging, and configuration updates.

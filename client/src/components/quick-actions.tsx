@@ -7,12 +7,12 @@ export default function QuickActions() {
 
   const actions = [
     {
-      title: "Replit Simple",
-      description: "Create, GitHub import, or clone websites",
+      title: "Simple Generator",
+      description: "Build complete applications with AI team",
       icon: Zap,
       color: "purple-600",
       onClick: () => {
-        setLocation('/replit-simple');
+        setLocation('/simple-generator');
       },
     },
     {
@@ -25,30 +25,12 @@ export default function QuickActions() {
       },
     },
     {
-      title: "Replit Clone",
-      description: "Full development environment",
-      icon: Code,
-      color: "blue-600",
-      onClick: () => {
-        setLocation('/replit');
-      },
-    },
-    {
       title: "Multi-Agent Collaboration",
       description: "AI teams working together",
       icon: Users,
       color: "purple-500",
       onClick: () => {
         setLocation('/collaboration');
-      },
-    },
-    {
-      title: "Live Coding View",
-      description: "Watch agents code in real-time",
-      icon: Monitor,
-      color: "green-500",
-      onClick: () => {
-        setLocation('/advanced-collaboration');
       },
     },
     {
@@ -61,84 +43,12 @@ export default function QuickActions() {
       },
     },
     {
-      title: "Debug Code",
-      description: "Intelligent error detection",
-      icon: Bug,
-      color: "accent",
-      onClick: () => {
-        setLocation('/debug');
-      },
-    },
-    {
       title: "GitHub Sync",
       description: "Repository management",
       icon: Github,
       color: "orange-500",
       onClick: () => {
         setLocation('/github');
-      },
-    },
-    {
-      title: "Deploy",
-      description: "Instant deployment",
-      icon: Rocket,
-      color: "purple-500",
-      onClick: () => {
-        setLocation('/deploy');
-      },
-    },
-    {
-      title: "Showcase Website",
-      description: "5-page professional portfolio",
-      icon: Globe,
-      color: "green-500",
-      onClick: () => {
-        setLocation('/showcase');
-      },
-    },
-    {
-      title: "Team Discussion",
-      description: "AI agents design collaboration",
-      icon: MessageSquare,
-      color: "cyan-500",
-      onClick: () => {
-        setLocation('/team-discussion');
-      },
-    },
-    {
-      title: "WeLet Properties",
-      description: "Property management platform",
-      icon: Building,
-      color: "emerald-500",
-      onClick: () => {
-        setLocation('/welet-properties');
-      },
-    },
-    {
-      title: "Replit AI Enhanced",
-      description: "Advanced AI Agent & Assistant",
-      icon: Zap,
-      color: "indigo-500",
-      onClick: () => {
-        setLocation('/replit-ai-enhanced');
-      },
-    },
-    {
-      title: "Claude AI Agent",
-      description: "Latest Claude Sonnet 4.0 SDK",
-      icon: MessageSquare,
-      color: "purple-600",
-      onClick: () => {
-        setLocation('/claude-sdk');
-      },
-    },
-    {
-      title: "Build Ambitious Apps",
-      description: "Multi-agent AI collaboration for production apps",
-      icon: Rocket,
-      color: "blue-600",
-      onClick: () => {
-        setLocation('/vibe-code-agents');
       },
     },
     {
@@ -150,55 +60,10 @@ export default function QuickActions() {
         setLocation('/dev-urls');
       },
     },
-    {
-      title: "Codex Enhanced",
-      description: "Advanced AI code generation",
-      icon: Code,
-      color: "violet-500",
-      onClick: () => {
-        setLocation('/codex-enhanced');
-      },
-    },
-    {
-      title: "Create New Repl",
-      description: "Simple project creation",
-      icon: Plus,
-      color: "green-500",
-      onClick: () => {
-        setLocation('/replit-simple');
-      },
-    },
-    {
-      title: "AI Development Roadmap",
-      description: "AI-powered roadmap & workspace",
-      icon: Map,
-      color: "teal-500",
-      onClick: () => {
-        setLocation('/agent-roadmap-flow');
-      },
-    },
-    {
-      title: "Multi-AI SDK Demo",
-      description: "OpenAI, Claude & Gemini integration",
-      icon: Zap,
-      color: "pink-500",
-      onClick: () => {
-        setLocation('/multi-ai-sdk-demo');
-      },
-    },
-    {
-      title: "Live Stream",
-      description: "Watch agents work in real-time",
-      icon: Users,
-      color: "cyan-500",
-      onClick: () => {
-        setLocation('/advanced-collaboration');
-      },
-    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       {actions.map((action) => {
         const Icon = action.icon;
         return (
