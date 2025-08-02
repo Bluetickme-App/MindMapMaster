@@ -1157,10 +1157,13 @@ Provide the complete application code with proper file structure.`;
       });
       
       // Mark as full application type
-      result.type = 'full-application';
-      result.explanation = `Maya generated a complete ${framework} application: ${result.explanation}`;
+      const enhancedResult = {
+        ...result,
+        type: 'full-application',
+        explanation: `Maya generated a complete ${framework} application: ${result.explanation}`
+      };
       
-      res.json(result);
+      res.json(enhancedResult);
     } catch (error) {
       console.error('Error with Claude full app generation:', error);
       res.status(500).json({ message: 'Failed to generate full application with Claude' });
