@@ -242,16 +242,13 @@ export default function VibeCodeAgents() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-8 text-center">
-        <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-slate-100 via-blue-100 to-slate-100 bg-clip-text text-transparent">
-          Build Ambitious Apps
+        <h1 className="text-4xl font-bold mb-4 text-white">
+          AI Code Generator
         </h1>
-        <h2 className="text-2xl font-semibold mb-4 text-slate-300">
-          With Multi-Agent AI Collaboration
-        </h2>
-        <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-          Advanced AI agents working together to create production-ready applications. Combining OpenAI Codex, Claude Sonnet 4.0, and intelligent collaboration patterns.
+        <p className="text-lg text-slate-400 max-w-xl mx-auto">
+          Tell AI what you want to build and watch multiple agents create code for you
         </p>
         <div className="flex justify-center gap-3 mt-6">
           {availableAgents.map(agent => (
