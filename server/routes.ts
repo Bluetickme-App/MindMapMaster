@@ -123,6 +123,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const projectData = insertProjectSchema.parse(req.body);
       const project = await storage.createProject({ ...projectData, userId: currentUserId });
+      
+      // Create actual project directory and files
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      
+      const projectDir = path.join(process.cwd(), 'projects', `${project.name.toLowerCase().replace(/\s+/g, '-')}-${project.id}`);
+      
+      try {
+        await fs.mkdir(projectDir, { recursive: true });
+        
+        // Create initial project structure
+        if (project.language === 'javascript' || project.framework === 'react') {
+          // Create package.json
+          await fs.writeFile(path.join(projectDir, 'package.json'), JSON.stringify({
+            name: project.name.toLowerCase().replace(/\s+/g, '-'),
+            version: '1.0.0',
+            description: project.description,
+            main: 'index.js',
+            scripts: {
+              start: 'node index.js',
+              dev: 'node index.js'
+            },
+            dependencies: {
+              express: '^4.18.0'
+            }
+          }, null, 2));
+          
+          // Create main index.js file
+          await fs.writeFile(path.join(projectDir, 'index.js'), `// ${project.name}
+// ${project.description}
+
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(express.static('public'));
+
+app.get('/', (req, res) => {
+  res.send(\`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${project.name}</title>
+      <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { background: #0066cc; color: white; padding: 20px; border-radius: 8px; }
+        .content { padding: 20px 0; }
+        .feature { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>${project.name}</h1>
+        <p>${project.description}</p>
+      </div>
+      <div class="content">
+        <h2>Welcome to your new project!</h2>
+        <p>This project was created with AI assistance and is ready for development.</p>
+        <div class="feature">
+          <h3>🚀 Ready to Deploy</h3>
+          <p>Your project structure is set up and ready to run.</p>
+        </div>
+        <div class="feature">
+          <h3>🤖 AI-Powered</h3>
+          <p>Built with intelligent assistance for faster development.</p>
+        </div>
+        <div class="feature">
+          <h3>🔧 Customizable</h3>
+          <p>Easily modify and extend to meet your specific needs.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  \`);
+});
+
+app.listen(port, () => {
+  console.log(\`${project.name} running on port \${port}\`);
+});
+`);
+
+          // Create README.md
+          await fs.writeFile(path.join(projectDir, 'README.md'), `# ${project.name}
+
+${project.description}
+
+## Getting Started
+
+\`\`\`bash
+npm install
+npm start
+\`\`\`
+
+## Development
+
+This project was created with AI-powered development tools and includes:
+
+- Express.js server setup
+- Static file serving
+- Basic HTML template
+- Development scripts
+
+## Features
+
+- ✅ Ready to run
+- ✅ AI-generated structure  
+- ✅ Customizable design
+- ✅ Production ready
+
+## Next Steps
+
+1. Run \`npm install\` to install dependencies
+2. Run \`npm start\` to start the server
+3. Open http://localhost:3000 to view your project
+4. Start building your amazing application!
+`);
+
+          // Create public directory
+          await fs.mkdir(path.join(projectDir, 'public'), { recursive: true });
+        }
+        
+        console.log(`✅ Created project directory and files: ${projectDir}`);
+      } catch (fsError) {
+        console.error('Error creating project files:', fsError);
+      }
+
       res.status(201).json(project);
     } catch (error) {
       console.error("Error creating project:", error);
@@ -1486,6 +1612,144 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
     } catch (error) {
       console.error('Error searching files:', error);
       res.status(500).json({ message: 'Failed to search files', error: error.message });
+    }
+  });
+
+  // ==================== AGENT COLLABORATION ROUTES ====================
+  
+  // Start agent communication
+  app.post('/api/enhanced-agents/start-communication', async (req, res) => {
+    try {
+      const { collaborationId, objective, agentIds } = req.body;
+      
+      // Get agent details
+      const agents = [
+        { id: "alex-frontend", name: "Alex", role: "Frontend Developer", provider: "openai" },
+        { id: "maya-designer", name: "Maya", role: "UI/UX Designer", provider: "claude" },
+        { id: "sam-backend", name: "Sam", role: "Backend Developer", provider: "gemini" },
+        { id: "jordan-fullstack", name: "Jordan", role: "Full-Stack Developer", provider: "openai" }
+      ];
+
+      // Start actual conversation between agents
+      const conversationStarter = `🎯 **New Collaboration Started**
+
+**Objective:** ${objective}
+
+**Team Members:**
+${agentIds.map(id => {
+  const agent = agents.find(a => a.id === id);
+  return agent ? `- ${agent.name} (${agent.role})` : `- ${id}`;
+}).join('\n')}
+
+Let's discuss our approach and divide the work. Who wants to start with the planning?`;
+
+      // Broadcast to all agents in the collaboration
+      websocketManager.broadcastToCollaboration(collaborationId, {
+        type: 'collaboration_start',
+        content: conversationStarter,
+        agentName: 'System',
+        timestamp: new Date().toISOString()
+      });
+
+      // Trigger first agent response after a short delay
+      setTimeout(async () => {
+        const firstAgent = agents.find(a => agentIds.includes(a.id));
+        if (firstAgent) {
+          try {
+            const response = await agentOrchestration.generateAgentResponse(
+              firstAgent.id,
+              `Hello team! I'm ${firstAgent.name}, your ${firstAgent.role}. For this objective: "${objective}", I suggest we start by understanding the requirements. What specific features do we need to implement?`,
+              { 
+                type: 'collaboration',
+                participants: agentIds,
+                objective 
+              }
+            );
+
+            websocketManager.broadcastToCollaboration(collaborationId, {
+              type: 'agent_message',
+              content: response.content,
+              agentName: firstAgent.name,
+              agentRole: firstAgent.role,
+              timestamp: new Date().toISOString()
+            });
+          } catch (error) {
+            console.error('Error generating first agent response:', error);
+          }
+        }
+      }, 2000);
+
+      res.json({ success: true, message: 'Agent communication started' });
+    } catch (error) {
+      console.error('Error starting agent communication:', error);
+      res.status(500).json({ message: 'Failed to start agent communication' });
+    }
+  });
+
+  // Trigger agent responses to user messages
+  app.post('/api/enhanced-agents/trigger-responses', async (req, res) => {
+    try {
+      const { collaborationId, userMessage, triggerAgentId } = req.body;
+      
+      const agents = [
+        { id: "alex-frontend", name: "Alex", role: "Frontend Developer", provider: "openai" },
+        { id: "maya-designer", name: "Maya", role: "UI/UX Designer", provider: "claude" },
+        { id: "sam-backend", name: "Sam", role: "Backend Developer", provider: "gemini" },
+        { id: "jordan-fullstack", name: "Jordan", role: "Full-Stack Developer", provider: "openai" }
+      ];
+
+      // Find agents that should respond (excluding the trigger agent if specified)
+      const respondingAgents = agents.filter(agent => 
+        !triggerAgentId || agent.id !== triggerAgentId
+      );
+
+      // Trigger responses from multiple agents with realistic delays
+      for (let i = 0; i < Math.min(2, respondingAgents.length); i++) {
+        const agent = respondingAgents[i];
+        const delay = (i + 1) * 3000; // Stagger responses by 3 seconds
+
+        setTimeout(async () => {
+          try {
+            let responsePrompt = `User said: "${userMessage}". `;
+            
+            if (agent.role === 'Frontend Developer') {
+              responsePrompt += `As a frontend developer, respond with your thoughts on the UI/UX aspects and any frontend implementation details.`;
+            } else if (agent.role === 'UI/UX Designer') {
+              responsePrompt += `As a UI/UX designer, provide design insights and user experience considerations.`;
+            } else if (agent.role === 'Backend Developer') {
+              responsePrompt += `As a backend developer, focus on server-side logic, APIs, and database considerations.`;
+            } else {
+              responsePrompt += `Provide your professional perspective based on your role as ${agent.role}.`;
+            }
+
+            const response = await agentOrchestration.generateAgentResponse(
+              agent.id,
+              responsePrompt,
+              { 
+                type: 'response_to_user',
+                userMessage,
+                collaborationId 
+              }
+            );
+
+            websocketManager.broadcastToCollaboration(collaborationId, {
+              type: 'agent_response',
+              content: response.content,
+              agentName: agent.name,
+              agentRole: agent.role,
+              timestamp: new Date().toISOString(),
+              inResponseTo: userMessage
+            });
+          } catch (error) {
+            console.error(`Error generating response from ${agent.name}:`, error);
+          }
+        }, delay);
+      }
+
+      res.json({ success: true, message: 'Agent responses triggered' });
+    } catch (error) {
+      console.error('Error triggering agent responses:', error);
+      res.status(500).json({ message: 'Failed to trigger agent responses' });
     }
   });
 

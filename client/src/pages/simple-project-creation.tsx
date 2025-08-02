@@ -38,7 +38,7 @@ export default function SimpleProjectCreation() {
     enabled: projectType === 'single' || step === 2
   });
 
-  const createProject = () => {
+  const createProject = async () => {
     if (!projectName.trim()) {
       toast({
         title: 'Project Name Required',
@@ -68,21 +68,50 @@ export default function SimpleProjectCreation() {
 
     setIsCreating(true);
     
-    // Navigate directly to Replit clone with project data as URL parameters
-    const params = new URLSearchParams({
-      name: projectName,
-      description: projectDescription || '',
-      type: projectType,
-      agents: projectType === 'single' ? selectedAgentId?.toString() || '' : selectedAgentIds.join(','),
-      brief: brief || ''
-    });
-    
-    toast({
-      title: 'Project Created',
-      description: 'Your project has been set up successfully.'
-    });
-    
-    setLocation(`/replit-clone?${params.toString()}`);
+    try {
+      // Actually create the project in the database and file system
+      const projectData = {
+        name: projectName,
+        description: projectDescription || '',
+        language: 'javascript',
+        framework: 'react',
+        status: 'active',
+        agentIds: projectType === 'single' ? [selectedAgentId] : selectedAgentIds,
+        projectType,
+        brief: brief || ''
+      };
+
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(projectData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create project');
+      }
+
+      const createdProject = await response.json();
+      
+      toast({
+        title: 'Project Created Successfully',
+        description: `${projectName} has been created and is ready for development.`
+      });
+
+      // Navigate to the actual workspace with the real project
+      setLocation(`/replit-workspace?project=${createdProject.id}`);
+    } catch (error) {
+      console.error('Error creating project:', error);
+      toast({
+        title: 'Project Creation Failed',
+        description: 'There was an error creating your project. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const getSuggestedAgents = () => {
