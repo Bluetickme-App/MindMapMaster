@@ -438,6 +438,7 @@ This project was created with AI-powered development tools and includes:
           name: "Jordan - Project Manager", 
           model: "gpt-4o", 
           specialty: "Project Management & Planning",
+          specialization: "Project Management & Planning",
           status: "online",
           capabilities: ["roadmap_planning", "task_coordination", "timeline_management", "team_leadership"]
         },
@@ -446,6 +447,7 @@ This project was created with AI-powered development tools and includes:
           name: "Maya - UI/UX Designer", 
           model: "claude-sonnet-4-20250514", 
           specialty: "UI/UX Design & User Experience",
+          specialization: "UI/UX Design & User Experience",
           status: "online",
           capabilities: ["design_systems", "user_research", "prototyping", "accessibility"]
         },
@@ -454,6 +456,7 @@ This project was created with AI-powered development tools and includes:
           name: "Sam - Backend Developer", 
           model: "gpt-4o", 
           specialty: "Backend Development & APIs",
+          specialization: "Backend Development & APIs",
           status: "online",
           capabilities: ["api_design", "database_architecture", "security", "performance"]
         },
@@ -462,6 +465,7 @@ This project was created with AI-powered development tools and includes:
           name: "Alex - Frontend Developer", 
           model: "claude-sonnet-4-20250514", 
           specialty: "Frontend Development & React",
+          specialization: "Frontend Development & React",
           status: "online",
           capabilities: ["react_development", "responsive_design", "state_management", "ui_implementation"]
         },
@@ -470,6 +474,7 @@ This project was created with AI-powered development tools and includes:
           name: "Casey - Full-Stack Developer", 
           model: "gemini-2.5-flash", 
           specialty: "Full-Stack Development",
+          specialization: "Full-Stack Development",
           status: "online",
           capabilities: ["end_to_end_development", "system_integration", "deployment", "debugging"]
         },
@@ -478,6 +483,7 @@ This project was created with AI-powered development tools and includes:
           name: "Taylor - DevOps Engineer", 
           model: "gpt-4o", 
           specialty: "DevOps & Infrastructure",
+          specialization: "DevOps & Infrastructure",
           status: "online",
           capabilities: ["deployment", "ci_cd", "monitoring", "scaling"]
         }

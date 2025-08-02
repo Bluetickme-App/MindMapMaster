@@ -235,11 +235,14 @@ export default function ReplitSimple() {
                         }`}
                       >
                         <div className="text-white font-medium text-sm">{agent.name}</div>
-                        <div className="text-slate-400 text-xs capitalize">{agent.specialization}</div>
+                        <div className="text-slate-400 text-xs capitalize">{agent.specialty || agent.specialization || 'General AI'}</div>
                         <Badge 
-                          className={`mt-1 text-xs ${getProviderColor(agent.aiProvider)}`}
+                          className={`mt-1 text-xs ${getProviderColor(agent.model || agent.aiProvider)}`}
                         >
-                          {agent.aiProvider}
+                          {agent.model === 'gpt-4o' ? 'OpenAI GPT-4o' : 
+                           agent.model === 'claude-sonnet-4-20250514' ? 'Claude Sonnet 4.0' :
+                           agent.model === 'gemini-2.5-flash' ? 'Google Gemini 2.5' : 
+                           agent.aiProvider || agent.model}
                         </Badge>
                       </div>
                     ))}

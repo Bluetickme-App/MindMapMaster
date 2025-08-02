@@ -785,19 +785,22 @@ export default function WorkspacePage() {
                                   <p className="font-medium">{agent.name}</p>
                                   <div className="flex items-center space-x-2">
                                     <Badge variant="outline" className="text-xs">
-                                      {agent.specialization}
+                                      {agent.specialty || agent.specialization || 'General AI'}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs capitalize">
+                                      {agent.model === 'gpt-4o' ? 'OpenAI GPT-4o' : 
+                                       agent.model === 'claude-sonnet-4-20250514' ? 'Claude Sonnet 4.0' :
+                                       agent.model === 'gemini-2.5-flash' ? 'Google Gemini 2.5' : 
+                                       agent.aiProvider || agent.model}
                                     </Badge>
                                     <Badge variant="outline" className="text-xs">
-                                      {agent.aiProvider}
-                                    </Badge>
-                                    <Badge variant="outline" className="text-xs">
-                                      {agent.experienceLevel}
+                                      {agent.status || agent.experienceLevel || 'online'}
                                     </Badge>
                                   </div>
                                 </div>
                               </div>
                               <p className="text-sm text-muted-foreground mb-2">
-                                {agent.description || `${agent.specialization} specialist`}
+                                {agent.description || `${agent.specialty || agent.specialization || 'AI'} specialist`}
                               </p>
                               <div className="flex flex-wrap gap-1">
                                 {agent.capabilities?.map((capability, index) => (
