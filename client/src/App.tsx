@@ -45,6 +45,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/collaboration" component={CollaborationDashboard} />
       <Route path="/team-agents" component={TeamAgentsPage} />
       <Route path="/generate" component={GeneratePage} />
