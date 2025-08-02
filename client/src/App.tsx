@@ -38,6 +38,7 @@ import ClaudeSDK from "@/pages/ClaudeSDK";
 import VibeCodeAgents from "@/pages/VideoCodeAgents";
 import SimpleCodeGenerator from "@/pages/SimpleCodeGenerator";
 import EnhancedCollaboration from "@/pages/enhanced-collaboration";
+import ReplitWorkspace from "@/pages/replit-workspace";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -78,6 +79,7 @@ function Router() {
       <Route path="/vibe-code-agents" component={VibeCodeAgents} />
       <Route path="/simple-generator" component={SimpleCodeGenerator} />
       <Route path="/enhanced-collaboration" component={EnhancedCollaboration} />
+      <Route path="/replit-workspace" component={ReplitWorkspace} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -60,6 +60,15 @@ export default function QuickActions() {
         setLocation('/dev-urls');
       },
     },
+    {
+      title: "Replit Workspace",
+      description: "Full IDE with project files",
+      icon: Monitor,
+      color: "green-500",
+      onClick: () => {
+        setLocation('/replit-workspace');
+      },
+    },
   ];
 
   return (

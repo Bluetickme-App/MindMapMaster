@@ -12,6 +12,7 @@ import { initializeDevTeamAgents } from "./services/team-agents";
 import { DevUrlConstructor } from "./services/dev-url-constructor";
 import { codexEnhanced } from "./services/codex-enhanced";
 import { enhancedAgentsTeam, ENHANCED_TEAM_AGENTS } from "./services/enhanced-agents-team";
+import { FileSystemService } from "./services/file-system";
 import { 
   insertCodeGenerationSchema, insertProjectSchema, insertApiTestSchema
 } from "@shared/schema";
@@ -32,6 +33,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize dev URL constructor
   const devUrlConstructor = new DevUrlConstructor(app);
   console.log("🌐 Dev URL Constructor initialized");
+  
+  // Initialize file system service
+  const fileSystemService = new FileSystemService();
+  console.log("📁 File System Service initialized");
   
   // ==================== HEALTH CHECK ROUTES ====================
   app.get('/health', (req, res) => {
@@ -1355,6 +1360,132 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
         message: 'Failed to get agent response',
         error: error.message 
       });
+    }
+  });
+
+  // ==================== FILE SYSTEM API ROUTES ====================
+  
+  // Get file tree structure
+  app.get('/api/files', async (req, res) => {
+    try {
+      const { path: targetPath } = req.query;
+      const fileTree = await fileSystemService.getFileTree(targetPath as string || '');
+      res.json(fileTree);
+    } catch (error) {
+      console.error('Error loading file tree:', error);
+      res.status(500).json({ message: 'Failed to load file tree', error: error.message });
+    }
+  });
+
+  // Get file content
+  app.get('/api/files/content', async (req, res) => {
+    try {
+      const { path: filePath } = req.query;
+      if (!filePath) {
+        return res.status(400).json({ message: 'File path is required' });
+      }
+      
+      const content = await fileSystemService.readFile(filePath as string);
+      res.type('text/plain').send(content);
+    } catch (error) {
+      console.error('Error reading file:', error);
+      res.status(500).json({ message: 'Failed to read file', error: error.message });
+    }
+  });
+
+  // Save file content
+  app.post('/api/files/content', async (req, res) => {
+    try {
+      const { path: filePath, content } = req.body;
+      if (!filePath || content === undefined) {
+        return res.status(400).json({ message: 'File path and content are required' });
+      }
+      
+      await fileSystemService.writeFile(filePath, content);
+      res.json({ success: true, message: 'File saved successfully' });
+    } catch (error) {
+      console.error('Error saving file:', error);
+      res.status(500).json({ message: 'Failed to save file', error: error.message });
+    }
+  });
+
+  // Create new file
+  app.post('/api/files', async (req, res) => {
+    try {
+      const { path: filePath, content = '' } = req.body;
+      if (!filePath) {
+        return res.status(400).json({ message: 'File path is required' });
+      }
+      
+      await fileSystemService.createFile(filePath, content);
+      res.json({ success: true, message: 'File created successfully' });
+    } catch (error) {
+      console.error('Error creating file:', error);
+      res.status(500).json({ message: 'Failed to create file', error: error.message });
+    }
+  });
+
+  // Create new folder
+  app.post('/api/files/folder', async (req, res) => {
+    try {
+      const { path: folderPath } = req.body;
+      if (!folderPath) {
+        return res.status(400).json({ message: 'Folder path is required' });
+      }
+      
+      await fileSystemService.createFolder(folderPath);
+      res.json({ success: true, message: 'Folder created successfully' });
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      res.status(500).json({ message: 'Failed to create folder', error: error.message });
+    }
+  });
+
+  // Delete file or folder
+  app.delete('/api/files', async (req, res) => {
+    try {
+      const { path: targetPath } = req.query;
+      if (!targetPath) {
+        return res.status(400).json({ message: 'Path is required' });
+      }
+      
+      await fileSystemService.deleteFile(targetPath as string);
+      res.json({ success: true, message: 'File/folder deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      res.status(500).json({ message: 'Failed to delete file/folder', error: error.message });
+    }
+  });
+
+  // Rename file or folder
+  app.put('/api/files/rename', async (req, res) => {
+    try {
+      const { oldPath, newPath } = req.body;
+      if (!oldPath || !newPath) {
+        return res.status(400).json({ message: 'Old path and new path are required' });
+      }
+      
+      await fileSystemService.renameFile(oldPath, newPath);
+      res.json({ success: true, message: 'File/folder renamed successfully' });
+    } catch (error) {
+      console.error('Error renaming file:', error);
+      res.status(500).json({ message: 'Failed to rename file/folder', error: error.message });
+    }
+  });
+
+  // Search files
+  app.get('/api/files/search', async (req, res) => {
+    try {
+      const { query, path: searchPath } = req.query;
+      if (!query) {
+        return res.status(400).json({ message: 'Search query is required' });
+      }
+      
+      const results = await fileSystemService.searchFiles(query as string, searchPath as string);
+      res.json(results);
+    } catch (error) {
+      console.error('Error searching files:', error);
+      res.status(500).json({ message: 'Failed to search files', error: error.message });
     }
   });
 

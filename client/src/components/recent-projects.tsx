@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
+import { Plus, Monitor } from "lucide-react";
 import { SiReact, SiPython, SiNodedotjs } from "react-icons/si";
 import type { Project } from "@shared/schema";
 
@@ -51,6 +52,7 @@ const formatTimeAgo = (date: Date) => {
 };
 
 export default function RecentProjects() {
+  const [, setLocation] = useLocation();
   const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ['/api/projects'],
   });
@@ -97,7 +99,7 @@ export default function RecentProjects() {
               return (
                 <div
                   key={project.id}
-                  className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:bg-slate-700/30 transition-colors cursor-pointer"
+                  className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:bg-slate-700/30 transition-colors"
                 >
                   <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                     <Icon className="w-4 h-4 text-primary" />
@@ -109,6 +111,15 @@ export default function RecentProjects() {
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 hover:bg-slate-600"
+                      onClick={() => setLocation(`/replit-workspace?project=${project.id}`)}
+                      title="Open in Workspace"
+                    >
+                      <Monitor className="h-3 w-3" />
+                    </Button>
                     <div className={`w-2 h-2 rounded-full ${
                       project.status === 'active' ? 'bg-accent' : 'bg-slate-500'
                     }`} />
