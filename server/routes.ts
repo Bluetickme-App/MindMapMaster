@@ -1149,7 +1149,11 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
       }
       
       // Use Claude for comprehensive application generation
-      const result = await anthropicService.generateFullApp(prompt);
+      const result = await anthropicService.generateCode({
+        prompt: `Create a complete, production-ready ${framework} application for: "${prompt}". Include full project structure, components, styling, and deployment instructions.`,
+        language,
+        framework
+      });
       
       // Enhanced result for full applications  
       const enhancedResult = {
