@@ -58,7 +58,9 @@ function Router() {
       <Route path="/settings" component={SettingsPage} />
       <Route path="/workspace" component={WorkspacePage} />
       <Route path="/showcase" component={ShowcaseWebsite} />
-      <Route path="/team-discussion" component={TeamShowcaseDiscussion} />
+      <Route path="/team-discussion">
+        {() => <TeamShowcaseDiscussion conversationId="" onBack={() => {}} />}
+      </Route>
       <Route path="/test-generation" component={TestGenerationPage} />
       <Route path="/create-project" component={CreateProjectPage} />
       <Route path="/project-builder" component={ProjectBuilderPage} />
