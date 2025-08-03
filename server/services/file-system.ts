@@ -23,9 +23,9 @@ export class FileSystemService {
   private projectRoot: string;
 
   constructor(projectRoot: string = process.cwd()) {
-    // Always point to TripleA luxury project for workspace
-    const tripleAPath = path.join(process.cwd(), 'projects', 'triplea-clone');
-    this.projectRoot = fs.existsSync(tripleAPath) ? tripleAPath : projectRoot;
+    // Default to workspace-demo directory for clean demo files
+    const workspaceDemoPath = path.join(process.cwd(), 'workspace-demo');
+    this.projectRoot = fs.existsSync(workspaceDemoPath) ? workspaceDemoPath : projectRoot;
   }
 
   setWorkingDirectory(newRoot: string): void {
