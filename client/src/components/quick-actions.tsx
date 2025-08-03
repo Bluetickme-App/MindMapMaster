@@ -7,6 +7,15 @@ export default function QuickActions() {
 
   const actions = [
     {
+      title: "Create Project",
+      description: "Interactive project creation with AI assistance",
+      icon: Plus,
+      color: "blue-500",
+      onClick: () => {
+        setLocation('/create-simple');
+      },
+    },
+    {
       title: "Multi-Agent Collaboration",
       description: "AI teams working together",
       icon: Users,

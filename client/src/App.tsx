@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
 import GeneratePage from "@/pages/generate";
 import GitHubPage from "@/pages/github";
+import SimpleProjectCreation from "@/pages/simple-project-creation";
 import EnhancedCollaboration from "@/pages/enhanced-collaboration";
 import DevUrls from "@/pages/DevUrls";
 import ReplitWorkspaceClone from "@/pages/replit-workspace-clone";
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/generate" component={GeneratePage} />
       <Route path="/github" component={GitHubPage} />
+      <Route path="/create-simple" component={SimpleProjectCreation} />
       <Route path="/enhanced-collaboration" component={EnhancedCollaboration} />
       <Route path="/dev-urls" component={DevUrls} />
       <Route path="/workspace" component={ReplitWorkspaceClone} />

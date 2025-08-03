@@ -69,7 +69,6 @@ export default function SimpleProjectCreation() {
     setIsCreating(true);
     
     try {
-      // Actually create the project in the database and file system
       const projectData = {
         name: projectName,
         description: projectDescription || '',
@@ -100,12 +99,12 @@ export default function SimpleProjectCreation() {
         description: `${projectName} has been created and is ready for development.`
       });
 
-      // Navigate to the actual workspace with the real project
-      setLocation(`/replit-workspace?project=${createdProject.id}`);
+      // Navigate to the workspace with the new project
+      setLocation('/workspace');
     } catch (error) {
       console.error('Error creating project:', error);
       toast({
-        title: 'Project Creation Failed',
+        title: 'Project Creation Failed', 
         description: 'There was an error creating your project. Please try again.',
         variant: 'destructive'
       });
@@ -115,13 +114,11 @@ export default function SimpleProjectCreation() {
   };
 
   const getSuggestedAgents = () => {
-    // Simple logic to suggest agents based on project description
     const description = projectDescription.toLowerCase();
     const suggested = agents.filter(agent => {
       const spec = agent.specialization.toLowerCase();
       if (description.includes('react') && spec.includes('react')) return true;
       if (description.includes('python') && spec.includes('python')) return true;
-      if (description.includes('php') && spec.includes('php')) return true;
       if (description.includes('design') && spec.includes('design')) return true;
       if (description.includes('css') && spec.includes('css')) return true;
       if (spec.includes('roadmap') || spec.includes('ai')) return true;
@@ -323,7 +320,7 @@ export default function SimpleProjectCreation() {
               <div className="flex items-center gap-2">
                 <Label>Suggested Team</Label>
                 <Badge variant="secondary" className="text-xs">
-                  Auto-selected based on your description
+                  Based on your description
                 </Badge>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -450,6 +447,17 @@ export default function SimpleProjectCreation() {
         {/* Step Content */}
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}
+        
+        {/* Back to Dashboard */}
+        <div className="text-center mt-8">
+          <Button 
+            variant="ghost" 
+            onClick={() => setLocation('/dashboard')}
+            className="text-gray-600 dark:text-gray-400"
+          >
+            ← Back to Dashboard
+          </Button>
+        </div>
       </div>
     </div>
   );
