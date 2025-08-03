@@ -117,6 +117,8 @@ export default function ReplitWorkspaceClone() {
   const [openTabs, setOpenTabs] = useState<FileNode[]>([]);
   const [activeTab, setActiveTab] = useState<string>('');
   const [isRunning, setIsRunning] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [projectUrl, setProjectUrl] = useState<string>('');
   const [terminal, setTerminal] = useState({ output: '', input: '' });
   const [rightPanelTab, setRightPanelTab] = useState('chat');
   
@@ -126,6 +128,73 @@ export default function ReplitWorkspaceClone() {
   const [chatInput, setChatInput] = useState('');
   const [showAgentDialog, setShowAgentDialog] = useState(false);
   const [conversationId, setConversationId] = useState<number | null>(null);
+
+  // Run/Share functionality
+  const handleRunProject = async () => {
+    if (!selectedProject) return;
+    
+    try {
+      if (isRunning) {
+        // Stop the project
+        const response = await fetch(`/api/projects/${selectedProject.id}/stop`, {
+          method: 'POST',
+        });
+        
+        if (response.ok) {
+          setIsRunning(false);
+          setTerminal(prev => ({ 
+            ...prev, 
+            output: prev.output + '\n🛑 Project stopped' 
+          }));
+          toast({
+            title: "Project Stopped",
+            description: `${selectedProject.name} has been stopped`,
+          });
+        }
+      } else {
+        // Start the project
+        const response = await fetch(`/api/projects/${selectedProject.id}/run`, {
+          method: 'POST',
+        });
+        
+        if (response.ok) {
+          setIsRunning(true);
+          setTerminal(prev => ({ 
+            ...prev, 
+            output: prev.output + '\n🚀 Starting project...\n✅ Server running on ' + projectUrl 
+          }));
+          toast({
+            title: "Project Started",
+            description: `${selectedProject.name} is now running`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling project:', error);
+      toast({
+        title: "Error",
+        description: "Failed to toggle project state",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copied!",
+        description: "Link copied to clipboard",
+      });
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
   
   // UI state
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -164,6 +233,15 @@ export default function ReplitWorkspaceClone() {
       setSelectedProject(projectsQuery.data[0]);
     }
   }, [projectsQuery.data, selectedProject]);
+
+  // Set project URL when project is selected
+  useEffect(() => {
+    if (selectedProject) {
+      // Create a dev URL for the project
+      const projectSlug = selectedProject.name.toLowerCase().replace(/\s+/g, '-');
+      setProjectUrl(`${window.location.origin}/dev/${projectSlug}`);
+    }
+  }, [selectedProject]);
 
   // Load file content
   const loadFileContent = async (file: FileNode) => {
@@ -479,7 +557,7 @@ export default function ReplitWorkspaceClone() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsRunning(!isRunning)}
+            onClick={handleRunProject}
             className={isRunning ? "text-red-500 hover:text-red-600" : "text-green-500 hover:text-green-600"}
           >
             {isRunning ? (
@@ -495,7 +573,11 @@ export default function ReplitWorkspaceClone() {
             )}
           </Button>
           
-          <Button variant="ghost" size="sm">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setShareDialogOpen(true)}
+          >
             <Share className="w-4 h-4 mr-2" />
             Share
           </Button>
@@ -822,19 +904,46 @@ export default function ReplitWorkspaceClone() {
                   </TabsContent>
 
                   <TabsContent value="preview" className="flex-1 m-0">
-                    <div className="h-full p-4">
-                      <div className="bg-white rounded border h-full flex items-center justify-center">
-                        {isRunning && selectedProject ? (
+                    <div className="h-full flex flex-col">
+                      <div className="p-3 border-b">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-sm">Live Preview</h4>
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={isRunning ? "default" : "secondary"} className="text-xs">
+                              {isRunning ? "Running" : "Stopped"}
+                            </Badge>
+                            {isRunning && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(projectUrl, '_blank')}
+                              >
+                                <Globe className="w-4 h-4 mr-2" />
+                                Open
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex-1">
+                        {isRunning ? (
                           <iframe
-                            src={`/dev/${selectedProject.name.toLowerCase().replace(/\s+/g, '-')}`}
+                            src={projectUrl}
                             className="w-full h-full border-0"
-                            title="Application Preview"
+                            title="Project Preview"
                           />
                         ) : (
-                          <div className="text-center text-muted-foreground">
-                            <Globe className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                            <h3 className="text-lg font-medium mb-2">Preview</h3>
-                            <p className="text-sm">Start your application to see the preview</p>
+                          <div className="h-full flex items-center justify-center text-muted-foreground">
+                            <div className="text-center">
+                              <Globe className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                              <h3 className="text-lg font-medium mb-2">Preview Not Available</h3>
+                              <p className="text-sm mb-4">Start your project to see the live preview</p>
+                              <Button onClick={handleRunProject} className="mx-auto">
+                                <Play className="w-4 h-4 mr-2" />
+                                Run Project
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -916,6 +1025,95 @@ export default function ReplitWorkspaceClone() {
           </div>
         )}
       </div>
+
+      {/* Share Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Project</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Project URL</label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  value={projectUrl}
+                  readOnly
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copyToClipboard(projectUrl)}
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Share this URL to give others access to your project
+              </p>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Embed Code</label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  value={`<iframe src="${projectUrl}" width="100%" height="400"></iframe>`}
+                  readOnly
+                  className="flex-1 text-xs"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copyToClipboard(`<iframe src="${projectUrl}" width="100%" height="400"></iframe>`)}
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Embed this project in your website
+              </p>
+            </div>
+
+            {isRunning && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="flex items-center text-green-600 dark:text-green-400">
+                  <Activity className="w-4 h-4 mr-2" />
+                  <span className="text-sm font-medium">Project is Live</span>
+                </div>
+                <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-1">
+                  Your project is currently running and accessible via the shared URL
+                </p>
+              </div>
+            )}
+
+            {!isRunning && (
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                <div className="flex items-center text-yellow-600 dark:text-yellow-400">
+                  <Square className="w-4 h-4 mr-2" />
+                  <span className="text-sm font-medium">Project Stopped</span>
+                </div>
+                <p className="text-xs text-yellow-600/80 dark:text-yellow-400/80 mt-1">
+                  Start your project to make it accessible via the shared URL
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
+              Close
+            </Button>
+            {!isRunning && (
+              <Button onClick={handleRunProject}>
+                <Play className="w-4 h-4 mr-2" />
+                Run & Share
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

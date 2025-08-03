@@ -315,6 +315,60 @@ This project was created with AI-powered development tools and includes:
     }
   });
 
+  // ==================== PROJECT RUNTIME ROUTES ====================
+  app.post("/api/projects/:id/run", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const project = await storage.getProject(id);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      // Update project status to running
+      await storage.updateProject(id, { isRunning: true });
+      
+      // Generate dev URL for the project
+      const projectSlug = project.name.toLowerCase().replace(/\s+/g, '-');
+      const projectUrl = `${req.protocol}://${req.get('host')}/dev/${projectSlug}`;
+      
+      console.log(`🚀 Starting project: ${project.name} (${projectUrl})`);
+      
+      res.json({ 
+        message: "Project started successfully", 
+        url: projectUrl,
+        status: "running"
+      });
+    } catch (error) {
+      console.error("Error starting project:", error);
+      res.status(500).json({ message: "Failed to start project" });
+    }
+  });
+
+  app.post("/api/projects/:id/stop", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const project = await storage.getProject(id);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      // Update project status to stopped
+      await storage.updateProject(id, { isRunning: false });
+      
+      console.log(`🛑 Stopping project: ${project.name}`);
+      
+      res.json({ 
+        message: "Project stopped successfully",
+        status: "stopped"
+      });
+    } catch (error) {
+      console.error("Error stopping project:", error);
+      res.status(500).json({ message: "Failed to stop project" });
+    }
+  });
+
   // ==================== API TESTING ROUTE ====================
   app.post("/api/test-api", async (req, res) => {
     try {

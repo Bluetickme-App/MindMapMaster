@@ -22,6 +22,7 @@ export const projects = pgTable("projects", {
   language: text("language").notNull(),
   framework: text("framework"),
   status: text("status").notNull().default("active"), // active, paused, completed
+  isRunning: boolean("is_running").default(false), // For tracking running state
   githubRepo: text("github_repo"),
   assistantId: text("assistant_id"), // OpenAI Assistant ID for this project
   threadId: text("thread_id"), // OpenAI Thread ID for conversation history
