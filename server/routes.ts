@@ -1617,7 +1617,9 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
   app.get('/api/files', async (req, res) => {
     try {
       const { path: targetPath } = req.query;
-      const fileTree = await fileSystemService.getFileTree(targetPath as string || '');
+      // Default to workspace-demo directory for demo files
+      const basePath = targetPath as string || 'workspace-demo';
+      const fileTree = await fileSystemService.getFileTree(basePath);
       res.json(fileTree);
     } catch (error) {
       console.error('Error loading file tree:', error);
@@ -1641,11 +1643,22 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
       
       let fullPath = filePath as string;
       
-      // Handle relative paths from project root
+      // Handle relative paths from project root, default to workspace-demo
       if (!fullPath.startsWith('/')) {
-        fullPath = path.resolve(process.cwd(), fullPath);
+        // If it doesn't start with workspace-demo, prepend it
+        if (!fullPath.startsWith('workspace-demo')) {
+          fullPath = path.resolve(process.cwd(), 'workspace-demo', fullPath);
+        } else {
+          fullPath = path.resolve(process.cwd(), fullPath);
+        }
       } else {
-        fullPath = path.resolve(process.cwd(), fullPath.slice(1));
+        // Remove leading slash and check if it needs workspace-demo prefix
+        const relativePath = fullPath.slice(1);
+        if (!relativePath.startsWith('workspace-demo')) {
+          fullPath = path.resolve(process.cwd(), 'workspace-demo', relativePath);
+        } else {
+          fullPath = path.resolve(process.cwd(), relativePath);
+        }
       }
       
       const content = await fs.readFile(fullPath, 'utf-8');
