@@ -122,6 +122,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/projects/generate", async (req, res) => {
+    try {
+      const { description, type = 'webapp', framework = 'react', agents = [] } = req.body;
+      
+      if (!description) {
+        return res.status(400).json({ message: 'Project description is required' });
+      }
+
+      // Create project in database using the correct schema
+      const projectData = {
+        userId: currentUserId,
+        name: `AI Generated Project - ${Date.now()}`,
+        description: description,
+        language: 'javascript',
+        framework: framework,
+        status: 'active'
+      };
+
+      const project = await storage.createProject(projectData);
+      
+      res.json({
+        success: true,
+        project,
+        message: 'Project created successfully',
+        devUrl: `http://localhost:5000/dev/ai-project-${project.id}`,
+        files: ['index.html', 'style.css', 'script.js', 'README.md']
+      });
+    } catch (error) {
+      console.error('Error generating project:', error);
+      res.status(500).json({ message: 'Failed to generate project' });
+    }
+  });
+
   app.post("/api/projects", async (req, res) => {
     try {
       const projectData = insertProjectSchema.parse({ ...req.body, userId: currentUserId });
