@@ -326,12 +326,13 @@ export default function WorkspacePage() {
         const response = await fetch(`/api/files/content?${params}`);
         if (response.ok) {
           const data = await response.json();
-          setFileContent(data.content);
+          console.log('File content loaded:', node.name, data.content ? `${data.content.length} chars` : 'empty');
+          setFileContent(data.content || '');
           setActiveTab('editor');
           
           // Update live preview if it's an HTML file
           if (node.path.endsWith('.html')) {
-            setPreviewContent(data.content);
+            setPreviewContent(data.content || '');
           }
         } else {
           throw new Error('Failed to fetch file content');
@@ -749,7 +750,7 @@ export default function WorkspacePage() {
                 </CardTitle>
                 <div className="flex items-center space-x-2">
                   <Badge variant="outline" className="text-xs">
-                    {selectedAgents.length} agents
+                    {agentsQuery.data?.length || 0} agents
                   </Badge>
                   <Dialog open={showAgentSelection} onOpenChange={setShowAgentSelection}>
                     <DialogTrigger asChild>
