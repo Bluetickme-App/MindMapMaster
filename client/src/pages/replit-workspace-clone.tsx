@@ -220,11 +220,16 @@ export default function ReplitWorkspaceClone() {
   });
 
   const fileTreeQuery = useQuery({
-    queryKey: ['/api/files'],
+    queryKey: ['/api/files', selectedProject?.id],
     queryFn: async () => {
-      const response = await fetch('/api/files');
+      const params = new URLSearchParams();
+      if (selectedProject?.id) {
+        params.append('projectId', selectedProject.id.toString());
+      }
+      const response = await fetch(`/api/files?${params}`);
       return response.json();
     },
+    enabled: !!selectedProject,
   });
 
   // Auto-select first project
@@ -245,17 +250,33 @@ export default function ReplitWorkspaceClone() {
 
   // Load file content
   const loadFileContent = async (file: FileNode) => {
+    if (!selectedProject) {
+      console.log('No project selected');
+      return '';
+    }
+
     try {
-      const params = new URLSearchParams({ path: file.path });
-      if (selectedProject?.id) {
-        params.append('projectId', selectedProject.id.toString());
-      }
+      const params = new URLSearchParams({ 
+        path: file.path,
+        projectId: selectedProject.id.toString()
+      });
+      
+      console.log(`Loading file content for: ${file.path} (Project: ${selectedProject.name})`);
       
       const response = await fetch(`/api/files/content?${params}`);
       if (response.ok) {
         const data = await response.json();
-        setFileContent(data.content || '');
-        return data.content || '';
+        const content = data.content || '';
+        setFileContent(content);
+        console.log(`Loaded ${content.length} characters for ${file.name}`);
+        return content;
+      } else {
+        console.error('Failed to load file:', response.status, response.statusText);
+        toast({
+          title: "Error",
+          description: `Failed to load ${file.name}`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error loading file:', error);
@@ -511,11 +532,36 @@ export default function ReplitWorkspaceClone() {
           
           <div className="flex items-center space-x-2">
             <h1 className="text-lg font-semibold">Development Workspace</h1>
-            {selectedProject && (
-              <>
+            
+            {/* Project Selector */}
+            {projectsQuery.data && projectsQuery.data.length > 0 && (
+              <div className="flex items-center space-x-2">
                 <span className="text-muted-foreground">•</span>
-                <span className="text-sm text-muted-foreground">{selectedProject.name}</span>
-              </>
+                <select
+                  value={selectedProject?.id || ''}
+                  onChange={(e) => {
+                    const projectId = parseInt(e.target.value);
+                    const project = projectsQuery.data.find((p: Project) => p.id === projectId);
+                    if (project) {
+                      setSelectedProject(project);
+                      // Clear current file selection and tabs when switching projects
+                      setSelectedFile(null);
+                      setOpenTabs([]);
+                      setActiveTab('');
+                      setFileContent('');
+                      // Refresh file tree
+                      queryClient.invalidateQueries({ queryKey: ['/api/files'] });
+                    }
+                  }}
+                  className="bg-background border border-border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {projectsQuery.data.map((project: Project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
           </div>
         </div>

@@ -1703,9 +1703,23 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
   // Get file tree structure
   app.get('/api/files', async (req, res) => {
     try {
-      const { path: targetPath } = req.query;
-      // Get file tree from current working directory (already set to workspace-demo)
-      const basePath = targetPath as string || '';
+      const { path: targetPath, projectId } = req.query;
+      
+      let basePath = '';
+      
+      if (projectId) {
+        // Get project-specific files
+        const projectIdNum = parseInt(projectId as string);
+        const project = await storage.getProject(projectIdNum);
+        if (project) {
+          const projectSlug = project.name.toLowerCase().replace(/\s+/g, '-');
+          basePath = `projects/${projectSlug}`;
+        }
+      } else {
+        // Default to workspace-demo for backward compatibility
+        basePath = 'workspace-demo';
+      }
+      
       const fileTree = await fileSystemService.getFileTree(basePath);
       res.json(fileTree);
     } catch (error) {
@@ -1717,24 +1731,35 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
   // Get file content
   app.get('/api/files/content', async (req, res) => {
     try {
-      const { path: filePath } = req.query;
+      const { path: filePath, projectId } = req.query;
       if (!filePath) {
         return res.status(400).json({ message: 'File path is required' });
       }
       
-      console.log(`Reading file: ${filePath}`);
+      console.log(`Reading file: ${filePath} for project: ${projectId}`);
       
       // Read file directly using Node.js fs for better reliability
       const fs = await import('fs/promises');
       const path = await import('path');
       
+      let basePath = 'workspace-demo'; // Default
+      
+      if (projectId) {
+        const projectIdNum = parseInt(projectId as string);
+        const project = await storage.getProject(projectIdNum);
+        if (project) {
+          const projectSlug = project.name.toLowerCase().replace(/\s+/g, '-');
+          basePath = `projects/${projectSlug}`;
+        }
+      }
+      
       let fullPath = filePath as string;
       
-      // Handle relative paths - files are already in workspace-demo directory
+      // Handle relative paths
       if (!fullPath.startsWith('/')) {
-        fullPath = path.resolve(process.cwd(), 'workspace-demo', fullPath);
+        fullPath = path.resolve(process.cwd(), basePath, fullPath);
       } else {
-        fullPath = path.resolve(process.cwd(), 'workspace-demo', fullPath.slice(1));
+        fullPath = path.resolve(process.cwd(), basePath, fullPath.slice(1));
       }
       
       const content = await fs.readFile(fullPath, 'utf-8');
