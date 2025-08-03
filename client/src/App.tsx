@@ -25,6 +25,7 @@ import ReplitClone from "@/pages/replit-clone";
 import ExtensionsPage from "@/pages/extensions";
 import ReplitAIEnhanced from "@/pages/replit-ai-enhanced";
 import ReplitSimple from "@/pages/replit-simple";
+import ReplitWorkspaceClone from "@/pages/replit-workspace-clone";
 import AgentRoadmapFlow from "@/pages/agent-roadmap-flow";
 import StreamlinedProjectCreation from "@/pages/streamlined-project-creation";
 import SimpleProjectCreation from "@/pages/simple-project-creation";
@@ -68,6 +69,7 @@ function Router() {
       <Route path="/extensions" component={ExtensionsPage} />
       <Route path="/replit-ai-enhanced" component={ReplitAIEnhanced} />
       <Route path="/replit-simple" component={ReplitSimple} />
+      <Route path="/replit-workspace-clone" component={ReplitWorkspaceClone} />
       <Route path="/agent-roadmap-flow" component={AgentRoadmapFlow} />
       <Route path="/create-streamlined" component={CreateStreamlined} />
       <Route path="/create-simple" component={SimpleProjectCreation} />
