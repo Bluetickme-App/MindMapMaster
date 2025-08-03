@@ -61,12 +61,12 @@ export default function QuickActions() {
       },
     },
     {
-      title: "Replit Workspace",
-      description: "Complete IDE clone with multi-agent collaboration",
+      title: "Workspace",
+      description: "Complete IDE with multi-agent collaboration",
       icon: Monitor,
       color: "green-500",
       onClick: () => {
-        setLocation('/replit-workspace-clone');
+        setLocation('/workspace');
       },
     },
   ];
