@@ -2269,31 +2269,65 @@ Let's discuss our approach and divide the work. Who wants to start with the plan
   };
 
   // ==================== AI AGENT RESPONSE FUNCTION ====================
-  async function generateAgentResponses(conversationId: any, userMessage: any, participants: any) {
-    const agentResponses = {
-      'project-manager': 'I\'ll coordinate this task and break it down into manageable components. Let me create a development roadmap and assign specific responsibilities to each team member.',
-      'ui-designer': 'I\'m analyzing the user experience requirements and will create wireframes and design mockups. I\'ll focus on creating an intuitive interface that matches modern fitness app standards.',
-      'backend-dev': 'I\'ll design the database schema and API architecture. For a fitness platform like Glofox, we need robust member management, payment processing, and real-time booking systems.',
-      'frontend-dev': 'I\'ll implement the React components with responsive design. I\'ll ensure the UI is mobile-first since fitness apps are primarily used on mobile devices.',
-      'fullstack-dev': 'I\'ll handle the end-to-end integration and ensure all systems work together seamlessly. I\'ll also set up the deployment pipeline and testing framework.',
-      'devops-specialist': 'I\'ll set up the infrastructure, CI/CD pipeline, and monitoring systems. For a fitness platform, we need high availability and scalable architecture.'
-    };
+  interface ConversationParticipant {
+    id: string;
+    name?: string;
+  }
 
+  const agentIdMap: Record<string, string> = {
+    'project-manager': 'jordan-project-manager',
+    'ui-designer': 'maya-ui-designer',
+    'backend-dev': 'sam-backend-dev',
+    'frontend-dev': 'alex-frontend-dev',
+    'fullstack-dev': 'casey-fullstack',
+    'devops-specialist': 'taylor-devops'
+  };
+
+  async function generateAgentResponses(
+    conversationId: number,
+    userMessage: string,
+    participants: ConversationParticipant[]
+  ) {
     for (const participant of participants) {
-      if (participant !== 'user') {
-        const agentId = participant.toLowerCase().replace(/[^a-z-]/g, '');
-        const responseText = agentResponses[agentId] || `I'm ${participant} and I'm ready to contribute to this Glofox clone project. Let me know what specific tasks you'd like me to focus on.`;
+      const participantId =
+        typeof participant === 'string' ? participant : participant.id || '';
+      const orchestratorId = agentIdMap[participantId];
+      if (!orchestratorId) continue;
+
+      try {
+        const result = await agentOrchestrator.executeAgentTask(
+          orchestratorId,
+          userMessage,
+          { conversationId }
+        );
 
         const agentMessage = {
           id: (Date.now() + Math.random()).toString(),
           conversationId,
-          content: responseText,
-          senderType: "agent",
-          senderId: participant,
+          content: result.result.response,
+          senderType: 'agent',
+          senderId: participantId,
           timestamp: new Date().toISOString()
         };
 
         memStorage.messages.push(agentMessage);
+
+        if (result.result.toolResults) {
+          for (const toolResult of result.result.toolResults) {
+            if (toolResult.result?.code) {
+              const ext =
+                toolResult.result.type === 'react-component' ||
+                toolResult.result.type === 'api-endpoint' ||
+                toolResult.result.type === 'database-schema'
+                  ? '.ts'
+                  : '.txt';
+              const filename = `generated/${toolResult.result.type}-${Date.now()}${ext}`;
+              await fileSystemService.writeFile(filename, toolResult.result.code);
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error generating response for ${participantId}:`, error);
       }
     }
   }
