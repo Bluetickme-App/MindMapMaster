@@ -3,7 +3,6 @@ import { agentMemoryService } from "./agent-memory-service";
 import { agentToolIntegration } from "./agent-tool-integration";
 import { storage } from "../storage";
 import { nanoid } from "nanoid";
-import type { Agent } from "@shared/schema";
 
 // Enhanced Replit AI System with Agent and Assistant capabilities
 export interface ReplitAICapabilities {
