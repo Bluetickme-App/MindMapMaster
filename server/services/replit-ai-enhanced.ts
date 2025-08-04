@@ -1,6 +1,5 @@
 import { multiAIService } from "./multi-ai-provider";
 import { agentMemoryService } from "./agent-memory-service";
-import { agentToolIntegration } from "./agent-tool-integration";
 import { storage } from "../storage";
 import { nanoid } from "nanoid";
 import type { Project } from "@shared/schema";
