@@ -3,6 +3,7 @@ import { agentMemoryService } from "./agent-memory-service";
 import { agentToolIntegration } from "./agent-tool-integration";
 import { storage } from "../storage";
 import { nanoid } from "nanoid";
+import type { Project } from "@shared/schema";
 
 // Enhanced Replit AI System with Agent and Assistant capabilities
 export interface ReplitAICapabilities {
@@ -31,11 +32,46 @@ export interface AITask {
   mode?: "basic" | "advanced";
   complexity: "simple" | "moderate" | "complex";
   description: string;
-  context: any;
+  context: Record<string, unknown>;
   estimatedEffort: number; // 1-10 scale
   actualEffort?: number;
   cost?: number;
   checkpoint?: string;
+}
+
+export interface AppCreationResult {
+  project: Project;
+  code: Record<string, unknown>;
+  checkpoint?: string;
+  effort: number;
+  cost?: number;
+}
+
+export interface AssistantRequest {
+  code: string;
+  language: string;
+  action: "explain" | "fix" | "add-feature";
+  mode: "basic" | "advanced";
+  context?: Record<string, unknown>;
+}
+
+export interface AssistantResponse {
+  result: string | Record<string, unknown>;
+  mode: "basic" | "advanced";
+  cost: number;
+}
+
+export interface UsageStats {
+  totalTasks: number;
+  agentTasks: number;
+  assistantTasks: number;
+  totalCost: number;
+  averageEffort: number;
+  complexityBreakdown: {
+    simple: number;
+    moderate: number;
+    complex: number;
+  };
 }
 
 export class ReplitAIEnhancedSystem {
@@ -67,7 +103,7 @@ export class ReplitAIEnhancedSystem {
   async createAppFromDescription(
     description: string,
     userId: number,
-  ): Promise<any> {
+  ): Promise<AppCreationResult> {
     const taskId = this.generateTaskId();
     const task: AITask = {
       id: taskId,
@@ -81,8 +117,8 @@ export class ReplitAIEnhancedSystem {
     this.activeTasks.set(taskId, task);
 
     try {
-      // Step 1: Analyze requirements using multiple AI providers
-      const requirements = await this.analyzeRequirements(description);
+      // Step 1: Analyse requirements using multiple AI providers
+      const requirements = await this.analyseRequirements(description);
 
       // Step 2: Generate architecture and plan
       const architecture = await this.generateArchitecture(requirements);
@@ -122,13 +158,7 @@ export class ReplitAIEnhancedSystem {
   }
 
   // Enhanced Assistant: Context-aware code assistance
-  async assistWithCode(request: {
-    code: string;
-    language: string;
-    action: "explain" | "fix" | "add-feature";
-    mode: "basic" | "advanced";
-    context?: any;
-  }): Promise<any> {
+  async assistWithCode(request: AssistantRequest): Promise<AssistantResponse> {
     const taskId = this.generateTaskId();
     const task: AITask = {
       id: taskId,
@@ -136,14 +166,14 @@ export class ReplitAIEnhancedSystem {
       mode: request.mode,
       complexity: "simple",
       description: `${request.action} for ${request.language} code`,
-      context: request.context,
+      context: request.context ?? {},
       estimatedEffort: request.mode === "basic" ? 0 : 1,
     };
 
     this.activeTasks.set(taskId, task);
 
     try {
-      let result: any;
+      let result: string | Record<string, unknown>;
 
       switch (request.action) {
         case "explain":
@@ -164,7 +194,7 @@ export class ReplitAIEnhancedSystem {
             result = await this.implementFeature(
               request.code,
               request.language,
-              request.context,
+              request.context ?? {},
             );
             task.cost = 0.05; // $0.05 per advanced edit
           }
@@ -232,9 +262,11 @@ export class ReplitAIEnhancedSystem {
   }
 
   // Multi-provider requirement analysis
-  private async analyzeRequirements(description: string): Promise<any> {
+  private async analyseRequirements(
+    description: string,
+  ): Promise<Record<string, unknown>> {
     const prompts = {
-      openai: `Analyze this app requirement and extract key features, tech stack, and architecture:
+      openai: `Analyse this app requirement and extract key features, tech stack, and architecture:
 "${description}"
 
 Respond with JSON:
@@ -245,11 +277,11 @@ Respond with JSON:
   "integrations": ["required third-party services"],
   "complexity": "simple|moderate|complex"
 }`,
-      claude: `As a product architect, analyze this app idea and provide detailed requirements:
+      claude: `As a product architect, analyse this app idea and provide detailed requirements:
 "${description}"
 
 Focus on user experience, design patterns, and scalability.`,
-      gemini: `Analyze technical requirements and performance considerations for:
+      gemini: `Analyse technical requirements and performance considerations for:
 "${description}"
 
 Include optimization strategies and deployment recommendations.`,
@@ -266,7 +298,9 @@ Include optimization strategies and deployment recommendations.`,
   }
 
   // Architecture generation with best practices
-  private async generateArchitecture(requirements: any): Promise<any> {
+  private async generateArchitecture(
+    requirements: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     const architecturePrompt = `
 Based on these requirements:
 ${JSON.stringify(requirements, null, 2)}
@@ -288,14 +322,14 @@ Use modern best practices and production-ready patterns.
       "openai",
     );
 
-    return JSON.parse(response.content);
+    return JSON.parse(response.content) as Record<string, unknown>;
   }
 
   // Create project with proper structure
   private async createProjectStructure(
-    architecture: any,
+    architecture: Record<string, any>,
     userId: number,
-  ): Promise<any> {
+  ): Promise<Project> {
     const project = await storage.createProject({
       userId,
       name: architecture.projectName || "AI Generated App",
@@ -305,18 +339,18 @@ Use modern best practices and production-ready patterns.
       status: "active",
     });
 
-    // Initialize project files structure
-    await this.initializeProjectFiles(project.id, architecture);
+    // Initialise project files structure
+    await this.initialiseProjectFiles(project.id, architecture);
 
     return project;
   }
 
   // Generate complete application code
   private async generateCompleteApp(
-    project: any,
-    architecture: any,
+    project: Project,
+    architecture: Record<string, any>,
     taskId: string,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const codeGeneration: {
       frontend: unknown[];
       backend: unknown[];
@@ -372,9 +406,9 @@ Use modern best practices and production-ready patterns.
 
   // Component generation with modern patterns
   private async generateComponent(
-    component: any,
-    techStack: any,
-  ): Promise<any> {
+    component: Record<string, any>,
+    techStack: Record<string, any>,
+  ): Promise<Record<string, unknown>> {
     const componentPrompt = `
 Generate a ${techStack.frontend} component:
 Name: ${component.name}
@@ -396,11 +430,14 @@ Include proper error handling and accessibility.
       name: component.name,
       code: response.content,
       type: component.type,
-    };
+    } as Record<string, unknown>;
   }
 
   // API generation with proper patterns
-  private async generateAPI(apiSpec: any, techStack: any): Promise<any> {
+  private async generateAPI(
+    apiSpec: Record<string, any>,
+    techStack: Record<string, any>,
+  ): Promise<Record<string, unknown>> {
     const apiPrompt = `
 Generate a RESTful API with these endpoints:
 ${JSON.stringify(apiSpec.endpoints, null, 2)}
@@ -425,12 +462,14 @@ Include:
     return {
       endpoints: apiSpec.endpoints,
       code: response.content,
-    };
+    } as Record<string, unknown>;
   }
 
   // Configuration file generation
-  private async generateConfigs(architecture: any): Promise<any[]> {
-    const configs = [];
+  private async generateConfigs(
+    architecture: Record<string, any>,
+  ): Promise<Array<Record<string, unknown>>> {
+    const configs: Array<Record<string, unknown>> = [];
 
     // Package.json
     configs.push({
@@ -479,7 +518,7 @@ Include:
   }
 
   // Environment setup
-  private async setupEnvironment(project: any): Promise<void> {
+  private async setupEnvironment(project: Project): Promise<void> {
     // This would integrate with actual package managers and build tools
     console.log(`Setting up environment for project ${project.id}`);
 
@@ -490,7 +529,10 @@ Include:
   }
 
   // Code explanation (free in basic mode)
-  private async explainCode(code: string, language: string): Promise<any> {
+  private async explainCode(
+    code: string,
+    language: string,
+  ): Promise<Record<string, unknown>> {
     const prompt = `
 Explain this ${language} code in simple terms:
 \`\`\`${language}
@@ -514,13 +556,16 @@ Provide:
       explanation: response.content,
       language,
       concepts: this.extractConcepts(response.content),
-    };
+    } as Record<string, unknown>;
   }
 
   // Suggest fixes (basic mode)
-  private async suggestFixes(code: string, language: string): Promise<any> {
+  private async suggestFixes(
+    code: string,
+    language: string,
+  ): Promise<Record<string, unknown>> {
     const prompt = `
-Analyze this ${language} code for issues:
+Analyse this ${language} code for issues:
 \`\`\`${language}
 ${code}
 \`\`\`
@@ -537,11 +582,14 @@ Suggest fixes for any bugs, performance issues, or best practice violations.
     return {
       suggestions: response.content,
       severity: "info",
-    };
+    } as Record<string, unknown>;
   }
 
   // Apply fixes (advanced mode - costs $0.05)
-  private async applyFixes(code: string, language: string): Promise<any> {
+  private async applyFixes(
+    code: string,
+    language: string,
+  ): Promise<Record<string, unknown>> {
     const prompt = `
 Fix all issues in this ${language} code:
 \`\`\`${language}
@@ -561,11 +609,14 @@ Return the corrected code with comments explaining the fixes.
       originalCode: code,
       fixedCode: response.content,
       changes: this.diffCode(code, response.content),
-    };
+    } as Record<string, unknown>;
   }
 
   // Suggest feature (basic mode)
-  private async suggestFeature(code: string, language: string): Promise<any> {
+  private async suggestFeature(
+    code: string,
+    language: string,
+  ): Promise<Record<string, unknown>> {
     const prompt = `
 Suggest a useful feature to add to this ${language} code:
 \`\`\`${language}
@@ -584,15 +635,15 @@ Describe what the feature would do and how to implement it.
     return {
       suggestion: response.content,
       complexity: "moderate",
-    };
+    } as Record<string, unknown>;
   }
 
   // Implement feature (advanced mode - costs $0.05)
   private async implementFeature(
     code: string,
     language: string,
-    context: any,
-  ): Promise<any> {
+    context: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     const prompt = `
 Add this feature to the ${language} code:
 ${context.featureDescription}
@@ -615,11 +666,14 @@ Implement the feature completely with proper integration.
       originalCode: code,
       updatedCode: response.content,
       featureAdded: context.featureDescription,
-    };
+    } as Record<string, unknown>;
   }
 
   // Checkpoint creation for rollback
-  private async createCheckpoint(project: any, code: any): Promise<string> {
+  private async createCheckpoint(
+    project: Project,
+    code: Record<string, unknown>,
+  ): Promise<string> {
     const checkpointId = `checkpoint-${Date.now()}`;
 
     // Store checkpoint data
@@ -673,13 +727,15 @@ Implement the feature completely with proper integration.
   }
 
   // Merge analyses from multiple AI providers
-  private mergeAnalyses(analyses: any[]): any {
+  private mergeAnalyses(
+    analyses: Array<Record<string, any>>,
+  ): Record<string, unknown> {
     // Intelligent merging of insights from different providers
     const merged = {
-      features: new Set(),
-      techStack: {},
+      features: new Set<string>(),
+      techStack: {} as Record<string, unknown>,
       architecture: "",
-      integrations: new Set(),
+      integrations: new Set<string>(),
       complexity: "moderate",
     };
 
@@ -739,10 +795,23 @@ Implement the feature completely with proper integration.
   }
 
   // Code diff for showing changes
-  private diffCode(original: string, updated: string): any {
+  private diffCode(
+    original: string,
+    updated: string,
+  ): Array<{
+    line: number;
+    original: string;
+    updated: string;
+    type: "added" | "removed" | "modified";
+  }> {
     const originalLines = original.split("\n");
     const updatedLines = updated.split("\n");
-    const changes = [];
+    const changes: Array<{
+      line: number;
+      original: string;
+      updated: string;
+      type: "added" | "removed" | "modified";
+    }> = [];
 
     // Simple line-by-line diff
     const maxLines = Math.max(originalLines.length, updatedLines.length);
@@ -765,10 +834,10 @@ Implement the feature completely with proper integration.
     return changes;
   }
 
-  // Initialize project files
-  private async initializeProjectFiles(
+  // Initialise project files
+  private async initialiseProjectFiles(
     projectId: number,
-    architecture: any,
+    architecture: Record<string, unknown>,
   ): Promise<void> {
     // Create initial file structure based on architecture
     const files = [
@@ -802,12 +871,12 @@ Implement the feature completely with proper integration.
   }
 
   // Get usage statistics
-  async getUsageStats(userId: number): Promise<any> {
+  async getUsageStats(userId: number): Promise<UsageStats> {
     const userTasks = this.taskHistory.filter(
       (task) => task.context?.userId === userId,
     );
 
-    const stats = {
+    const stats: UsageStats = {
       totalTasks: userTasks.length,
       agentTasks: userTasks.filter((t) => t.type === "agent").length,
       assistantTasks: userTasks.filter((t) => t.type === "assistant").length,
