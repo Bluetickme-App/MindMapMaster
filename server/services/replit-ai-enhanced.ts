@@ -1,8 +1,8 @@
-// @ts-nocheck
 import { multiAIService } from "./multi-ai-provider";
 import { agentMemoryService } from "./agent-memory-service";
 import { agentToolIntegration } from "./agent-tool-integration";
 import { storage } from "../storage";
+import { nanoid } from "nanoid";
 import type { Agent } from "@shared/schema";
 
 // Enhanced Replit AI System with Agent and Assistant capabilities
@@ -304,7 +304,6 @@ Use modern best practices and production-ready patterns.
       language: architecture.techStack.language || "typescript",
       framework: architecture.techStack.frontend || "react",
       status: "active",
-      isPublic: false,
     });
 
     // Initialize project files structure
@@ -319,7 +318,12 @@ Use modern best practices and production-ready patterns.
     architecture: any,
     taskId: string,
   ): Promise<any> {
-    const codeGeneration = {
+    const codeGeneration: {
+      frontend: unknown[];
+      backend: unknown[];
+      config: unknown[];
+      tests: unknown[];
+    } = {
       frontend: [],
       backend: [],
       config: [],
@@ -620,13 +624,18 @@ Implement the feature completely with proper integration.
     const checkpointId = `checkpoint-${Date.now()}`;
 
     // Store checkpoint data
-    await agentMemoryService.storeMemory(0, project.id, {
-      type: "checkpoint",
-      checkpointId,
-      code: JSON.stringify(code),
-      timestamp: new Date(),
-      projectState: project,
-    });
+    await agentMemoryService.storeMemory(
+      0,
+      "project_context",
+      `Project ${project.id} checkpoint ${checkpointId}`,
+      {
+        checkpointId,
+        code: JSON.stringify(code),
+        timestamp: new Date(),
+        projectState: project,
+      },
+      project.id,
+    );
 
     return checkpointId;
   }
@@ -712,7 +721,7 @@ Implement the feature completely with proper integration.
 
   // Extract concepts from explanation
   private extractConcepts(explanation: string): string[] {
-    const concepts = [];
+    const concepts: string[] = [];
     const conceptPatterns = [
       /uses?\s+(\w+)/gi,
       /implements?\s+(\w+)/gi,
@@ -721,13 +730,13 @@ Implement the feature completely with proper integration.
     ];
 
     conceptPatterns.forEach((pattern) => {
-      const matches = explanation.matchAll(pattern);
+      const matches = Array.from(explanation.matchAll(pattern));
       for (const match of matches) {
         concepts.push(match[1]);
       }
     });
 
-    return [...new Set(concepts)];
+    return Array.from(new Set(concepts));
   }
 
   // Code diff for showing changes
@@ -774,18 +783,23 @@ Implement the feature completely with proper integration.
 
     // Store file structure metadata
     for (const file of files) {
-      await agentMemoryService.storeMemory(0, projectId, {
-        type: "project-file",
-        path: file.path,
-        fileType: file.type,
-        created: new Date(),
-      });
+      await agentMemoryService.storeMemory(
+        0,
+        "project_context",
+        `Initial file: ${file.path}`,
+        {
+          path: file.path,
+          fileType: file.type,
+          created: new Date(),
+        },
+        projectId,
+      );
     }
   }
 
   // Generate unique task ID
   private generateTaskId(): string {
-    return `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return nanoid();
   }
 
   // Get usage statistics

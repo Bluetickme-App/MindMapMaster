@@ -107,11 +107,9 @@ router.post("/assistant/add-feature", async (req, res) => {
     const { code, language, featureDescription, mode = "basic" } = req.body;
 
     if (!code || !language || !featureDescription) {
-      return res
-        .status(400)
-        .json({
-          message: "Code, language, and feature description are required",
-        });
+      return res.status(400).json({
+        message: "Code, language, and feature description are required",
+      });
     }
 
     const result = await replitAIEnhanced.assistWithCode({
