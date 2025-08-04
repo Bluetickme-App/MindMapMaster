@@ -42,9 +42,36 @@ export class AgentOrchestrationService {
     ai_specialist: "openai", // API development
     roadmap_specialist: "openai", // System architecture
     backend_specialist: "openai", // Backend development
-    vite_specialist: "gemini", // Build optimization
+    vite_specialist: "gemini", // Build optimisation
     devops_specialist: "gemini", // DevOps excellence
   };
+
+  async startCollaborationSession(
+    projectId: number,
+    objective: string,
+    roles: string[],
+  ): Promise<CollaborationSession> {
+    const participants: Agent[] = [];
+    for (const role of roles) {
+      const [agent] = await storage.getAgentsByType(role);
+      if (agent) {
+        participants.push(agent);
+      }
+    }
+
+    const session: CollaborationSession = {
+      id: Date.now(),
+      projectId,
+      participants,
+      objective,
+      currentPhase: "initialisation",
+      decisions: [],
+      outcomes: [],
+    };
+
+    this.activeCollaborations.set(session.id, session);
+    return session;
+  }
 
   // Core agent response generation with memory integration
   async generateAgentResponse(
