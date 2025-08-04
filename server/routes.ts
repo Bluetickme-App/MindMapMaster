@@ -23,6 +23,7 @@ import {
   insertProjectSchema,
   insertApiTestSchema,
 } from "@shared/schema";
+import replitAIEnhancedRouter from "./api/replit-ai-enhanced";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const currentUserId = 1; // For demo purposes, using a fixed user ID
@@ -75,6 +76,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  app.use("/api/replit-ai", replitAIEnhancedRouter);
+
   // ==================== CODE GENERATION ROUTES ====================
   app.post("/api/generate-code", async (req, res) => {
     try {
@@ -105,12 +108,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("Code generation error:", error);
-      res
-        .status(500)
-        .json({
-          message:
-            error instanceof Error ? error.message : "Failed to generate code",
-        });
+      res.status(500).json({
+        message:
+          error instanceof Error ? error.message : "Failed to generate code",
+      });
     }
   });
 
@@ -128,12 +129,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("Code debugging error:", error);
-      res
-        .status(500)
-        .json({
-          message:
-            error instanceof Error ? error.message : "Failed to debug code",
-        });
+      res.status(500).json({
+        message:
+          error instanceof Error ? error.message : "Failed to debug code",
+      });
     }
   });
 
@@ -544,12 +543,10 @@ This project was created with AI-powered development tools and includes:
     try {
       const token = process.env.GITHUB_TOKEN;
       if (!token) {
-        return res
-          .status(400)
-          .json({
-            message:
-              "GitHub token not configured. Please set GITHUB_TOKEN environment variable.",
-          });
+        return res.status(400).json({
+          message:
+            "GitHub token not configured. Please set GITHUB_TOKEN environment variable.",
+        });
       }
 
       const githubService = new GitHubService(token);
@@ -2029,12 +2026,10 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
       res.json({ success: true, message: "File/folder deleted successfully" });
     } catch (error) {
       console.error("Error deleting file:", error);
-      res
-        .status(500)
-        .json({
-          message: "Failed to delete file/folder",
-          error: error.message,
-        });
+      res.status(500).json({
+        message: "Failed to delete file/folder",
+        error: error.message,
+      });
     }
   });
 
@@ -2052,12 +2047,10 @@ http://localhost:5000/dev/${cleanRepoName}-${project.id}
       res.json({ success: true, message: "File/folder renamed successfully" });
     } catch (error) {
       console.error("Error renaming file:", error);
-      res
-        .status(500)
-        .json({
-          message: "Failed to rename file/folder",
-          error: error.message,
-        });
+      res.status(500).json({
+        message: "Failed to rename file/folder",
+        error: error.message,
+      });
     }
   });
 
@@ -2496,12 +2489,10 @@ Let's discuss our approach and divide the work. Who wants to start with the plan
       res.json(result);
     } catch (error) {
       console.error("Error executing agent task:", error);
-      res
-        .status(500)
-        .json({
-          message: "Failed to execute agent task",
-          error: error.message,
-        });
+      res.status(500).json({
+        message: "Failed to execute agent task",
+        error: error.message,
+      });
     }
   });
 
@@ -2511,11 +2502,9 @@ Let's discuss our approach and divide the work. Who wants to start with the plan
       const { projectId, objective, participants } = req.body;
 
       if (!projectId || !objective || !participants?.length) {
-        return res
-          .status(400)
-          .json({
-            message: "Project ID, objective, and participants are required",
-          });
+        return res.status(400).json({
+          message: "Project ID, objective, and participants are required",
+        });
       }
 
       const result = await agentOrchestrator.orchestrateTeam(
