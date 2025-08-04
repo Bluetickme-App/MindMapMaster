@@ -1,10 +1,8 @@
-import { multiAIService } from "./multi-ai-provider";
-import { agentMemoryService } from "./agent-memory-service";
-import { storage } from "../storage";
 import { nanoid } from "nanoid";
 import type { Project } from "@shared/schema";
-
-// Enhanced Replit AI System with Agent and Assistant capabilities
+import { storage } from "../storage";
+import { agentMemoryService } from "./agent-memory-service";
+import { multiAIService } from "./multi-ai-provider";
 export interface ReplitAICapabilities {
   agent: {
     naturalLanguageToApp: boolean;
