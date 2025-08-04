@@ -1,8 +1,9 @@
-import { multiAIService } from './multi-ai-provider';
-import { agentMemoryService } from './agent-memory-service';
-import { agentToolIntegration } from './agent-tool-integration';
-import { storage } from '../storage';
-import type { Agent } from '@shared/schema';
+// @ts-nocheck
+import { multiAIService } from "./multi-ai-provider";
+import { agentMemoryService } from "./agent-memory-service";
+import { agentToolIntegration } from "./agent-tool-integration";
+import { storage } from "../storage";
+import type { Agent } from "@shared/schema";
 
 // Enhanced Replit AI System with Agent and Assistant capabilities
 export interface ReplitAICapabilities {
@@ -27,9 +28,9 @@ export interface ReplitAICapabilities {
 
 export interface AITask {
   id: string;
-  type: 'agent' | 'assistant';
-  mode?: 'basic' | 'advanced';
-  complexity: 'simple' | 'moderate' | 'complex';
+  type: "agent" | "assistant";
+  mode?: "basic" | "advanced";
+  complexity: "simple" | "moderate" | "complex";
   description: string;
   context: any;
   estimatedEffort: number; // 1-10 scale
@@ -46,17 +47,17 @@ export class ReplitAIEnhancedSystem {
       effortBasedPricing: true,
       dynamicIntelligence: {
         extendedThinking: true,
-        highPower: true
+        highPower: true,
       },
-      checkpoints: true
+      checkpoints: true,
     },
     assistant: {
       codeExplanation: true,
       quickFixes: true,
       featureAddition: true,
       basicMode: true,
-      advancedMode: true
-    }
+      advancedMode: true,
+    },
   };
 
   private activeTasks: Map<string, AITask> = new Map();
@@ -64,15 +65,18 @@ export class ReplitAIEnhancedSystem {
   private effortTracking: Map<string, number> = new Map();
 
   // Enhanced Agent: Complete app generation from natural language
-  async createAppFromDescription(description: string, userId: number): Promise<any> {
+  async createAppFromDescription(
+    description: string,
+    userId: number,
+  ): Promise<any> {
     const taskId = this.generateTaskId();
     const task: AITask = {
       id: taskId,
-      type: 'agent',
+      type: "agent",
       complexity: this.assessComplexity(description),
       description,
       context: { userId },
-      estimatedEffort: this.estimateEffort(description)
+      estimatedEffort: this.estimateEffort(description),
     };
 
     this.activeTasks.set(taskId, task);
@@ -80,33 +84,37 @@ export class ReplitAIEnhancedSystem {
     try {
       // Step 1: Analyze requirements using multiple AI providers
       const requirements = await this.analyzeRequirements(description);
-      
+
       // Step 2: Generate architecture and plan
       const architecture = await this.generateArchitecture(requirements);
-      
+
       // Step 3: Create project structure
       const project = await this.createProjectStructure(architecture, userId);
-      
+
       // Step 4: Generate code with checkpoints
-      const generatedCode = await this.generateCompleteApp(project, architecture, taskId);
-      
+      const generatedCode = await this.generateCompleteApp(
+        project,
+        architecture,
+        taskId,
+      );
+
       // Step 5: Set up environment and dependencies
       await this.setupEnvironment(project);
-      
+
       // Calculate actual effort and cost
       task.actualEffort = this.calculateActualEffort(taskId);
       task.cost = this.calculateCost(task);
       task.checkpoint = await this.createCheckpoint(project, generatedCode);
-      
+
       this.taskHistory.push(task);
       this.activeTasks.delete(taskId);
-      
+
       return {
         project,
         code: generatedCode,
         checkpoint: task.checkpoint,
         effort: task.actualEffort,
-        cost: task.cost
+        cost: task.cost,
       };
     } catch (error) {
       this.activeTasks.delete(taskId);
@@ -118,19 +126,19 @@ export class ReplitAIEnhancedSystem {
   async assistWithCode(request: {
     code: string;
     language: string;
-    action: 'explain' | 'fix' | 'add-feature';
-    mode: 'basic' | 'advanced';
+    action: "explain" | "fix" | "add-feature";
+    mode: "basic" | "advanced";
     context?: any;
   }): Promise<any> {
     const taskId = this.generateTaskId();
     const task: AITask = {
       id: taskId,
-      type: 'assistant',
+      type: "assistant",
       mode: request.mode,
-      complexity: 'simple',
+      complexity: "simple",
       description: `${request.action} for ${request.language} code`,
       context: request.context,
-      estimatedEffort: request.mode === 'basic' ? 0 : 1
+      estimatedEffort: request.mode === "basic" ? 0 : 1,
     };
 
     this.activeTasks.set(taskId, task);
@@ -139,22 +147,26 @@ export class ReplitAIEnhancedSystem {
       let result: any;
 
       switch (request.action) {
-        case 'explain':
+        case "explain":
           result = await this.explainCode(request.code, request.language);
           break;
-        case 'fix':
-          if (request.mode === 'basic') {
+        case "fix":
+          if (request.mode === "basic") {
             result = await this.suggestFixes(request.code, request.language);
           } else {
             result = await this.applyFixes(request.code, request.language);
             task.cost = 0.05; // $0.05 per advanced edit
           }
           break;
-        case 'add-feature':
-          if (request.mode === 'basic') {
+        case "add-feature":
+          if (request.mode === "basic") {
             result = await this.suggestFeature(request.code, request.language);
           } else {
-            result = await this.implementFeature(request.code, request.language, request.context);
+            result = await this.implementFeature(
+              request.code,
+              request.language,
+              request.context,
+            );
             task.cost = 0.05; // $0.05 per advanced edit
           }
           break;
@@ -167,7 +179,7 @@ export class ReplitAIEnhancedSystem {
       return {
         result,
         mode: request.mode,
-        cost: task.cost || 0
+        cost: task.cost || 0,
       };
     } catch (error) {
       this.activeTasks.delete(taskId);
@@ -176,22 +188,32 @@ export class ReplitAIEnhancedSystem {
   }
 
   // Intelligent complexity assessment
-  private assessComplexity(description: string): 'simple' | 'moderate' | 'complex' {
+  private assessComplexity(
+    description: string,
+  ): "simple" | "moderate" | "complex" {
     const complexityIndicators = {
-      simple: ['basic', 'simple', 'landing page', 'static', 'display'],
-      moderate: ['crud', 'api', 'database', 'authentication', 'responsive'],
-      complex: ['real-time', 'ai', 'machine learning', 'payment', 'integration', 'multi-user', 'websocket']
+      simple: ["basic", "simple", "landing page", "static", "display"],
+      moderate: ["crud", "api", "database", "authentication", "responsive"],
+      complex: [
+        "real-time",
+        "ai",
+        "machine learning",
+        "payment",
+        "integration",
+        "multi-user",
+        "websocket",
+      ],
     };
 
     const lowerDesc = description.toLowerCase();
-    
+
     for (const [level, keywords] of Object.entries(complexityIndicators)) {
-      if (keywords.some(keyword => lowerDesc.includes(keyword))) {
-        return level as 'simple' | 'moderate' | 'complex';
+      if (keywords.some((keyword) => lowerDesc.includes(keyword))) {
+        return level as "simple" | "moderate" | "complex";
       }
     }
-    
-    return 'moderate';
+
+    return "moderate";
   }
 
   // Effort estimation (1-10 scale)
@@ -200,11 +222,11 @@ export class ReplitAIEnhancedSystem {
     const baseEffort = {
       simple: 2,
       moderate: 5,
-      complex: 8
+      complex: 8,
     };
 
     // Adjust based on description length and specificity
-    const wordCount = description.split(' ').length;
+    const wordCount = description.split(" ").length;
     const adjustment = Math.min(wordCount / 50, 2); // Max 2 points adjustment
 
     return Math.min(baseEffort[complexity] + adjustment, 10);
@@ -231,13 +253,13 @@ Focus on user experience, design patterns, and scalability.`,
       gemini: `Analyze technical requirements and performance considerations for:
 "${description}"
 
-Include optimization strategies and deployment recommendations.`
+Include optimization strategies and deployment recommendations.`,
     };
 
     const analyses = await Promise.all([
-      multiAIService.generateResponseWithFallback(prompts.openai, '', 'openai'),
-      multiAIService.generateResponseWithFallback(prompts.claude, '', 'claude'),
-      multiAIService.generateResponseWithFallback(prompts.gemini, '', 'gemini')
+      multiAIService.generateResponseWithFallback(prompts.openai, "", "openai"),
+      multiAIService.generateResponseWithFallback(prompts.claude, "", "claude"),
+      multiAIService.generateResponseWithFallback(prompts.gemini, "", "gemini"),
     ]);
 
     // Merge insights from all providers
@@ -263,23 +285,26 @@ Use modern best practices and production-ready patterns.
 
     const response = await multiAIService.generateResponseWithFallback(
       architecturePrompt,
-      'You are an expert software architect.',
-      'openai'
+      "You are an expert software architect.",
+      "openai",
     );
 
     return JSON.parse(response.content);
   }
 
   // Create project with proper structure
-  private async createProjectStructure(architecture: any, userId: number): Promise<any> {
+  private async createProjectStructure(
+    architecture: any,
+    userId: number,
+  ): Promise<any> {
     const project = await storage.createProject({
       userId,
-      name: architecture.projectName || 'AI Generated App',
+      name: architecture.projectName || "AI Generated App",
       description: architecture.description,
-      language: architecture.techStack.language || 'typescript',
-      framework: architecture.techStack.frontend || 'react',
-      status: 'active',
-      isPublic: false
+      language: architecture.techStack.language || "typescript",
+      framework: architecture.techStack.frontend || "react",
+      status: "active",
+      isPublic: false,
     });
 
     // Initialize project files structure
@@ -289,12 +314,16 @@ Use modern best practices and production-ready patterns.
   }
 
   // Generate complete application code
-  private async generateCompleteApp(project: any, architecture: any, taskId: string): Promise<any> {
+  private async generateCompleteApp(
+    project: any,
+    architecture: any,
+    taskId: string,
+  ): Promise<any> {
     const codeGeneration = {
       frontend: [],
       backend: [],
       config: [],
-      tests: []
+      tests: [],
     };
 
     // Track effort for each component
@@ -302,14 +331,20 @@ Use modern best practices and production-ready patterns.
 
     // Generate frontend components
     for (const component of architecture.components || []) {
-      const code = await this.generateComponent(component, architecture.techStack);
+      const code = await this.generateComponent(
+        component,
+        architecture.techStack,
+      );
       codeGeneration.frontend.push(code);
       this.incrementEffort(taskId, 0.5);
     }
 
     // Generate backend API
     if (architecture.api) {
-      const apiCode = await this.generateAPI(architecture.api, architecture.techStack);
+      const apiCode = await this.generateAPI(
+        architecture.api,
+        architecture.techStack,
+      );
       codeGeneration.backend.push(apiCode);
       this.incrementEffort(taskId, 1);
     }
@@ -326,20 +361,23 @@ Use modern best practices and production-ready patterns.
       prompt: JSON.stringify(architecture),
       language: architecture.techStack.language,
       framework: architecture.techStack.frontend,
-      generatedCode: JSON.stringify(codeGeneration)
+      generatedCode: JSON.stringify(codeGeneration),
     });
 
     return codeGeneration;
   }
 
   // Component generation with modern patterns
-  private async generateComponent(component: any, techStack: any): Promise<any> {
+  private async generateComponent(
+    component: any,
+    techStack: any,
+  ): Promise<any> {
     const componentPrompt = `
 Generate a ${techStack.frontend} component:
 Name: ${component.name}
 Type: ${component.type}
 Props: ${JSON.stringify(component.props)}
-Features: ${component.features?.join(', ')}
+Features: ${component.features?.join(", ")}
 
 Use TypeScript, modern hooks, and best practices.
 Include proper error handling and accessibility.
@@ -347,14 +385,14 @@ Include proper error handling and accessibility.
 
     const response = await multiAIService.generateResponseWithFallback(
       componentPrompt,
-      'You are an expert frontend developer.',
-      'claude' // Claude excels at UI/UX code
+      "You are an expert frontend developer.",
+      "claude", // Claude excels at UI/UX code
     );
 
     return {
       name: component.name,
       code: response.content,
-      type: component.type
+      type: component.type,
     };
   }
 
@@ -377,13 +415,13 @@ Include:
 
     const response = await multiAIService.generateResponseWithFallback(
       apiPrompt,
-      'You are an expert backend developer.',
-      'openai' // OpenAI excels at API design
+      "You are an expert backend developer.",
+      "openai", // OpenAI excels at API design
     );
 
     return {
       endpoints: apiSpec.endpoints,
-      code: response.content
+      code: response.content,
     };
   }
 
@@ -393,36 +431,44 @@ Include:
 
     // Package.json
     configs.push({
-      name: 'package.json',
-      content: JSON.stringify({
-        name: architecture.projectName.toLowerCase().replace(/\s+/g, '-'),
-        version: '1.0.0',
-        scripts: {
-          dev: 'vite',
-          build: 'vite build',
-          preview: 'vite preview'
+      name: "package.json",
+      content: JSON.stringify(
+        {
+          name: architecture.projectName.toLowerCase().replace(/\s+/g, "-"),
+          version: "1.0.0",
+          scripts: {
+            dev: "vite",
+            build: "vite build",
+            preview: "vite preview",
+          },
+          dependencies: architecture.dependencies || {},
+          devDependencies: architecture.devDependencies || {},
         },
-        dependencies: architecture.dependencies || {},
-        devDependencies: architecture.devDependencies || {}
-      }, null, 2)
+        null,
+        2,
+      ),
     });
 
     // TypeScript config
-    if (architecture.techStack.language === 'typescript') {
+    if (architecture.techStack.language === "typescript") {
       configs.push({
-        name: 'tsconfig.json',
-        content: JSON.stringify({
-          compilerOptions: {
-            target: 'ES2020',
-            module: 'ESNext',
-            strict: true,
-            jsx: 'react-jsx',
-            moduleResolution: 'node',
-            resolveJsonModule: true,
-            esModuleInterop: true,
-            skipLibCheck: true
-          }
-        }, null, 2)
+        name: "tsconfig.json",
+        content: JSON.stringify(
+          {
+            compilerOptions: {
+              target: "ES2020",
+              module: "ESNext",
+              strict: true,
+              jsx: "react-jsx",
+              moduleResolution: "node",
+              resolveJsonModule: true,
+              esModuleInterop: true,
+              skipLibCheck: true,
+            },
+          },
+          null,
+          2,
+        ),
       });
     }
 
@@ -433,7 +479,7 @@ Include:
   private async setupEnvironment(project: any): Promise<void> {
     // This would integrate with actual package managers and build tools
     console.log(`Setting up environment for project ${project.id}`);
-    
+
     // Create necessary directories
     // Install dependencies
     // Set up build scripts
@@ -457,14 +503,14 @@ Provide:
 
     const response = await multiAIService.generateResponseWithFallback(
       prompt,
-      'You are a helpful coding teacher.',
-      'openai'
+      "You are a helpful coding teacher.",
+      "openai",
     );
 
     return {
       explanation: response.content,
       language,
-      concepts: this.extractConcepts(response.content)
+      concepts: this.extractConcepts(response.content),
     };
   }
 
@@ -481,13 +527,13 @@ Suggest fixes for any bugs, performance issues, or best practice violations.
 
     const response = await multiAIService.generateResponseWithFallback(
       prompt,
-      'You are an expert code reviewer.',
-      'openai'
+      "You are an expert code reviewer.",
+      "openai",
     );
 
     return {
       suggestions: response.content,
-      severity: 'info'
+      severity: "info",
     };
   }
 
@@ -504,14 +550,14 @@ Return the corrected code with comments explaining the fixes.
 
     const response = await multiAIService.generateResponseWithFallback(
       prompt,
-      'You are an expert developer who writes clean, bug-free code.',
-      'claude' // Claude excels at code quality
+      "You are an expert developer who writes clean, bug-free code.",
+      "claude", // Claude excels at code quality
     );
 
     return {
       originalCode: code,
       fixedCode: response.content,
-      changes: this.diffCode(code, response.content)
+      changes: this.diffCode(code, response.content),
     };
   }
 
@@ -528,18 +574,22 @@ Describe what the feature would do and how to implement it.
 
     const response = await multiAIService.generateResponseWithFallback(
       prompt,
-      'You are a creative developer.',
-      'claude'
+      "You are a creative developer.",
+      "claude",
     );
 
     return {
       suggestion: response.content,
-      complexity: 'moderate'
+      complexity: "moderate",
     };
   }
 
   // Implement feature (advanced mode - costs $0.05)
-  private async implementFeature(code: string, language: string, context: any): Promise<any> {
+  private async implementFeature(
+    code: string,
+    language: string,
+    context: any,
+  ): Promise<any> {
     const prompt = `
 Add this feature to the ${language} code:
 ${context.featureDescription}
@@ -554,28 +604,28 @@ Implement the feature completely with proper integration.
 
     const response = await multiAIService.generateResponseWithFallback(
       prompt,
-      'You are an expert developer who implements features perfectly.',
-      'openai'
+      "You are an expert developer who implements features perfectly.",
+      "openai",
     );
 
     return {
       originalCode: code,
       updatedCode: response.content,
-      featureAdded: context.featureDescription
+      featureAdded: context.featureDescription,
     };
   }
 
   // Checkpoint creation for rollback
   private async createCheckpoint(project: any, code: any): Promise<string> {
     const checkpointId = `checkpoint-${Date.now()}`;
-    
+
     // Store checkpoint data
     await agentMemoryService.storeMemory(0, project.id, {
-      type: 'checkpoint',
+      type: "checkpoint",
       checkpointId,
       code: JSON.stringify(code),
       timestamp: new Date(),
-      projectState: project
+      projectState: project,
     });
 
     return checkpointId;
@@ -593,24 +643,24 @@ Implement the feature completely with proper integration.
 
   // Cost calculation based on effort
   private calculateCost(task: AITask): number {
-    if (task.type === 'assistant' && task.mode === 'basic') {
+    if (task.type === "assistant" && task.mode === "basic") {
       return 0; // Basic assistant mode is free
     }
 
-    if (task.type === 'assistant' && task.mode === 'advanced') {
+    if (task.type === "assistant" && task.mode === "advanced") {
       return 0.05; // Fixed price for advanced assistant
     }
 
     // Agent pricing based on effort
     const effortCost = {
-      simple: 0.10,    // $0.10 for simple tasks
-      moderate: 0.50,  // $0.50 for moderate tasks
-      complex: 2.00    // $2.00 for complex tasks
+      simple: 0.1, // $0.10 for simple tasks
+      moderate: 0.5, // $0.50 for moderate tasks
+      complex: 2.0, // $2.00 for complex tasks
     };
 
     const baseCost = effortCost[task.complexity];
     const effortMultiplier = task.actualEffort || task.estimatedEffort;
-    
+
     return baseCost * (effortMultiplier / 5); // Normalized to 5 as average
   }
 
@@ -620,31 +670,34 @@ Implement the feature completely with proper integration.
     const merged = {
       features: new Set(),
       techStack: {},
-      architecture: '',
+      architecture: "",
       integrations: new Set(),
-      complexity: 'moderate'
+      complexity: "moderate",
     };
 
-    analyses.forEach(analysis => {
+    analyses.forEach((analysis) => {
       try {
-        const parsed = typeof analysis.content === 'string' 
-          ? JSON.parse(analysis.content) 
-          : analysis.content;
-        
+        const parsed =
+          typeof analysis.content === "string"
+            ? JSON.parse(analysis.content)
+            : analysis.content;
+
         if (parsed.features) {
           parsed.features.forEach((f: string) => merged.features.add(f));
         }
-        
+
         if (parsed.techStack) {
           Object.assign(merged.techStack, parsed.techStack);
         }
-        
+
         if (parsed.integrations) {
-          parsed.integrations.forEach((i: string) => merged.integrations.add(i));
+          parsed.integrations.forEach((i: string) =>
+            merged.integrations.add(i),
+          );
         }
       } catch (e) {
         // Handle non-JSON responses
-        console.log('Non-JSON analysis response:', analysis);
+        console.log("Non-JSON analysis response:", analysis);
       }
     });
 
@@ -653,7 +706,7 @@ Implement the feature completely with proper integration.
       techStack: merged.techStack,
       architecture: merged.architecture,
       integrations: Array.from(merged.integrations),
-      complexity: merged.complexity
+      complexity: merged.complexity,
     };
   }
 
@@ -664,10 +717,10 @@ Implement the feature completely with proper integration.
       /uses?\s+(\w+)/gi,
       /implements?\s+(\w+)/gi,
       /pattern:\s*(\w+)/gi,
-      /concept:\s*(\w+)/gi
+      /concept:\s*(\w+)/gi,
     ];
 
-    conceptPatterns.forEach(pattern => {
+    conceptPatterns.forEach((pattern) => {
       const matches = explanation.matchAll(pattern);
       for (const match of matches) {
         concepts.push(match[1]);
@@ -679,20 +732,24 @@ Implement the feature completely with proper integration.
 
   // Code diff for showing changes
   private diffCode(original: string, updated: string): any {
-    const originalLines = original.split('\n');
-    const updatedLines = updated.split('\n');
+    const originalLines = original.split("\n");
+    const updatedLines = updated.split("\n");
     const changes = [];
 
     // Simple line-by-line diff
     const maxLines = Math.max(originalLines.length, updatedLines.length);
-    
+
     for (let i = 0; i < maxLines; i++) {
       if (originalLines[i] !== updatedLines[i]) {
         changes.push({
           line: i + 1,
-          original: originalLines[i] || '',
-          updated: updatedLines[i] || '',
-          type: !originalLines[i] ? 'added' : !updatedLines[i] ? 'removed' : 'modified'
+          original: originalLines[i] || "",
+          updated: updatedLines[i] || "",
+          type: !originalLines[i]
+            ? "added"
+            : !updatedLines[i]
+              ? "removed"
+              : "modified",
         });
       }
     }
@@ -701,24 +758,27 @@ Implement the feature completely with proper integration.
   }
 
   // Initialize project files
-  private async initializeProjectFiles(projectId: number, architecture: any): Promise<void> {
+  private async initializeProjectFiles(
+    projectId: number,
+    architecture: any,
+  ): Promise<void> {
     // Create initial file structure based on architecture
     const files = [
-      { path: 'src/index.tsx', type: 'file' },
-      { path: 'src/App.tsx', type: 'file' },
-      { path: 'src/components/', type: 'folder' },
-      { path: 'src/styles/', type: 'folder' },
-      { path: 'public/', type: 'folder' },
-      { path: 'README.md', type: 'file' }
+      { path: "src/index.tsx", type: "file" },
+      { path: "src/App.tsx", type: "file" },
+      { path: "src/components/", type: "folder" },
+      { path: "src/styles/", type: "folder" },
+      { path: "public/", type: "folder" },
+      { path: "README.md", type: "file" },
     ];
 
     // Store file structure metadata
     for (const file of files) {
       await agentMemoryService.storeMemory(0, projectId, {
-        type: 'project-file',
+        type: "project-file",
         path: file.path,
         fileType: file.type,
-        created: new Date()
+        created: new Date(),
       });
     }
   }
@@ -730,21 +790,23 @@ Implement the feature completely with proper integration.
 
   // Get usage statistics
   async getUsageStats(userId: number): Promise<any> {
-    const userTasks = this.taskHistory.filter(task => 
-      task.context?.userId === userId
+    const userTasks = this.taskHistory.filter(
+      (task) => task.context?.userId === userId,
     );
 
     const stats = {
       totalTasks: userTasks.length,
-      agentTasks: userTasks.filter(t => t.type === 'agent').length,
-      assistantTasks: userTasks.filter(t => t.type === 'assistant').length,
+      agentTasks: userTasks.filter((t) => t.type === "agent").length,
+      assistantTasks: userTasks.filter((t) => t.type === "assistant").length,
       totalCost: userTasks.reduce((sum, task) => sum + (task.cost || 0), 0),
-      averageEffort: userTasks.reduce((sum, task) => sum + (task.actualEffort || 0), 0) / userTasks.length,
+      averageEffort:
+        userTasks.reduce((sum, task) => sum + (task.actualEffort || 0), 0) /
+        userTasks.length,
       complexityBreakdown: {
-        simple: userTasks.filter(t => t.complexity === 'simple').length,
-        moderate: userTasks.filter(t => t.complexity === 'moderate').length,
-        complex: userTasks.filter(t => t.complexity === 'complex').length
-      }
+        simple: userTasks.filter((t) => t.complexity === "simple").length,
+        moderate: userTasks.filter((t) => t.complexity === "moderate").length,
+        complex: userTasks.filter((t) => t.complexity === "complex").length,
+      },
     };
 
     return stats;

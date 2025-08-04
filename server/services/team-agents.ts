@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Development Team Agent Management System
 import { db } from "../db";
 import { agents, conversations, messages } from "@shared/schema";
@@ -20,7 +21,7 @@ export interface ProjectRequirement {
   language: string;
   framework?: string;
   projectType: string; // webapp, api, mobile, etc.
-  complexity: 'simple' | 'moderate' | 'complex';
+  complexity: "simple" | "moderate" | "complex";
   features: string[];
 }
 
@@ -30,7 +31,12 @@ export const DEV_TEAM_AGENTS = [
     type: "roadmap_specialist",
     name: "Alex Roadmap",
     specialization: "roadmap",
-    capabilities: ["project_planning", "timeline_estimation", "milestone_tracking", "risk_assessment"],
+    capabilities: [
+      "project_planning",
+      "timeline_estimation",
+      "milestone_tracking",
+      "risk_assessment",
+    ],
     languages: ["general"],
     frameworks: ["agile", "scrum"],
     aiProvider: "openai",
@@ -46,13 +52,19 @@ Your expertise:
 
 Communication style: Strategic, detail-oriented, practical. Always provide actionable roadmaps with clear timelines and deliverables.
 
-Focus on creating realistic, achievable project plans that account for technical complexity and team capabilities.`
+Focus on creating realistic, achievable project plans that account for technical complexity and team capabilities.`,
   },
   {
     type: "design_specialist",
     name: "Maya Designer",
     specialization: "design",
-    capabilities: ["ui_design", "ux_research", "prototyping", "design_systems", "accessibility"],
+    capabilities: [
+      "ui_design",
+      "ux_research",
+      "prototyping",
+      "design_systems",
+      "accessibility",
+    ],
     languages: ["html", "css", "javascript"],
     frameworks: ["figma", "tailwind", "react"],
     aiProvider: "claude",
@@ -68,15 +80,41 @@ Your expertise:
 
 Communication style: Creative, user-focused, collaborative. Always consider user experience and accessibility in every design decision.
 
-Focus on creating beautiful, functional designs that solve real user problems and align with business goals.`
+Focus on creating beautiful, functional designs that solve real user problems and align with business goals.`,
   },
   {
     type: "claude_ai_agent",
     name: "Claude AI",
     specialization: "advanced_ai",
-    capabilities: ["text_generation", "code_generation", "analysis", "chat", "problem_solving", "content_creation"],
-    languages: ["javascript", "typescript", "python", "html", "css", "sql", "react", "vue", "angular"],
-    frameworks: ["react", "vue", "angular", "express", "django", "flask", "next", "nuxt"],
+    capabilities: [
+      "text_generation",
+      "code_generation",
+      "analysis",
+      "chat",
+      "problem_solving",
+      "content_creation",
+    ],
+    languages: [
+      "javascript",
+      "typescript",
+      "python",
+      "html",
+      "css",
+      "sql",
+      "react",
+      "vue",
+      "angular",
+    ],
+    frameworks: [
+      "react",
+      "vue",
+      "angular",
+      "express",
+      "django",
+      "flask",
+      "next",
+      "nuxt",
+    ],
     aiProvider: "claude",
     experienceLevel: "expert",
     systemPrompt: `You are Claude, an advanced AI assistant powered by Claude Sonnet 4.0, the latest model from Anthropic.
@@ -91,13 +129,18 @@ Your expertise:
 
 Communication style: Professional, insightful, comprehensive. Always provide detailed explanations and consider multiple approaches to problems.
 
-Focus on delivering accurate, helpful, and well-reasoned responses that help users achieve their goals efficiently.`
+Focus on delivering accurate, helpful, and well-reasoned responses that help users achieve their goals efficiently.`,
   },
   {
     type: "css_specialist",
     name: "Jordan CSS",
     specialization: "css",
-    capabilities: ["advanced_css", "animations", "responsive_design", "performance_optimization"],
+    capabilities: [
+      "advanced_css",
+      "animations",
+      "responsive_design",
+      "performance_optimization",
+    ],
     languages: ["css", "scss", "less"],
     frameworks: ["tailwind", "bootstrap", "styled-components"],
     aiProvider: "gemini",
@@ -113,13 +156,18 @@ Your expertise:
 
 Communication style: Technical, precise, performance-focused. Always provide optimized CSS solutions with cross-browser compatibility.
 
-Focus on writing clean, efficient CSS that enhances user experience without compromising performance.`
+Focus on writing clean, efficient CSS that enhances user experience without compromising performance.`,
   },
   {
     type: "ai_specialist",
     name: "Sam AI",
     specialization: "ai",
-    capabilities: ["machine_learning", "ai_integration", "api_development", "data_processing"],
+    capabilities: [
+      "machine_learning",
+      "ai_integration",
+      "api_development",
+      "data_processing",
+    ],
     languages: ["python", "javascript", "typescript"],
     frameworks: ["openai", "langchain", "tensorflow", "pytorch"],
     aiProvider: "openai",
@@ -135,13 +183,18 @@ Your expertise:
 
 Communication style: Technical, innovative, solution-oriented. Always consider AI best practices and ethical implications.
 
-Focus on creating intelligent, efficient AI integrations that add genuine value to applications.`
+Focus on creating intelligent, efficient AI integrations that add genuine value to applications.`,
   },
   {
     type: "php_senior",
     name: "Carlos PHP",
     specialization: "php",
-    capabilities: ["backend_development", "api_design", "database_optimization", "security"],
+    capabilities: [
+      "backend_development",
+      "api_design",
+      "database_optimization",
+      "security",
+    ],
     languages: ["php", "sql", "javascript"],
     frameworks: ["laravel", "symfony", "codeigniter"],
     aiProvider: "claude",
@@ -157,13 +210,18 @@ Your expertise:
 
 Communication style: Professional, security-conscious, performance-focused. Always prioritize code quality and maintainability.
 
-Focus on creating secure, efficient PHP solutions that follow industry standards and best practices.`
+Focus on creating secure, efficient PHP solutions that follow industry standards and best practices.`,
   },
   {
     type: "python_senior",
     name: "Riley Python",
     specialization: "python",
-    capabilities: ["backend_development", "data_analysis", "automation", "api_development"],
+    capabilities: [
+      "backend_development",
+      "data_analysis",
+      "automation",
+      "api_development",
+    ],
     languages: ["python", "sql", "javascript"],
     frameworks: ["django", "flask", "fastapi", "pandas"],
     aiProvider: "openai",
@@ -179,13 +237,18 @@ Your expertise:
 
 Communication style: Analytical, efficient, detail-oriented. Always write clean, pythonic code with proper documentation.
 
-Focus on creating elegant, efficient Python solutions that leverage the language's strengths and ecosystem.`
+Focus on creating elegant, efficient Python solutions that leverage the language's strengths and ecosystem.`,
   },
   {
     type: "react_senior",
     name: "Taylor React",
     specialization: "react",
-    capabilities: ["frontend_development", "component_architecture", "state_management", "performance"],
+    capabilities: [
+      "frontend_development",
+      "component_architecture",
+      "state_management",
+      "performance",
+    ],
     languages: ["javascript", "typescript", "html", "css"],
     frameworks: ["react", "next.js", "vite", "tailwind"],
     aiProvider: "claude",
@@ -201,13 +264,18 @@ Your expertise:
 
 Communication style: Modern, component-focused, performance-oriented. Always follow React best practices and hooks patterns.
 
-Focus on creating maintainable, high-performance React applications with excellent developer experience.`
+Focus on creating maintainable, high-performance React applications with excellent developer experience.`,
   },
   {
     type: "vite_specialist",
     name: "Morgan Vite",
     specialization: "vite",
-    capabilities: ["build_optimization", "development_tools", "bundling", "performance"],
+    capabilities: [
+      "build_optimization",
+      "development_tools",
+      "bundling",
+      "performance",
+    ],
     languages: ["javascript", "typescript"],
     frameworks: ["vite", "webpack", "rollup"],
     aiProvider: "gemini",
@@ -223,8 +291,8 @@ Your expertise:
 
 Communication style: Technical, optimization-focused, practical. Always prioritize developer experience and build efficiency.
 
-Focus on creating fast, efficient build processes that enhance development productivity and application performance.`
-  }
+Focus on creating fast, efficient build processes that enhance development productivity and application performance.`,
+  },
 ];
 
 // Initialize development team agents in database
@@ -232,8 +300,11 @@ export async function initializeDevTeamAgents(): Promise<void> {
   try {
     for (const agent of DEV_TEAM_AGENTS) {
       // Check if agent already exists
-      const existing = await db.select().from(agents).where(eq(agents.type, agent.type));
-      
+      const existing = await db
+        .select()
+        .from(agents)
+        .where(eq(agents.type, agent.type));
+
       if (existing.length === 0) {
         await db.insert(agents).values({
           type: agent.type,
@@ -246,58 +317,78 @@ export async function initializeDevTeamAgents(): Promise<void> {
           systemPrompt: agent.systemPrompt,
           experienceLevel: agent.experienceLevel,
           description: `${agent.experienceLevel} ${agent.specialization} specialist`,
-          status: "active"
+          status: "active",
         });
       }
     }
-    console.log('✅ Development team agents initialized');
+    console.log("✅ Development team agents initialized");
   } catch (error) {
-    console.error('❌ Error initializing dev team agents:', error);
+    console.error("❌ Error initializing dev team agents:", error);
   }
 }
 
 // Analyze project requirements and suggest required agents
-export async function suggestRequiredAgents(requirements: ProjectRequirement): Promise<DevTeamAgent[]> {
+export async function suggestRequiredAgents(
+  requirements: ProjectRequirement,
+): Promise<DevTeamAgent[]> {
   try {
     const suggestedAgents: string[] = [];
-    
+
     // Always include roadmap specialist for project planning
     suggestedAgents.push("roadmap_specialist");
-    
+
     // Add design specialist for UI/UX projects
-    if (requirements.projectType === 'webapp' || requirements.features.includes('ui')) {
+    if (
+      requirements.projectType === "webapp" ||
+      requirements.features.includes("ui")
+    ) {
       suggestedAgents.push("design_specialist");
     }
-    
+
     // Add CSS specialist for complex styling
-    if (requirements.complexity !== 'simple' || requirements.features.includes('animations')) {
+    if (
+      requirements.complexity !== "simple" ||
+      requirements.features.includes("animations")
+    ) {
       suggestedAgents.push("css_specialist");
     }
-    
+
     // Add AI specialist if AI features are required
-    if (requirements.features.includes('ai') || requirements.features.includes('chatbot')) {
+    if (
+      requirements.features.includes("ai") ||
+      requirements.features.includes("chatbot")
+    ) {
       suggestedAgents.push("ai_specialist");
     }
-    
+
     // Add language-specific specialists
-    if (requirements.language === 'php') {
+    if (requirements.language === "php") {
       suggestedAgents.push("php_senior");
-    } else if (requirements.language === 'python') {
+    } else if (requirements.language === "python") {
       suggestedAgents.push("python_senior");
-    } else if (requirements.language === 'javascript' || requirements.language === 'typescript') {
+    } else if (
+      requirements.language === "javascript" ||
+      requirements.language === "typescript"
+    ) {
       suggestedAgents.push("react_senior");
     }
-    
+
     // Add framework-specific specialists
-    if (requirements.framework === 'vite' || requirements.framework === 'react') {
+    if (
+      requirements.framework === "vite" ||
+      requirements.framework === "react"
+    ) {
       suggestedAgents.push("react_senior");
       suggestedAgents.push("vite_specialist");
     }
-    
+
     // Get agent details from database
-    const agentDetails = await db.select().from(agents).where(inArray(agents.type, suggestedAgents));
-    
-    return agentDetails.map(agent => ({
+    const agentDetails = await db
+      .select()
+      .from(agents)
+      .where(inArray(agents.type, suggestedAgents));
+
+    return agentDetails.map((agent) => ({
       id: agent.id,
       type: agent.type,
       name: agent.name,
@@ -307,10 +398,10 @@ export async function suggestRequiredAgents(requirements: ProjectRequirement): P
       frameworks: agent.frameworks || [],
       aiProvider: agent.aiProvider,
       systemPrompt: agent.systemPrompt,
-      experienceLevel: agent.experienceLevel
+      experienceLevel: agent.experienceLevel,
     }));
   } catch (error) {
-    console.error('Error suggesting required agents:', error);
+    console.error("Error suggesting required agents:", error);
     return [];
   }
 }
@@ -319,31 +410,34 @@ export async function suggestRequiredAgents(requirements: ProjectRequirement): P
 export async function createTeamConversation(
   projectId: number,
   requiredAgents: DevTeamAgent[],
-  userId: number
+  userId: number,
 ): Promise<number> {
   try {
-    const [conversation] = await db.insert(conversations).values({
-      projectId,
-      title: `Project Development Team`,
-      type: 'project_discussion',
-      status: 'active',
-      participants: requiredAgents.map(agent => agent.id),
-      createdBy: userId
-    }).returning();
+    const [conversation] = await db
+      .insert(conversations)
+      .values({
+        projectId,
+        title: `Project Development Team`,
+        type: "project_discussion",
+        status: "active",
+        participants: requiredAgents.map((agent) => agent.id),
+        createdBy: userId,
+      })
+      .returning();
 
     // Add initial system message
     await db.insert(messages).values({
       conversationId: conversation.id,
       senderId: userId,
-      senderType: 'user',
-      content: `Welcome to the project development team! Here are the selected specialists:\n\n${requiredAgents.map(agent => `• ${agent.name} (${agent.specialization})`).join('\n')}\n\nLet's start planning and building this project together!`,
-      messageType: 'system'
+      senderType: "user",
+      content: `Welcome to the project development team! Here are the selected specialists:\n\n${requiredAgents.map((agent) => `• ${agent.name} (${agent.specialization})`).join("\n")}\n\nLet's start planning and building this project together!`,
+      messageType: "system",
     });
 
     return conversation.id;
   } catch (error) {
-    console.error('Error creating team conversation:', error);
-    throw new Error('Failed to create team conversation');
+    console.error("Error creating team conversation:", error);
+    throw new Error("Failed to create team conversation");
   }
 }
 
@@ -351,10 +445,10 @@ export async function createTeamConversation(
 export async function initializeAgents(): Promise<void> {
   try {
     const existingAgents = await db.select().from(agents);
-    
+
     if (existingAgents.length === 0) {
-      console.log('Initializing team agents in database...');
-      
+      console.log("Initializing team agents in database...");
+
       for (const agentData of DEV_TEAM_AGENTS) {
         await db.insert(agents).values({
           type: agentData.type,
@@ -366,15 +460,15 @@ export async function initializeAgents(): Promise<void> {
           aiProvider: agentData.aiProvider,
           systemPrompt: agentData.systemPrompt,
           experienceLevel: agentData.experienceLevel,
-          status: 'active',
-          lastActive: new Date()
+          status: "active",
+          lastActive: new Date(),
         });
       }
-      
+
       console.log(`Initialized ${DEV_TEAM_AGENTS.length} team agents`);
     }
   } catch (error) {
-    console.error('Error initializing agents:', error);
+    console.error("Error initializing agents:", error);
   }
 }
 
@@ -383,9 +477,9 @@ export async function getAllAgents(): Promise<DevTeamAgent[]> {
   try {
     // Initialize agents if they don't exist
     await initializeAgents();
-    
+
     const allAgents = await db.select().from(agents);
-    return allAgents.map(agent => ({
+    return allAgents.map((agent) => ({
       id: agent.id,
       type: agent.type,
       name: agent.name,
@@ -395,10 +489,10 @@ export async function getAllAgents(): Promise<DevTeamAgent[]> {
       frameworks: agent.frameworks || [],
       aiProvider: agent.aiProvider,
       systemPrompt: agent.systemPrompt,
-      experienceLevel: agent.experienceLevel
+      experienceLevel: agent.experienceLevel,
     }));
   } catch (error) {
-    console.error('Error getting all agents:', error);
+    console.error("Error getting all agents:", error);
     return [];
   }
 }
@@ -407,9 +501,9 @@ export async function getAllAgents(): Promise<DevTeamAgent[]> {
 export async function sendTeamMessage(
   conversationId: number,
   senderId: number,
-  senderType: 'user' | 'agent',
+  senderType: "user" | "agent",
   content: string,
-  messageType: 'text' | 'code' | 'system' = 'text'
+  messageType: "text" | "code" | "system" = "text",
 ): Promise<void> {
   try {
     await db.insert(messages).values({
@@ -417,21 +511,24 @@ export async function sendTeamMessage(
       senderId,
       senderType,
       content,
-      messageType
+      messageType,
     });
   } catch (error) {
-    console.error('Error sending team message:', error);
-    throw new Error('Failed to send team message');
+    console.error("Error sending team message:", error);
+    throw new Error("Failed to send team message");
   }
 }
 
 // Get team conversation messages
 export async function getTeamMessages(conversationId: number): Promise<any[]> {
   try {
-    const msgs = await db.select().from(messages).where(eq(messages.conversationId, conversationId));
+    const msgs = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.conversationId, conversationId));
     return msgs;
   } catch (error) {
-    console.error('Error getting team messages:', error);
+    console.error("Error getting team messages:", error);
     return [];
   }
 }

@@ -1,4 +1,4 @@
-import { storage } from '../storage';
+import { storage } from "../storage";
 
 interface DemoStep {
   agentId: number;
@@ -6,14 +6,14 @@ interface DemoStep {
   fileName: string;
   action: string;
   content: string;
-  updateType: 'thinking' | 'partial' | 'complete' | 'error';
+  updateType: "thinking" | "partial" | "complete" | "error";
   delayMs: number;
 }
 
 export class LiveDemoOrchestrator {
   private static instance: LiveDemoOrchestrator;
   private isRunning = false;
-  private sessionId = '';
+  private sessionId = "";
   private steps: DemoStep[] = [];
 
   static getInstance(): LiveDemoOrchestrator {
@@ -23,36 +23,49 @@ export class LiveDemoOrchestrator {
     return LiveDemoOrchestrator.instance;
   }
 
-  async startGymBuddyDemo(): Promise<{ sessionId: string; totalSteps: number }> {
+  async startGymBuddyDemo(): Promise<{
+    sessionId: string;
+    totalSteps: number;
+  }> {
     if (this.isRunning) {
-      throw new Error('Demo already running');
+      throw new Error("Demo already running");
     }
 
     this.sessionId = `gym-buddy-${Date.now()}`;
     this.isRunning = true;
-    
+
     // Get agents from database
     const agents = await storage.getAllAgents();
-    const mayaDesigner = agents.find(a => a.name.includes('Maya')) || { id: 3, name: 'Maya Designer' };
-    const samDeveloper = agents.find(a => a.name.includes('Sam')) || { id: 2, name: 'Sam Developer' };
-    const jordanCSS = agents.find(a => a.name.includes('Jordan')) || { id: 4, name: 'Jordan CSS' };
+    const mayaDesigner = agents.find((a) => a.name.includes("Maya")) || {
+      id: 3,
+      name: "Maya Designer",
+    };
+    const samDeveloper = agents.find((a) => a.name.includes("Sam")) || {
+      id: 2,
+      name: "Sam Developer",
+    };
+    const jordanCSS = agents.find((a) => a.name.includes("Jordan")) || {
+      id: 4,
+      name: "Jordan CSS",
+    };
 
     // Define the demo steps
     this.steps = [
       {
         agentId: mayaDesigner.id,
         agentName: mayaDesigner.name,
-        fileName: 'index.html',
-        action: 'Analyzing current HTML structure...',
-        content: 'Reviewing the basic gym buddy finder layout and identifying improvement opportunities.',
-        updateType: 'thinking',
-        delayMs: 2000
+        fileName: "index.html",
+        action: "Analyzing current HTML structure...",
+        content:
+          "Reviewing the basic gym buddy finder layout and identifying improvement opportunities.",
+        updateType: "thinking",
+        delayMs: 2000,
       },
       {
         agentId: mayaDesigner.id,
         agentName: mayaDesigner.name,
-        fileName: 'index.html',
-        action: 'Adding modern responsive layout',
+        fileName: "index.html",
+        action: "Adding modern responsive layout",
         content: `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -62,14 +75,14 @@ export class LiveDemoOrchestrator {
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 min-h-screen">`,
-        updateType: 'partial',
-        delayMs: 3000
+        updateType: "partial",
+        delayMs: 3000,
       },
       {
         agentId: jordanCSS.id,
         agentName: jordanCSS.name,
-        fileName: 'styles.css',
-        action: 'Creating modern CSS animations and responsive design',
+        fileName: "styles.css",
+        action: "Creating modern CSS animations and responsive design",
         content: `/* Gym Buddy Finder - Modern Styling */
 .hero-gradient {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -99,14 +112,14 @@ export class LiveDemoOrchestrator {
 .animate-fadeInUp {
   animation: fadeInUp 0.6s ease-out;
 }`,
-        updateType: 'complete',
-        delayMs: 4000
+        updateType: "complete",
+        delayMs: 4000,
       },
       {
         agentId: samDeveloper.id,
         agentName: samDeveloper.name,
-        fileName: 'app.js',
-        action: 'Implementing interactive functionality',
+        fileName: "app.js",
+        action: "Implementing interactive functionality",
         content: `// Gym Buddy Finder - Interactive Features
 class GymBuddyFinder {
   constructor() {
@@ -145,14 +158,14 @@ class GymBuddyFinder {
       }
     ];
   }`,
-        updateType: 'partial',
-        delayMs: 5000
+        updateType: "partial",
+        delayMs: 5000,
       },
       {
         agentId: samDeveloper.id,
         agentName: samDeveloper.name,
-        fileName: 'app.js',
-        action: 'Adding search and filter functionality',
+        fileName: "app.js",
+        action: "Adding search and filter functionality",
         content: `  setupEventListeners() {
     // Search functionality
     document.getElementById('searchInput')?.addEventListener('input', (e) => {
@@ -183,14 +196,14 @@ class GymBuddyFinder {
     );
     this.renderUserCards(filtered);
   }`,
-        updateType: 'complete',
-        delayMs: 4500
+        updateType: "complete",
+        delayMs: 4500,
       },
       {
         agentId: mayaDesigner.id,
         agentName: mayaDesigner.name,
-        fileName: 'index.html',
-        action: 'Adding user interface components',
+        fileName: "index.html",
+        action: "Adding user interface components",
         content: `    <!-- Navigation -->
     <nav class="bg-white/10 backdrop-blur-md shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -232,14 +245,14 @@ class GymBuddyFinder {
             </div>
         </div>
     </section>`,
-        updateType: 'complete',
-        delayMs: 6000
+        updateType: "complete",
+        delayMs: 6000,
       },
       {
         agentId: jordanCSS.id,
         agentName: jordanCSS.name,
-        fileName: 'styles.css',
-        action: 'Adding responsive mobile design',
+        fileName: "styles.css",
+        action: "Adding responsive mobile design",
         content: `/* Mobile Responsive Design */
 @media (max-width: 768px) {
   .hero-gradient h2 {
@@ -291,41 +304,41 @@ class GymBuddyFinder {
   background: linear-gradient(45deg, #059669, #047857);
   transform: scale(1.05);
 }`,
-        updateType: 'complete',
-        delayMs: 3500
+        updateType: "complete",
+        delayMs: 3500,
       },
       {
         agentId: samDeveloper.id,
         agentName: samDeveloper.name,
-        fileName: 'app.js',
-        action: 'Implementing user profiles and matching logic',
+        fileName: "app.js",
+        action: "Implementing user profiles and matching logic",
         content: `  renderUserCards(usersToRender = this.users) {
     const container = document.getElementById('userContainer');
     if (!container) return;
 
-    container.innerHTML = usersToRender.map(user => `
+    container.innerHTML = usersToRender.map(user => \`
       <div class="user-card animate-fadeInUp">
         <div class="flex items-center mb-4">
-          <img src="${user.avatar}" alt="${user.name}" class="w-16 h-16 rounded-full mr-4">
+          <img src="\${user.avatar}" alt="\${user.name}" class="w-16 h-16 rounded-full mr-4">
           <div>
-            <h3 class="text-xl font-bold text-white">${user.name}</h3>
-            <p class="text-blue-200">${user.age} years old</p>
+            <h3 class="text-xl font-bold text-white">\${user.name}</h3>
+            <p class="text-blue-200">\${user.age} years old</p>
           </div>
         </div>
         <div class="space-y-2 mb-4">
-          <p class="text-white"><span class="font-semibold">Location:</span> ${user.location}</p>
-          <p class="text-white"><span class="font-semibold">Workout:</span> ${user.workoutType}</p>
-          <p class="text-white"><span class="font-semibold">Level:</span> ${user.experience}</p>
-          <p class="text-blue-100 text-sm mt-3">${user.bio}</p>
+          <p class="text-white"><span class="font-semibold">Location:</span> \${user.location}</p>
+          <p class="text-white"><span class="font-semibold">Workout:</span> \${user.workoutType}</p>
+          <p class="text-white"><span class="font-semibold">Level:</span> \${user.experience}</p>
+          <p class="text-blue-100 text-sm mt-3">\${user.bio}</p>
         </div>
-        <button 
+        <button
           class="match-btn w-full py-2 px-4 rounded-lg text-white font-semibold"
-          data-user-id="${user.id}"
+          data-user-id="\${user.id}"
         >
           Send Match Request
         </button>
       </div>
-    `).join('');
+    \`).join('');
   }
 
   sendMatchRequest(userId) {
@@ -343,14 +356,14 @@ class GymBuddyFinder {
 document.addEventListener('DOMContentLoaded', () => {
   new GymBuddyFinder();
 });`,
-        updateType: 'complete',
-        delayMs: 7000
+        updateType: "complete",
+        delayMs: 7000,
       },
       {
         agentId: mayaDesigner.id,
         agentName: mayaDesigner.name,
-        fileName: 'index.html',
-        action: 'Finalizing the complete user interface',
+        fileName: "index.html",
+        action: "Finalizing the complete user interface",
         content: `    <!-- Filters Section -->
     <section class="py-8 bg-white/5">
         <div class="max-w-7xl mx-auto px-4">
@@ -398,9 +411,9 @@ document.addEventListener('DOMContentLoaded', () => {
     <script src="app.js"></script>
 </body>
 </html>`,
-        updateType: 'complete',
-        delayMs: 5000
-      }
+        updateType: "complete",
+        delayMs: 5000,
+      },
     ];
 
     // Start executing the demo steps
@@ -408,28 +421,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return {
       sessionId: this.sessionId,
-      totalSteps: this.steps.length
+      totalSteps: this.steps.length,
     };
   }
 
   private async executeDemo() {
     const globalWebSocketManager = (global as any).webSocketManager;
-    
+
     for (let i = 0; i < this.steps.length; i++) {
       const step = this.steps[i];
-      
+
       // Wait for the specified delay
-      await new Promise(resolve => setTimeout(resolve, step.delayMs));
-      
+      await new Promise((resolve) => setTimeout(resolve, step.delayMs));
+
       if (!this.isRunning) break; // Check if demo was stopped
-      
+
       // Broadcast the step via WebSocket
-      if (globalWebSocketManager && typeof globalWebSocketManager.broadcastToAll === 'function') {
+      if (
+        globalWebSocketManager &&
+        typeof globalWebSocketManager.broadcastToAll === "function"
+      ) {
         globalWebSocketManager.broadcastToAll({
-          type: 'liveUpdate',
+          type: "liveUpdate",
           conversationId: 0,
           senderId: step.agentId,
-          senderType: 'agent',
+          senderType: "agent",
           content: JSON.stringify({
             sessionId: this.sessionId,
             fileName: step.fileName,
@@ -440,9 +456,9 @@ document.addEventListener('DOMContentLoaded', () => {
             action: step.action,
             stepNumber: i + 1,
             totalSteps: this.steps.length,
-            progress: ((i + 1) / this.steps.length * 100).toFixed(1)
+            progress: (((i + 1) / this.steps.length) * 100).toFixed(1),
           }),
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       }
     }
@@ -450,25 +466,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // Demo completed
     if (this.isRunning) {
       setTimeout(() => {
-        if (globalWebSocketManager && typeof globalWebSocketManager.broadcastToAll === 'function') {
+        if (
+          globalWebSocketManager &&
+          typeof globalWebSocketManager.broadcastToAll === "function"
+        ) {
           globalWebSocketManager.broadcastToAll({
-            type: 'liveUpdate',
+            type: "liveUpdate",
             conversationId: 0,
             senderId: 0,
-            senderType: 'system',
+            senderType: "system",
             content: JSON.stringify({
               sessionId: this.sessionId,
-              fileName: 'DEMO_COMPLETE',
-              content: '🎉 Gym Buddy Finder transformation complete! The basic HTML has been transformed into a modern, responsive web application with interactive features.',
-              agentName: 'System',
-              updateType: 'complete',
+              fileName: "DEMO_COMPLETE",
+              content:
+                "🎉 Gym Buddy Finder transformation complete! The basic HTML has been transformed into a modern, responsive web application with interactive features.",
+              agentName: "System",
+              updateType: "complete",
               timestamp: new Date().toISOString(),
-              action: 'Demo completed successfully',
+              action: "Demo completed successfully",
               stepNumber: this.steps.length + 1,
               totalSteps: this.steps.length + 1,
-              progress: '100.0'
+              progress: "100.0",
             }),
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
         this.isRunning = false;
@@ -484,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return {
       isRunning: this.isRunning,
       sessionId: this.sessionId,
-      totalSteps: this.steps.length
+      totalSteps: this.steps.length,
     };
   }
 }

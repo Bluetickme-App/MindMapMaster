@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from "@anthropic-ai/sdk";
 
 /*
 <important_code_snippet_instructions>
@@ -27,28 +27,30 @@ export async function generateText(params: {
 }> {
   try {
     const { prompt, maxTokens = 4000, temperature = 0.7 } = params;
-    
+
     const message = await anthropic.messages.create({
       max_tokens: maxTokens,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: "user", content: prompt }],
       // "claude-sonnet-4-20250514"
       model: DEFAULT_MODEL_STR,
       temperature,
     });
 
     const content = message.content[0];
-    if (content.type === 'text') {
+    if (content.type === "text") {
       return {
         text: content.text,
         model: DEFAULT_MODEL_STR,
-        usage: message.usage
+        usage: message.usage,
       };
     }
-    
-    throw new Error('Unexpected response format from Claude');
-  } catch (error) {
-    console.error('Claude text generation error:', error);
-    throw new Error(`Failed to generate text with Claude: ${error.message}`);
+
+    throw new Error("Unexpected response format from Claude");
+  } catch (error: any) {
+    console.error("Claude text generation error:", error);
+    throw new Error(
+      `Failed to generate text with Claude: ${(error as Error).message}`,
+    );
   }
 }
 
@@ -63,12 +65,12 @@ export async function generateCode(params: {
   framework?: string;
 }> {
   try {
-    const { prompt, language = 'javascript', framework } = params;
-    
+    const { prompt, language = "javascript", framework } = params;
+
     const systemPrompt = `You are an expert software architect with deep knowledge of modern development practices. Create production-ready code that follows best practices and is well-documented.
 
 Language: ${language}
-Framework: ${framework || 'vanilla'}
+Framework: ${framework || "vanilla"}
 
 Respond with JSON containing:
 - code: Complete, functional code
@@ -86,22 +88,22 @@ Focus on:
     const message = await anthropic.messages.create({
       max_tokens: 4000,
       messages: [
-        { 
-          role: 'user', 
-          content: `${systemPrompt}\n\nUser request: ${prompt}` 
-        }
+        {
+          role: "user",
+          content: `${systemPrompt}\n\nUser request: ${prompt}`,
+        },
       ],
       // "claude-sonnet-4-20250514"
       model: DEFAULT_MODEL_STR,
     });
 
     const content = message.content[0];
-    if (content.type === 'text') {
+    if (content.type === "text") {
       try {
         const result = JSON.parse(content.text);
         return {
-          code: result.code || '// Failed to generate code',
-          explanation: result.explanation || 'Code generation failed',
+          code: result.code || "// Failed to generate code",
+          explanation: result.explanation || "Code generation failed",
           language: result.language || language,
           framework: result.framework || framework,
         };
@@ -109,17 +111,19 @@ Focus on:
         // If not JSON, treat as plain text code
         return {
           code: content.text,
-          explanation: 'Generated code using Claude',
+          explanation: "Generated code using Claude",
           language,
           framework,
         };
       }
     }
 
-    throw new Error('Unexpected response format');
-  } catch (error) {
-    console.error('Anthropic code generation error:', error);
-    throw new Error(`Failed to generate code with Claude: ${error.message}`);
+    throw new Error("Unexpected response format");
+  } catch (error: any) {
+    console.error("Anthropic code generation error:", error);
+    throw new Error(
+      `Failed to generate code with Claude: ${(error as Error).message}`,
+    );
   }
 }
 
@@ -133,8 +137,8 @@ export async function analyzeText(params: {
   recommendations: string[];
 }> {
   try {
-    const { text, analysisType = 'general' } = params;
-    
+    const { text, analysisType = "general" } = params;
+
     const systemPrompt = `You are an expert analyst providing comprehensive text analysis. Analyze the provided text and provide insights based on the analysis type requested.
 
 Analysis Type: ${analysisType}
@@ -154,40 +158,42 @@ Focus on:
     const message = await anthropic.messages.create({
       max_tokens: 4000,
       messages: [
-        { 
-          role: 'user', 
-          content: `${systemPrompt}\n\nText to analyze: ${text}` 
-        }
+        {
+          role: "user",
+          content: `${systemPrompt}\n\nText to analyze: ${text}`,
+        },
       ],
       // "claude-sonnet-4-20250514"
       model: DEFAULT_MODEL_STR,
     });
 
     const content = message.content[0];
-    if (content.type === 'text') {
+    if (content.type === "text") {
       try {
         const result = JSON.parse(content.text);
         return {
-          analysis: result.analysis || 'Analysis completed',
+          analysis: result.analysis || "Analysis completed",
           insights: result.insights || [],
-          summary: result.summary || 'Summary not available',
+          summary: result.summary || "Summary not available",
           recommendations: result.recommendations || [],
         };
       } catch {
         // If not JSON, treat as plain text analysis
         return {
           analysis: content.text,
-          insights: ['Analysis provided as plain text'],
-          summary: 'Analysis completed using Claude',
-          recommendations: ['Review the detailed analysis provided'],
+          insights: ["Analysis provided as plain text"],
+          summary: "Analysis completed using Claude",
+          recommendations: ["Review the detailed analysis provided"],
         };
       }
     }
-    
-    throw new Error('Unexpected response format');
-  } catch (error) {
-    console.error('Claude text analysis error:', error);
-    throw new Error(`Failed to analyze text with Claude: ${error.message}`);
+
+    throw new Error("Unexpected response format");
+  } catch (error: any) {
+    console.error("Claude text analysis error:", error);
+    throw new Error(
+      `Failed to analyze text with Claude: ${(error as Error).message}`,
+    );
   }
 }
 
@@ -201,11 +207,11 @@ export async function chatCompletion(params: {
 }> {
   try {
     const { messages, systemPrompt } = params;
-    
+
     // Build conversation with system prompt if provided
-    const conversationMessages = messages.map(msg => ({
-      role: msg.role as 'user' | 'assistant',
-      content: msg.content
+    const conversationMessages = messages.map((msg) => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
     }));
 
     const createParams: any = {
@@ -222,18 +228,20 @@ export async function chatCompletion(params: {
     const message = await anthropic.messages.create(createParams);
 
     const content = message.content[0];
-    if (content.type === 'text') {
+    if (content.type === "text") {
       return {
         message: content.text,
-        role: 'assistant',
+        role: "assistant",
         model: DEFAULT_MODEL_STR,
       };
     }
-    
-    throw new Error('Unexpected response format');
-  } catch (error) {
-    console.error('Claude chat completion error:', error);
-    throw new Error(`Failed to complete chat with Claude: ${error.message}`);
+
+    throw new Error("Unexpected response format");
+  } catch (error: any) {
+    console.error("Claude chat completion error:", error);
+    throw new Error(
+      `Failed to complete chat with Claude: ${(error as Error).message}`,
+    );
   }
 }
 
@@ -262,43 +270,47 @@ Focus on:
     const message = await anthropic.messages.create({
       max_tokens: 4000,
       messages: [
-        { 
-          role: 'user', 
-          content: `${systemPrompt}\n\nDesign request: ${prompt}` 
-        }
+        {
+          role: "user",
+          content: `${systemPrompt}\n\nDesign request: ${prompt}`,
+        },
       ],
       // "claude-sonnet-4-20250514"
       model: DEFAULT_MODEL_STR,
     });
 
     const content = message.content[0];
-    if (content.type === 'text') {
+    if (content.type === "text") {
       try {
         const result = JSON.parse(content.text);
         return {
-          design: result.design || '<!-- Failed to generate design -->',
+          design: result.design || "<!-- Failed to generate design -->",
           components: result.components || [],
-          styling: result.styling || '/* No styling generated */',
-          explanation: result.explanation || 'Design generation failed',
+          styling: result.styling || "/* No styling generated */",
+          explanation: result.explanation || "Design generation failed",
         };
       } catch {
         return {
           design: content.text,
           components: [],
-          styling: '',
-          explanation: 'Generated design using Claude',
+          styling: "",
+          explanation: "Generated design using Claude",
         };
       }
     }
 
-    throw new Error('Unexpected response format');
+    throw new Error("Unexpected response format");
   } catch (error) {
-    console.error('Anthropic design generation error:', error);
-    throw new Error('Failed to generate design with Anthropic');
+    console.error("Anthropic design generation error:", error);
+    throw new Error("Failed to generate design with Anthropic");
   }
 }
 
-export async function generateFullAppWithClaude(prompt: string, language: string = "javascript", framework: string = "react") {
+export async function generateFullAppWithClaude(
+  prompt: string,
+  language: string = "javascript",
+  framework: string = "react",
+) {
   try {
     const systemPrompt = `You are an expert full-stack developer specializing in creating complete, production-ready applications. Your task is to build entire applications, not just code snippets.
 
@@ -374,8 +386,8 @@ Make this a production-ready application that can be immediately deployed and us
       messages: [
         {
           role: "user",
-          content: enhancedPrompt
-        }
+          content: enhancedPrompt,
+        },
       ],
     });
 
@@ -384,76 +396,85 @@ Make this a production-ready application that can be immediately deployed and us
       // Try to parse JSON response first
       let responseText = content.text;
       let parsedApp = null;
-      
+
       try {
         // Extract JSON from response if it's wrapped in code blocks
-        if (responseText.includes('```json')) {
+        if (responseText.includes("```json")) {
           const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
           if (jsonMatch) {
             parsedApp = JSON.parse(jsonMatch[1]);
           }
-        } else if (responseText.trim().startsWith('{')) {
+        } else if (responseText.trim().startsWith("{")) {
           parsedApp = JSON.parse(responseText);
         }
-        
+
         if (parsedApp && parsedApp.structure) {
           // Format the structured response nicely
           const files = [];
-          if (parsedApp.structure.mainFiles) files.push(...parsedApp.structure.mainFiles);
-          if (parsedApp.structure.configFiles) files.push(...parsedApp.structure.configFiles);
-          if (parsedApp.structure.styleFiles) files.push(...parsedApp.structure.styleFiles);
-          
-          const formattedResponse = `# ${parsedApp.projectName || 'Generated Application'}
+          if (parsedApp.structure.mainFiles)
+            files.push(...parsedApp.structure.mainFiles);
+          if (parsedApp.structure.configFiles)
+            files.push(...parsedApp.structure.configFiles);
+          if (parsedApp.structure.styleFiles)
+            files.push(...parsedApp.structure.styleFiles);
 
-${parsedApp.description || 'Complete application generated by Claude'}
+          const formattedResponse = `# ${parsedApp.projectName || "Generated Application"}
+
+${parsedApp.description || "Complete application generated by Claude"}
 
 ## Features
-${parsedApp.features ? parsedApp.features.map((f: string) => `- ${f}`).join('\n') : '- Full application functionality'}
+${parsedApp.features ? parsedApp.features.map((f: string) => `- ${f}`).join("\n") : "- Full application functionality"}
 
 ## Architecture
-${parsedApp.architecture || 'Modern web application architecture'}
+${parsedApp.architecture || "Modern web application architecture"}
 
 ## Project Files
 
-${files.map(file => `### ${file.path}
-\`\`\`${file.path.endsWith('.json') ? 'json' : file.path.endsWith('.css') ? 'css' : file.path.endsWith('.js') || file.path.endsWith('.jsx') ? 'javascript' : 'text'}
+${files
+  .map(
+    (file) => `### ${file.path}
+\`\`\`${file.path.endsWith(".json") ? "json" : file.path.endsWith(".css") ? "css" : file.path.endsWith(".js") || file.path.endsWith(".jsx") ? "javascript" : "text"}
 ${file.content}
 \`\`\`
-`).join('\n')}
+`,
+  )
+  .join("\n")}
 
 ## Setup Instructions
-${parsedApp.setupInstructions ? parsedApp.setupInstructions.map((s: string) => `- ${s}`).join('\n') : '- npm install\n- npm run dev'}
+${parsedApp.setupInstructions ? parsedApp.setupInstructions.map((s: string) => `- ${s}`).join("\n") : "- npm install\n- npm run dev"}
 
 ## Dependencies
-**Main:** ${parsedApp.dependencies?.main?.join(', ') || 'react, react-dom'}
-**Dev:** ${parsedApp.dependencies?.dev?.join(', ') || 'vite, @vitejs/plugin-react'}`;
+**Main:** ${parsedApp.dependencies?.main?.join(", ") || "react, react-dom"}
+**Dev:** ${parsedApp.dependencies?.dev?.join(", ") || "vite, @vitejs/plugin-react"}`;
 
           return {
             code: formattedResponse,
-            explanation: `Generated complete ${parsedApp.projectName || 'application'} with ${files.length} files and ${parsedApp.features?.length || 'multiple'} features`,
+            explanation: `Generated complete ${parsedApp.projectName || "application"} with ${files.length} files and ${parsedApp.features?.length || "multiple"} features`,
             language,
             framework,
             type: "full-application",
-            projectData: parsedApp
+            projectData: parsedApp,
           };
         }
       } catch (parseError) {
-        console.log('Could not parse as structured JSON, using raw response');
+        console.log("Could not parse as structured JSON, using raw response");
       }
-      
+
       return {
         code: responseText,
         explanation: `Claude generated complete ${language} application using ${framework}`,
         language,
         framework,
-        type: "full-application"
+        type: "full-application",
       };
     }
 
     throw new Error("Unexpected response format from Claude");
-  } catch (error) {
+  } catch (error: any) {
     console.error("Claude API error:", error);
-    throw new Error(`Failed to generate application with Claude: ${error.message}`);
+    throw new Error(
+      `Failed to generate application with Claude: ${(error as Error).message}`,
+    );
   }
 }
 
@@ -461,14 +482,14 @@ export async function testConnection(): Promise<boolean> {
   try {
     const message = await anthropic.messages.create({
       max_tokens: 10,
-      messages: [{ role: 'user', content: 'Hello' }],
+      messages: [{ role: "user", content: "Hello" }],
       // "claude-sonnet-4-20250514"
       model: DEFAULT_MODEL_STR,
     });
-    
+
     return message.content.length > 0;
   } catch (error) {
-    console.error('Anthropic connection test failed:', error);
+    console.error("Anthropic connection test failed:", error);
     return false;
   }
 }

@@ -1,4 +1,6 @@
-import { fileSystemService } from './file-system';
+import { fileSystemService } from "./file-system";
+import fs from "fs";
+import path from "path";
 
 export interface AgentTool {
   name: string;
@@ -17,112 +19,124 @@ export class AgentFileSystemService {
   private initializeTools() {
     this.tools = [
       {
-        name: 'create_file',
-        description: 'Create a new file with content',
+        name: "create_file",
+        description: "Create a new file with content",
         parameters: {
-          path: { type: 'string', required: true },
-          content: { type: 'string', required: true }
+          path: { type: "string", required: true },
+          content: { type: "string", required: true },
         },
         execute: async (params) => {
           try {
-            await fileSystemService.writeFile(1, params.path, params.content);
+            await fileSystemService.writeFile(params.path, params.content);
             return { success: true, message: `File created: ${params.path}` };
           } catch (error) {
             return { success: false, error: error.message };
           }
-        }
+        },
       },
       {
-        name: 'read_file',
-        description: 'Read content from a file',
+        name: "read_file",
+        description: "Read content from a file",
         parameters: {
-          path: { type: 'string', required: true }
+          path: { type: "string", required: true },
         },
         execute: async (params) => {
           try {
-            const content = await fileSystemService.readFile(1, params.path);
+            const content = await fileSystemService.readFile(params.path);
             return { success: true, content };
           } catch (error) {
             return { success: false, error: error.message };
           }
-        }
+        },
       },
       {
-        name: 'list_files',
-        description: 'List files in a directory',
+        name: "list_files",
+        description: "List files in a directory",
         parameters: {
-          path: { type: 'string', required: false, default: '.' }
+          path: { type: "string", required: false, default: "." },
         },
         execute: async (params) => {
           try {
-            const files = await fileSystemService.listFiles(1, params.path || '.');
+            const files = await fileSystemService.getFileTree(
+              params.path || ".",
+            );
             return { success: true, files };
           } catch (error) {
             return { success: false, error: error.message };
           }
-        }
+        },
       },
       {
-        name: 'delete_file',
-        description: 'Delete a file',
+        name: "delete_file",
+        description: "Delete a file",
         parameters: {
-          path: { type: 'string', required: true }
+          path: { type: "string", required: true },
         },
         execute: async (params) => {
           try {
-            await fileSystemService.deleteFile(1, params.path);
+            await fileSystemService.deleteFile(params.path);
             return { success: true, message: `File deleted: ${params.path}` };
           } catch (error) {
             return { success: false, error: error.message };
           }
-        }
+        },
       },
       {
-        name: 'create_directory',
-        description: 'Create a new directory',
+        name: "create_directory",
+        description: "Create a new directory",
         parameters: {
-          path: { type: 'string', required: true }
+          path: { type: "string", required: true },
         },
         execute: async (params) => {
           try {
             await fileSystemService.createDirectory(1, params.path);
-            return { success: true, message: `Directory created: ${params.path}` };
+            return {
+              success: true,
+              message: `Directory created: ${params.path}`,
+            };
           } catch (error) {
             return { success: false, error: error.message };
           }
-        }
+        },
       },
       {
-        name: 'search_files',
-        description: 'Search for files containing specific text',
+        name: "search_files",
+        description: "Search for files containing specific text",
         parameters: {
-          query: { type: 'string', required: true },
-          maxResults: { type: 'number', required: false, default: 10 }
+          query: { type: "string", required: true },
+          maxResults: { type: "number", required: false, default: 10 },
         },
         execute: async (params) => {
           try {
-            const results = await fileSystemService.searchFiles(1, params.query, params.maxResults);
+            const results = await fileSystemService.searchFiles(
+              1,
+              params.query,
+              params.maxResults,
+            );
             return { success: true, results };
           } catch (error) {
             return { success: false, error: error.message };
           }
-        }
+        },
       },
       {
-        name: 'get_workspace_structure',
-        description: 'Get the structure of the workspace',
+        name: "get_workspace_structure",
+        description: "Get the structure of the workspace",
         parameters: {
-          depth: { type: 'number', required: false, default: 2 }
+          depth: { type: "number", required: false, default: 2 },
         },
         execute: async (params) => {
           try {
-            const structure = await fileSystemService.getWorkspaceStructure(1, params.depth);
+            const structure = await fileSystemService.getWorkspaceStructure(
+              1,
+              params.depth,
+            );
             return { success: true, structure };
           } catch (error) {
             return { success: false, error: error.message };
           }
-        }
-      }
+        },
+      },
     ];
   }
 
@@ -133,7 +147,7 @@ export class AgentFileSystemService {
 
   // Get specific tool by name
   getTool(name: string): AgentTool | undefined {
-    return this.tools.find(tool => tool.name === name);
+    return this.tools.find((tool) => tool.name === name);
   }
 
   // Execute a tool with parameters
@@ -162,7 +176,7 @@ export class AgentFileSystemService {
     try {
       return await fileSystemService.getWorkspaceStructure(1, depth);
     } catch (error) {
-      console.error('Error getting workspace structure:', error);
+      console.error("Error getting workspace structure:", error);
       return {};
     }
   }
@@ -172,7 +186,7 @@ export class AgentFileSystemService {
     try {
       return await fileSystemService.searchFiles(1, query, maxResults);
     } catch (error) {
-      console.error('Error searching files:', error);
+      console.error("Error searching files:", error);
       return [];
     }
   }
@@ -183,7 +197,7 @@ export class AgentFileSystemService {
       await fileSystemService.writeFile(1, path, content);
       return true;
     } catch (error) {
-      console.error('Error creating file:', error);
+      console.error("Error creating file:", error);
       return false;
     }
   }
@@ -193,17 +207,17 @@ export class AgentFileSystemService {
     try {
       return await fileSystemService.readFile(1, path);
     } catch (error) {
-      console.error('Error reading file:', error);
+      console.error("Error reading file:", error);
       return null;
     }
   }
 
   // List files in directory
-  async listFiles(path: string = '.'): Promise<any[]> {
+  async listFiles(path: string = "."): Promise<any[]> {
     try {
       return await fileSystemService.listFiles(1, path);
     } catch (error) {
-      console.error('Error listing files:', error);
+      console.error("Error listing files:", error);
       return [];
     }
   }
@@ -214,7 +228,7 @@ export class AgentFileSystemService {
       await fileSystemService.deleteFile(1, path);
       return true;
     } catch (error) {
-      console.error('Error deleting file:', error);
+      console.error("Error deleting file:", error);
       return false;
     }
   }
@@ -225,7 +239,7 @@ export class AgentFileSystemService {
       await fileSystemService.createDirectory(1, path);
       return true;
     } catch (error) {
-      console.error('Error creating directory:', error);
+      console.error("Error creating directory:", error);
       return false;
     }
   }
@@ -235,7 +249,7 @@ export class AgentFileSystemService {
     try {
       return await fileSystemService.getFileStats(1, path);
     } catch (error) {
-      console.error('Error getting file stats:', error);
+      console.error("Error getting file stats:", error);
       return null;
     }
   }
@@ -243,7 +257,7 @@ export class AgentFileSystemService {
   // Check if file exists
   async fileExists(path: string): Promise<boolean> {
     try {
-      const stats = await fileSystemService.getFileStats(1, path);
+      const stats = await this.getFileStats(path);
       return !!stats;
     } catch (error) {
       return false;
@@ -254,23 +268,23 @@ export class AgentFileSystemService {
   async getFileWithMetadata(path: string): Promise<any> {
     try {
       const [content, stats] = await Promise.all([
-        fileSystemService.readFile(1, path),
-        fileSystemService.getFileStats(1, path)
+        fileSystemService.readFile(path),
+        this.getFileStats(path),
       ]);
-      
+
       return {
         path,
         content,
         stats,
-        exists: true
+        exists: true,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         path,
         content: null,
         stats: null,
         exists: false,
-        error: error.message
+        error: (error as Error).message,
       };
     }
   }

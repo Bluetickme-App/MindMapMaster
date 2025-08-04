@@ -1,22 +1,23 @@
-import { Anthropic } from '@anthropic-ai/sdk';
-import type { Agent, Message, Conversation, AgentContext } from "@shared/schema";
+import { Anthropic } from "@anthropic-ai/sdk";
+import type { Agent, Message, Conversation } from "@shared/schema";
+import type { AgentContext } from "./agent-orchestration";
 import { agentMemoryService } from "./agent-memory-service";
 import { storage } from "../storage";
 import { agentFileSystem } from "./agent-file-system";
 import { agentToolIntegration } from "./agent-tool-integration";
 
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || 'default_key'
+  apiKey: process.env.ANTHROPIC_API_KEY || "default_key",
 });
 
 export interface ClaudeAgentCapabilities {
   // Core Claude 4.0 Sonnet capabilities
-  reasoning: 'advanced' | 'expert' | 'master';
-  codeGeneration: 'production' | 'enterprise' | 'architect';
-  problemSolving: 'systematic' | 'creative' | 'hybrid';
-  contextAwareness: 'project' | 'conversation' | 'global';
-  communication: 'professional' | 'technical' | 'educational';
-  
+  reasoning: "advanced" | "expert" | "master";
+  codeGeneration: "production" | "enterprise" | "architect";
+  problemSolving: "systematic" | "creative" | "hybrid";
+  contextAwareness: "project" | "conversation" | "global";
+  communication: "professional" | "technical" | "educational";
+
   // Specialized capabilities
   multimodalAnalysis: boolean;
   longContextProcessing: boolean;
@@ -59,7 +60,7 @@ export class ClaudeAgentSystem {
 
   private setupSeniorDeveloper() {
     const agentId = 1; // Alex Chen
-    
+
     this.agentPersonalities.set(agentId, {
       helpfulness: 9,
       harmlessness: 8,
@@ -68,26 +69,26 @@ export class ClaudeAgentSystem {
       patience: 9,
       thoroughness: 10,
       creativity: 7,
-      analyticalThinking: 10
+      analyticalThinking: 10,
     });
 
     this.agentCapabilities.set(agentId, {
-      reasoning: 'expert',
-      codeGeneration: 'enterprise',
-      problemSolving: 'systematic',
-      contextAwareness: 'global',
-      communication: 'technical',
+      reasoning: "expert",
+      codeGeneration: "enterprise",
+      problemSolving: "systematic",
+      contextAwareness: "global",
+      communication: "technical",
       multimodalAnalysis: true,
       longContextProcessing: true,
       toolUse: true,
       chainOfThought: true,
-      selfCorreection: true
+      selfCorreection: true,
     });
   }
 
   private setupDesigner() {
     const agentId = 2; // Maya Rodriguez
-    
+
     this.agentPersonalities.set(agentId, {
       helpfulness: 10,
       harmlessness: 9,
@@ -96,26 +97,26 @@ export class ClaudeAgentSystem {
       patience: 10,
       thoroughness: 8,
       creativity: 10,
-      analyticalThinking: 8
+      analyticalThinking: 8,
     });
 
     this.agentCapabilities.set(agentId, {
-      reasoning: 'advanced',
-      codeGeneration: 'production',
-      problemSolving: 'creative',
-      contextAwareness: 'project',
-      communication: 'professional',
+      reasoning: "advanced",
+      codeGeneration: "production",
+      problemSolving: "creative",
+      contextAwareness: "project",
+      communication: "professional",
       multimodalAnalysis: true,
       longContextProcessing: true,
       toolUse: true,
       chainOfThought: true,
-      selfCorreection: true
+      selfCorreection: true,
     });
   }
 
   private setupJuniorDeveloper() {
     const agentId = 3; // Sam Park
-    
+
     this.agentPersonalities.set(agentId, {
       helpfulness: 9,
       harmlessness: 9,
@@ -124,26 +125,26 @@ export class ClaudeAgentSystem {
       patience: 8,
       thoroughness: 9,
       creativity: 8,
-      analyticalThinking: 8
+      analyticalThinking: 8,
     });
 
     this.agentCapabilities.set(agentId, {
-      reasoning: 'advanced',
-      codeGeneration: 'production',
-      problemSolving: 'systematic',
-      contextAwareness: 'conversation',
-      communication: 'educational',
+      reasoning: "advanced",
+      codeGeneration: "production",
+      problemSolving: "systematic",
+      contextAwareness: "conversation",
+      communication: "educational",
       multimodalAnalysis: false,
       longContextProcessing: true,
       toolUse: true,
       chainOfThought: true,
-      selfCorreection: true
+      selfCorreection: true,
     });
   }
 
   private setupDevOpsEngineer() {
     const agentId = 4; // Jordan Kim
-    
+
     this.agentPersonalities.set(agentId, {
       helpfulness: 9,
       harmlessness: 10,
@@ -152,26 +153,26 @@ export class ClaudeAgentSystem {
       patience: 8,
       thoroughness: 10,
       creativity: 6,
-      analyticalThinking: 10
+      analyticalThinking: 10,
     });
 
     this.agentCapabilities.set(agentId, {
-      reasoning: 'expert',
-      codeGeneration: 'enterprise',
-      problemSolving: 'systematic',
-      contextAwareness: 'global',
-      communication: 'technical',
+      reasoning: "expert",
+      codeGeneration: "enterprise",
+      problemSolving: "systematic",
+      contextAwareness: "global",
+      communication: "technical",
       multimodalAnalysis: false,
       longContextProcessing: true,
       toolUse: true,
       chainOfThought: true,
-      selfCorreection: true
+      selfCorreection: true,
     });
   }
 
   private setupProductManager() {
     const agentId = 5; // Emma Thompson
-    
+
     this.agentPersonalities.set(agentId, {
       helpfulness: 10,
       harmlessness: 8,
@@ -180,26 +181,26 @@ export class ClaudeAgentSystem {
       patience: 10,
       thoroughness: 9,
       creativity: 9,
-      analyticalThinking: 9
+      analyticalThinking: 9,
     });
 
     this.agentCapabilities.set(agentId, {
-      reasoning: 'expert',
-      codeGeneration: 'production',
-      problemSolving: 'hybrid',
-      contextAwareness: 'global',
-      communication: 'professional',
+      reasoning: "expert",
+      codeGeneration: "production",
+      problemSolving: "hybrid",
+      contextAwareness: "global",
+      communication: "professional",
       multimodalAnalysis: true,
       longContextProcessing: true,
       toolUse: true,
       chainOfThought: true,
-      selfCorreection: true
+      selfCorreection: true,
     });
   }
 
   private setupCodeReviewer() {
     const agentId = 6; // Dr. Lisa Wang
-    
+
     this.agentPersonalities.set(agentId, {
       helpfulness: 9,
       harmlessness: 10,
@@ -208,26 +209,26 @@ export class ClaudeAgentSystem {
       patience: 9,
       thoroughness: 10,
       creativity: 6,
-      analyticalThinking: 10
+      analyticalThinking: 10,
     });
 
     this.agentCapabilities.set(agentId, {
-      reasoning: 'master',
-      codeGeneration: 'architect',
-      problemSolving: 'systematic',
-      contextAwareness: 'global',
-      communication: 'technical',
+      reasoning: "master",
+      codeGeneration: "architect",
+      problemSolving: "systematic",
+      contextAwareness: "global",
+      communication: "technical",
       multimodalAnalysis: true,
       longContextProcessing: true,
       toolUse: true,
       chainOfThought: true,
-      selfCorreection: true
+      selfCorreection: true,
     });
   }
 
   private setupQAEngineer() {
     const agentId = 7; // Taylor QA
-    
+
     this.agentPersonalities.set(agentId, {
       helpfulness: 9,
       harmlessness: 9,
@@ -236,26 +237,26 @@ export class ClaudeAgentSystem {
       patience: 10,
       thoroughness: 10,
       creativity: 7,
-      analyticalThinking: 10
+      analyticalThinking: 10,
     });
 
     this.agentCapabilities.set(agentId, {
-      reasoning: 'expert',
-      codeGeneration: 'production',
-      problemSolving: 'systematic',
-      contextAwareness: 'project',
-      communication: 'technical',
+      reasoning: "expert",
+      codeGeneration: "production",
+      problemSolving: "systematic",
+      contextAwareness: "project",
+      communication: "technical",
       multimodalAnalysis: false,
       longContextProcessing: true,
       toolUse: true,
       chainOfThought: true,
-      selfCorreection: true
+      selfCorreection: true,
     });
   }
 
   private setupDataAnalyst() {
     const agentId = 8; // Morgan Data
-    
+
     this.agentPersonalities.set(agentId, {
       helpfulness: 9,
       harmlessness: 8,
@@ -264,38 +265,46 @@ export class ClaudeAgentSystem {
       patience: 8,
       thoroughness: 10,
       creativity: 8,
-      analyticalThinking: 10
+      analyticalThinking: 10,
     });
 
     this.agentCapabilities.set(agentId, {
-      reasoning: 'expert',
-      codeGeneration: 'production',
-      problemSolving: 'hybrid',
-      contextAwareness: 'global',
-      communication: 'professional',
+      reasoning: "expert",
+      codeGeneration: "production",
+      problemSolving: "hybrid",
+      contextAwareness: "global",
+      communication: "professional",
       multimodalAnalysis: true,
       longContextProcessing: true,
       toolUse: true,
       chainOfThought: true,
-      selfCorreection: true
+      selfCorreection: true,
     });
   }
 
   async generateClaudeResponse(
     agent: Agent,
     userMessage: string,
-    context: AgentContext
+    context: AgentContext,
   ): Promise<{ content: string; metadata: any }> {
     const personality = this.agentPersonalities.get(agent.id);
     const capabilities = this.agentCapabilities.get(agent.id);
-    
+
     if (!personality || !capabilities) {
       throw new Error(`Agent ${agent.id} not properly configured`);
     }
 
     // Build context-aware prompt like Claude 4.0 Sonnet
-    const systemPrompt = this.buildClaudeSystemPrompt(agent, personality, capabilities);
-    const contextualPrompt = await this.buildContextualPrompt(userMessage, context, agent);
+    const systemPrompt = this.buildClaudeSystemPrompt(
+      agent,
+      personality,
+      capabilities,
+    );
+    const contextualPrompt = await this.buildContextualPrompt(
+      userMessage,
+      context,
+      agent,
+    );
 
     try {
       const response = await anthropic.messages.create({
@@ -306,14 +315,15 @@ export class ClaudeAgentSystem {
         messages: [
           {
             role: "user",
-            content: contextualPrompt
-          }
-        ]
+            content: contextualPrompt,
+          },
+        ],
       });
 
-      const content = response.content[0].type === 'text' 
-        ? response.content[0].text 
-        : 'Response generated';
+      const content =
+        response.content[0].type === "text"
+          ? response.content[0].text
+          : "Response generated";
 
       // Store conversation context for future reference
       this.updateConversationContext(agent.id, userMessage, content);
@@ -327,8 +337,8 @@ export class ClaudeAgentSystem {
           agentPersonality: personality,
           capabilities: capabilities,
           contextLength: contextualPrompt.length,
-          responseTime: Date.now()
-        }
+          responseTime: Date.now(),
+        },
       };
     } catch (error) {
       console.error(`[Claude Agent ${agent.id}] Error:`, error);
@@ -337,8 +347,8 @@ export class ClaudeAgentSystem {
         metadata: {
           error: true,
           fallback: true,
-          agentId: agent.id
-        }
+          agentId: agent.id,
+        },
       };
     }
   }
@@ -346,7 +356,7 @@ export class ClaudeAgentSystem {
   private buildClaudeSystemPrompt(
     agent: Agent,
     personality: ClaudeAgentPersonality,
-    capabilities: ClaudeAgentCapabilities
+    capabilities: ClaudeAgentCapabilities,
   ): string {
     return `You are ${agent.name}, a ${agent.specialization} specialist operating with Claude 4.0 Sonnet-level capabilities.
 
@@ -369,11 +379,11 @@ ${agent.systemPrompt}
 - Problem Solving: ${capabilities.problemSolving}
 - Context Awareness: ${capabilities.contextAwareness}
 - Communication Style: ${capabilities.communication}
-- Multimodal Analysis: ${capabilities.multimodalAnalysis ? 'Enabled' : 'Disabled'}
-- Long Context Processing: ${capabilities.longContextProcessing ? 'Enabled' : 'Disabled'}
-- Tool Use: ${capabilities.toolUse ? 'Enabled' : 'Disabled'}
-- Chain of Thought: ${capabilities.chainOfThought ? 'Enabled' : 'Disabled'}
-- Self-Correction: ${capabilities.selfCorreection ? 'Enabled' : 'Disabled'}
+- Multimodal Analysis: ${capabilities.multimodalAnalysis ? "Enabled" : "Disabled"}
+- Long Context Processing: ${capabilities.longContextProcessing ? "Enabled" : "Disabled"}
+- Tool Use: ${capabilities.toolUse ? "Enabled" : "Disabled"}
+- Chain of Thought: ${capabilities.chainOfThought ? "Enabled" : "Disabled"}
+- Self-Correction: ${capabilities.selfCorreection ? "Enabled" : "Disabled"}
 
 ## Operating Principles (Claude 4.0 Sonnet Standard)
 1. **Deep Understanding**: Always seek to understand the full context and nuances of requests
@@ -417,28 +427,28 @@ Remember: You are part of a multi-agent collaboration system. Your expertise in 
   private async buildContextualPrompt(
     userMessage: string,
     context: AgentContext,
-    agent: Agent
-  ): string {
+    agent: Agent,
+  ): Promise<string> {
     // Get relevant memories and project context
     const memories = await agentMemoryService.retrieveMemories(
       agent.id,
-      context.conversation.projectId || 0
+      context.conversation.projectId || 0,
     );
 
     const recentContext = context.recentMessages
       .slice(-5)
-      .map(msg => `${msg.senderType}: ${msg.content}`)
-      .join('\n');
+      .map((msg: Message) => `${msg.senderType}: ${msg.content}`)
+      .join("\n");
 
     return `## Current Context
-Project: ${context.conversation.title || 'General Discussion'}
-${context.conversation.projectId ? `Project ID: ${context.conversation.projectId}` : ''}
+Project: ${context.conversation.title || "General Discussion"}
+${context.conversation.projectId ? `Project ID: ${context.conversation.projectId}` : ""}
 
 ## Recent Conversation
 ${recentContext}
 
 ## Relevant Memories
-${memories.map(m => `- ${m.content} (importance: ${m.importance})`).join('\n')}
+  ${memories.map((m) => `- ${m.summary} (importance: ${m.importance})`).join("\n")}
 
 ## Current Request
 ${userMessage}
@@ -460,57 +470,73 @@ Remember to maintain your personality profile and communication style while deli
     // Calculate temperature based on creativity and analytical thinking balance
     const creativity = personality.creativity / 10;
     const analytical = personality.analyticalThinking / 10;
-    
+
     // Higher creativity = higher temperature, higher analytical = lower temperature
     const baseTemp = (creativity - analytical + 1) / 2;
-    
+
     // Keep within reasonable bounds (0.1 to 0.9)
     return Math.max(0.1, Math.min(0.9, baseTemp * 0.8 + 0.1));
   }
 
   private calculateConfidence(
     personality: ClaudeAgentPersonality,
-    capabilities: ClaudeAgentCapabilities
+    capabilities: ClaudeAgentCapabilities,
   ): number {
     const factors = [
       personality.honesty / 10,
       personality.thoroughness / 10,
       personality.analyticalThinking / 10,
-      capabilities.reasoning === 'master' ? 1 : capabilities.reasoning === 'expert' ? 0.9 : 0.8
+      capabilities.reasoning === "master"
+        ? 1
+        : capabilities.reasoning === "expert"
+          ? 0.9
+          : 0.8,
     ];
-    
+
     return factors.reduce((sum, factor) => sum + factor, 0) / factors.length;
   }
 
   private extractReasoning(content: string): string {
     // Simple reasoning extraction - could be enhanced with NLP
-    const reasoningKeywords = ['because', 'since', 'therefore', 'due to', 'as a result'];
+    const reasoningKeywords = [
+      "because",
+      "since",
+      "therefore",
+      "due to",
+      "as a result",
+    ];
     const sentences = content.split(/[.!?]+/);
-    
-    const reasoningSentences = sentences.filter(sentence => 
-      reasoningKeywords.some(keyword => 
-        sentence.toLowerCase().includes(keyword)
-      )
+
+    const reasoningSentences = sentences.filter((sentence) =>
+      reasoningKeywords.some((keyword) =>
+        sentence.toLowerCase().includes(keyword),
+      ),
     );
-    
-    return reasoningSentences.slice(0, 2).join('. ') || 'Contextual analysis applied';
+
+    return (
+      reasoningSentences.slice(0, 2).join(". ") || "Contextual analysis applied"
+    );
   }
 
-  private updateConversationContext(agentId: number, userMessage: string, response: string) {
+  private updateConversationContext(
+    agentId: number,
+    userMessage: string,
+    response: string,
+  ) {
     const context = this.conversationContexts.get(agentId) || [];
     context.push({
       timestamp: new Date(),
       userMessage,
       response,
       messageLength: userMessage.length,
-      responseLength: response.length
+      responseLength: response.length,
     });
-    
+
     // Keep last 20 interactions
     if (context.length > 20) {
       context.splice(0, context.length - 20);
     }
-    
+
     this.conversationContexts.set(agentId, context);
   }
 
@@ -528,7 +554,7 @@ Remember to maintain your personality profile and communication style while deli
   updateAgentConfiguration(
     agentId: number,
     personality?: Partial<ClaudeAgentPersonality>,
-    capabilities?: Partial<ClaudeAgentCapabilities>
+    capabilities?: Partial<ClaudeAgentCapabilities>,
   ) {
     if (personality) {
       const current = this.agentPersonalities.get(agentId);
@@ -536,7 +562,7 @@ Remember to maintain your personality profile and communication style while deli
         this.agentPersonalities.set(agentId, { ...current, ...personality });
       }
     }
-    
+
     if (capabilities) {
       const current = this.agentCapabilities.get(agentId);
       if (current) {

@@ -1,9 +1,9 @@
-import { WebSocket } from 'ws';
-import { multiAIService } from './multi-ai-provider';
+import { WebSocket } from "ws";
+import { multiAIService } from "./multi-ai-provider";
 
 interface TenantQuery {
-  type: 'maintenance' | 'property' | 'payment' | 'general';
-  urgency: 'emergency' | 'high' | 'normal' | 'low';
+  type: "maintenance" | "property" | "payment" | "general";
+  urgency: "emergency" | "high" | "normal" | "low";
   category?: string;
   details: string;
 }
@@ -14,7 +14,7 @@ interface MaintenanceRequest {
   propertyId: string;
   issue: string;
   urgency: string;
-  status: 'reported' | 'contractor_notified' | 'in_progress' | 'resolved';
+  status: "reported" | "contractor_notified" | "in_progress" | "resolved";
   contractorInfo?: {
     name: string;
     phone: string;
@@ -29,17 +29,20 @@ interface MaintenanceRequest {
 
 export class WeletAIAgent {
   private maintenanceRequests: Map<string, MaintenanceRequest> = new Map();
-  
-  async processMessage(message: string, conversationHistory: any[] = []): Promise<string> {
+
+  async processMessage(
+    message: string,
+    conversationHistory: any[] = [],
+  ): Promise<string> {
     // Analyze the message to determine intent
     const query = await this.analyzeQuery(message);
-    
+
     switch (query.type) {
-      case 'maintenance':
+      case "maintenance":
         return await this.handleMaintenanceRequest(message, query);
-      case 'property':
+      case "property":
         return await this.handlePropertyQuery(message);
-      case 'payment':
+      case "payment":
         return await this.handlePaymentQuery(message);
       default:
         return await this.handleGeneralQuery(message, conversationHistory);
@@ -59,51 +62,60 @@ export class WeletAIAgent {
 
     try {
       const response = await multiAIService.generateStructuredResponse(
-        'openai',
+        "openai",
         message,
         systemPrompt,
         {
-          type: { type: 'string', enum: ['maintenance', 'property', 'payment', 'general'] },
-          urgency: { type: 'string', enum: ['emergency', 'high', 'normal', 'low'] },
-          category: { type: 'string' },
-          details: { type: 'string' }
-        }
+          type: {
+            type: "string",
+            enum: ["maintenance", "property", "payment", "general"],
+          },
+          urgency: {
+            type: "string",
+            enum: ["emergency", "high", "normal", "low"],
+          },
+          category: { type: "string" },
+          details: { type: "string" },
+        },
       );
-      
+
       return response as TenantQuery;
     } catch (error) {
-      return { type: 'general', urgency: 'normal', details: message };
+      return { type: "general", urgency: "normal", details: message };
     }
   }
 
-  private async handleMaintenanceRequest(message: string, query: TenantQuery): Promise<string> {
+  private async handleMaintenanceRequest(
+    message: string,
+    query: TenantQuery,
+  ): Promise<string> {
     // For emergency maintenance like leaks
-    if (query.urgency === 'emergency') {
+    if (query.urgency === "emergency") {
       const requestId = this.generateRequestId();
       const maintenanceRequest: MaintenanceRequest = {
         id: requestId,
-        tenantId: 'current-tenant', // Would come from session
-        propertyId: 'current-property', // Would come from session
+        tenantId: "current-tenant", // Would come from session
+        propertyId: "current-property", // Would come from session
         issue: query.details,
         urgency: query.urgency,
-        status: 'contractor_notified',
+        status: "contractor_notified",
         contractorInfo: {
-          name: 'Quick Fix Plumbing',
-          phone: '07700 123456',
-          eta: '45 minutes'
+          name: "Quick Fix Plumbing",
+          phone: "07700 123456",
+          eta: "45 minutes",
         },
         timeline: [
           {
             timestamp: new Date(),
-            status: 'reported',
-            description: 'Issue reported by tenant'
+            status: "reported",
+            description: "Issue reported by tenant",
           },
           {
             timestamp: new Date(),
-            status: 'contractor_notified',
-            description: 'Emergency plumber notified and dispatched'
-          }
-        ]
+            status: "contractor_notified",
+            description: "Emergency plumber notified and dispatched",
+          },
+        ],
       };
 
       this.maintenanceRequests.set(requestId, maintenanceRequest);
@@ -112,9 +124,9 @@ export class WeletAIAgent {
 
 I've detected this is an emergency and have already taken action:
 
-✅ **Plumber Dispatched**: ${maintenanceRequest.contractorInfo.name}
-📞 **Contact**: ${maintenanceRequest.contractorInfo.phone}
-⏰ **ETA**: ${maintenanceRequest.contractorInfo.eta}
+✅ **Plumber Dispatched**: ${maintenanceRequest.contractorInfo?.name ?? "TBA"}
+📞 **Contact**: ${maintenanceRequest.contractorInfo?.phone ?? "TBA"}
+⏰ **ETA**: ${maintenanceRequest.contractorInfo?.eta ?? "TBA"}
 
 **Your Request ID**: ${requestId}
 
@@ -149,9 +161,9 @@ This helps us dispatch the right specialist with the proper tools.`;
     Be friendly, professional, and informative.`;
 
     const response = await multiAIService.generateResponse(
-      'claude',
+      "claude",
       message,
-      systemPrompt
+      systemPrompt,
     );
 
     return response.content;
@@ -173,7 +185,10 @@ Would you like me to:
 - Answer questions about your deposit`;
   }
 
-  private async handleGeneralQuery(message: string, history: any[]): Promise<string> {
+  private async handleGeneralQuery(
+    message: string,
+    history: any[],
+  ): Promise<string> {
     const systemPrompt = `You are the WeLet Properties AI assistant. You help with:
     - Property viewings and availability
     - Maintenance requests (you can automatically dispatch contractors for emergencies)
@@ -182,13 +197,17 @@ Would you like me to:
     
     Be helpful, professional, and proactive. For urgent issues like leaks, immediately offer to dispatch help.`;
 
-    const conversationContext = history.map(h => `${h.role}: ${h.content}`).join('\n');
-    const fullPrompt = conversationContext ? `${conversationContext}\nUser: ${message}` : message;
+    const conversationContext = history
+      .map((h) => `${h.role}: ${h.content}`)
+      .join("\n");
+    const fullPrompt = conversationContext
+      ? `${conversationContext}\nUser: ${message}`
+      : message;
 
     const response = await multiAIService.generateResponse(
-      'openai',
+      "openai",
       fullPrompt,
-      systemPrompt
+      systemPrompt,
     );
 
     return response.content;

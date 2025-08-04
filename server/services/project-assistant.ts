@@ -1,10 +1,10 @@
 // Universal project assistant that works with all AI providers
 import { db } from "../db";
 import { projects, projectConversations } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 interface ConversationMessage {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: string;
 }
@@ -19,27 +19,31 @@ interface AssistantResponse {
 // Create or get project assistant configuration
 export async function initializeProjectAssistant(
   projectId: number,
-  aiProvider: 'openai' | 'claude' | 'gemini' = 'openai'
+  aiProvider: "openai" | "claude" | "gemini" = "openai",
 ): Promise<{ assistantId?: string; threadId?: string }> {
   try {
-    const [project] = await db.select().from(projects).where(eq(projects.id, projectId));
-    
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId));
+
     if (!project) {
-      throw new Error('Project not found');
+      throw new Error("Project not found");
     }
 
     // For OpenAI, create actual assistant
-    if (aiProvider === 'openai' && process.env.OPENAI_API_KEY) {
+    if (aiProvider === "openai" && process.env.OPENAI_API_KEY) {
       if (!project.assistantId || !project.threadId) {
-        const { createProjectAssistant } = await import('./openai.js');
+        const { createProjectAssistant } = await import("./openai.js");
         const { assistantId, threadId } = await createProjectAssistant(
           project.name,
           project.language,
-          project.framework
+          project.framework ?? undefined,
         );
 
         // Update project with assistant IDs
-        await db.update(projects)
+        await db
+          .update(projects)
           .set({ assistantId, threadId })
           .where(eq(projects.id, projectId));
 
@@ -51,16 +55,16 @@ export async function initializeProjectAssistant(
     // For Claude and Gemini, we'll use database-based memory
     return {};
   } catch (error) {
-    console.error('Error initializing project assistant:', error);
-    throw new Error('Failed to initialize project assistant');
+    console.error("Error initializing project assistant:", error);
+    throw new Error("Failed to initialize project assistant");
   }
 }
 
 // Get conversation history for context
 export async function getProjectContext(
   projectId: number,
-  aiProvider: 'openai' | 'claude' | 'gemini',
-  limit: number = 10
+  aiProvider: "openai" | "claude" | "gemini",
+  limit: number = 10,
 ): Promise<ConversationMessage[]> {
   try {
     const conversations = await db
@@ -72,13 +76,13 @@ export async function getProjectContext(
 
     return conversations
       .reverse() // Get chronological order
-      .map(conv => ({
-        role: conv.role as 'user' | 'assistant',
+      .map((conv) => ({
+        role: conv.role as "user" | "assistant",
         content: conv.content,
-        timestamp: conv.createdAt?.toISOString() || new Date().toISOString()
+        timestamp: conv.createdAt?.toISOString() || new Date().toISOString(),
       }));
   } catch (error) {
-    console.error('Error getting project context:', error);
+    console.error("Error getting project context:", error);
     return [];
   }
 }
@@ -86,10 +90,10 @@ export async function getProjectContext(
 // Store conversation message
 export async function storeConversationMessage(
   projectId: number,
-  role: 'user' | 'assistant',
+  role: "user" | "assistant",
   content: string,
-  aiProvider: 'openai' | 'claude' | 'gemini',
-  metadata?: any
+  aiProvider: "openai" | "claude" | "gemini",
+  metadata?: any,
 ): Promise<void> {
   try {
     await db.insert(projectConversations).values({
@@ -97,10 +101,10 @@ export async function storeConversationMessage(
       role,
       content,
       aiProvider,
-      metadata
+      metadata,
     });
   } catch (error) {
-    console.error('Error storing conversation message:', error);
+    console.error("Error storing conversation message:", error);
   }
 }
 
@@ -110,75 +114,112 @@ export async function generateCodeWithContext(
   prompt: string,
   language: string,
   framework?: string,
-  aiProvider: 'openai' | 'claude' | 'gemini' = 'openai'
+  aiProvider: "openai" | "claude" | "gemini" = "openai",
 ): Promise<AssistantResponse> {
   try {
     // Get project info
-    const [project] = await db.select().from(projects).where(eq(projects.id, projectId));
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId));
     if (!project) {
-      throw new Error('Project not found');
+      throw new Error("Project not found");
     }
 
     // Store user message
-    await storeConversationMessage(projectId, 'user', prompt, aiProvider);
+    await storeConversationMessage(projectId, "user", prompt, aiProvider);
 
     // Get recent context
     const context = await getProjectContext(projectId, aiProvider, 5);
-    
+
     let result: AssistantResponse;
 
-    if (aiProvider === 'openai' && process.env.OPENAI_API_KEY) {
+    if (aiProvider === "openai" && process.env.OPENAI_API_KEY) {
       // Initialize assistant if needed
-      const { assistantId, threadId } = await initializeProjectAssistant(projectId, 'openai');
-      
+      const { assistantId, threadId } = await initializeProjectAssistant(
+        projectId,
+        "openai",
+      );
+
       if (assistantId && threadId) {
         // Use OpenAI Assistant with persistent memory
-        const { generateCodeWithAssistant } = await import('./openai.js');
-        result = await generateCodeWithAssistant(assistantId, threadId, prompt, language, framework);
+        const { generateCodeWithAssistant } = await import("./openai.js");
+        result = await generateCodeWithAssistant(
+          assistantId,
+          threadId,
+          prompt,
+          language,
+          framework,
+        );
       } else {
         // Fallback to regular OpenAI with context
-        result = await generateWithContextualPrompt('openai', prompt, language, framework, context, project);
+        result = await generateWithContextualPrompt(
+          "openai",
+          prompt,
+          language,
+          framework,
+          context,
+          project,
+        );
       }
-    } else if (aiProvider === 'claude' && process.env.ANTHROPIC_API_KEY) {
-      result = await generateWithContextualPrompt('claude', prompt, language, framework, context, project);
-    } else if (aiProvider === 'gemini' && process.env.GEMINI_API_KEY) {
-      result = await generateWithContextualPrompt('gemini', prompt, language, framework, context, project);
+    } else if (aiProvider === "claude" && process.env.ANTHROPIC_API_KEY) {
+      result = await generateWithContextualPrompt(
+        "claude",
+        prompt,
+        language,
+        framework,
+        context,
+        project,
+      );
+    } else if (aiProvider === "gemini" && process.env.GEMINI_API_KEY) {
+      result = await generateWithContextualPrompt(
+        "gemini",
+        prompt,
+        language,
+        framework,
+        context,
+        project,
+      );
     } else {
       throw new Error(`AI provider ${aiProvider} not available`);
     }
 
     // Store assistant response
     await storeConversationMessage(
-      projectId, 
-      'assistant', 
-      `Generated code: ${result.explanation}`, 
+      projectId,
+      "assistant",
+      `Generated code: ${result.explanation}`,
       aiProvider,
-      { code: result.code, language: result.language, framework: result.framework }
+      {
+        code: result.code,
+        language: result.language,
+        framework: result.framework,
+      },
     );
 
     return result;
   } catch (error) {
-    console.error('Error generating code with context:', error);
-    throw new Error('Failed to generate code with context');
+    console.error("Error generating code with context:", error);
+    throw new Error("Failed to generate code with context");
   }
 }
 
 // Generate code with contextual prompt for non-OpenAI providers
 async function generateWithContextualPrompt(
-  provider: 'openai' | 'claude' | 'gemini',
+  provider: "openai" | "claude" | "gemini",
   prompt: string,
   language: string,
   framework: string | undefined,
   context: ConversationMessage[],
-  project: any
+  project: any,
 ): Promise<AssistantResponse> {
   const contextualPrompt = `Project: ${project.name}
 Description: ${project.description}
 Language: ${language}
-Framework: ${framework || 'vanilla'}
+Framework: ${framework || "vanilla"}
 
 Previous conversation context:
-${context.map(msg => `${msg.role.toUpperCase()}: ${msg.content}`).join('\n')}
+${context.map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`).join("\n")}
 
 Current request: ${prompt}
 
@@ -194,42 +235,46 @@ Please provide your response in JSON format with:
 - language: Programming language used
 - framework: Framework used (if any)`;
 
-  if (provider === 'openai') {
-    const { generateCode } = await import('./openai.js');
+  if (provider === "openai") {
+    const { generateCode } = await import("./openai.js");
     return await generateCode(contextualPrompt, language, framework);
-  } else if (provider === 'claude') {
-    const { generateCode } = await import('./anthropic.js');
-    return await generateCode(contextualPrompt, language, framework);
+  } else if (provider === "claude") {
+    const { generateCode } = await import("./anthropic.js");
+    return await generateCode({
+      prompt: contextualPrompt,
+      language,
+      framework,
+    });
   } else {
     // For Gemini, we'd implement similar function
-    throw new Error('Gemini provider not yet implemented');
+    throw new Error("Gemini provider not yet implemented");
   }
 }
 
 // Get project conversation history for display
 export async function getProjectConversationHistory(
   projectId: number,
-  aiProvider?: 'openai' | 'claude' | 'gemini'
+  aiProvider?: "openai" | "claude" | "gemini",
 ): Promise<ConversationMessage[]> {
   try {
-    let query = db
-      .select()
-      .from(projectConversations)
-      .where(eq(projectConversations.projectId, projectId));
-
+    const conditions = [eq(projectConversations.projectId, projectId)];
     if (aiProvider) {
-      query = query.where(eq(projectConversations.aiProvider, aiProvider));
+      conditions.push(eq(projectConversations.aiProvider, aiProvider));
     }
 
-    const conversations = await query.orderBy(projectConversations.createdAt);
+    const conversations = await db
+      .select()
+      .from(projectConversations)
+      .where(and(...conditions))
+      .orderBy(projectConversations.createdAt);
 
-    return conversations.map(conv => ({
-      role: conv.role as 'user' | 'assistant',
+    return conversations.map((conv) => ({
+      role: conv.role as "user" | "assistant",
       content: conv.content,
-      timestamp: conv.createdAt?.toISOString() || new Date().toISOString()
+      timestamp: conv.createdAt?.toISOString() || new Date().toISOString(),
     }));
   } catch (error) {
-    console.error('Error getting conversation history:', error);
+    console.error("Error getting conversation history:", error);
     return [];
   }
 }

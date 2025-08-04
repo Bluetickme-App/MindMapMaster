@@ -1,14 +1,44 @@
-import { 
-  users, projects, codeGenerations, apiTests, githubRepositories,
-  agents, conversations, messages, agentSessions, agentKnowledge, agentMemory,
-  collaborativeDocuments, designAssets, workflowTasks,
-  type User, type InsertUser, type Project, type InsertProject,
-  type CodeGeneration, type InsertCodeGeneration, type ApiTest, type InsertApiTest,
-  type GithubRepository, type InsertGithubRepository,
-  type Agent, type InsertAgent, type Conversation, type InsertConversation,
-  type Message, type InsertMessage, type AgentSession, type InsertAgentSession,
-  type AgentKnowledge, type InsertAgentKnowledge, type CollaborativeDocument, type InsertCollaborativeDocument,
-  type DesignAsset, type InsertDesignAsset, type WorkflowTask, type InsertWorkflowTask
+import {
+  users,
+  projects,
+  codeGenerations,
+  apiTests,
+  githubRepositories,
+  agents,
+  conversations,
+  messages,
+  agentSessions,
+  agentKnowledge,
+  agentMemory,
+  collaborativeDocuments,
+  designAssets,
+  workflowTasks,
+  type User,
+  type InsertUser,
+  type Project,
+  type InsertProject,
+  type CodeGeneration,
+  type InsertCodeGeneration,
+  type ApiTest,
+  type InsertApiTest,
+  type GithubRepository,
+  type InsertGithubRepository,
+  type Agent,
+  type InsertAgent,
+  type Conversation,
+  type InsertConversation,
+  type Message,
+  type InsertMessage,
+  type AgentSession,
+  type InsertAgentSession,
+  type AgentKnowledge,
+  type InsertAgentKnowledge,
+  type CollaborativeDocument,
+  type InsertCollaborativeDocument,
+  type DesignAsset,
+  type InsertDesignAsset,
+  type WorkflowTask,
+  type InsertWorkflowTask,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -31,7 +61,9 @@ export interface IStorage {
   getCodeGeneration(id: number): Promise<CodeGeneration | undefined>;
   getCodeGenerationsByUser(userId: number): Promise<CodeGeneration[]>;
   getCodeGenerationsByProject(projectId: number): Promise<CodeGeneration[]>;
-  createCodeGeneration(generation: InsertCodeGeneration): Promise<CodeGeneration>;
+  createCodeGeneration(
+    generation: InsertCodeGeneration,
+  ): Promise<CodeGeneration>;
 
   // API test operations
   getApiTest(id: number): Promise<ApiTest | undefined>;
@@ -43,8 +75,13 @@ export interface IStorage {
   // GitHub repository operations
   getGithubRepository(id: number): Promise<GithubRepository | undefined>;
   getGithubRepositoriesByUser(userId: number): Promise<GithubRepository[]>;
-  createGithubRepository(repo: InsertGithubRepository): Promise<GithubRepository>;
-  updateGithubRepository(id: number, repo: Partial<InsertGithubRepository>): Promise<GithubRepository>;
+  createGithubRepository(
+    repo: InsertGithubRepository,
+  ): Promise<GithubRepository>;
+  updateGithubRepository(
+    id: number,
+    repo: Partial<InsertGithubRepository>,
+  ): Promise<GithubRepository>;
   deleteGithubRepository(id: number): Promise<void>;
 
   // Multi-Agent System operations
@@ -62,8 +99,14 @@ export interface IStorage {
   getConversationsByProject(projectId: number): Promise<Conversation[]>;
   getConversationsByParticipant(participantId: number): Promise<Conversation[]>;
   createConversation(conversation: InsertConversation): Promise<Conversation>;
-  updateConversation(id: number, conversation: Partial<InsertConversation>): Promise<Conversation>;
-  addParticipantToConversation(conversationId: number, participantId: number): Promise<void>;
+  updateConversation(
+    id: number,
+    conversation: Partial<InsertConversation>,
+  ): Promise<Conversation>;
+  addParticipantToConversation(
+    conversationId: number,
+    participantId: number,
+  ): Promise<void>;
 
   // Message operations
   getMessage(id: number): Promise<Message | undefined>;
@@ -71,32 +114,63 @@ export interface IStorage {
   getMessageThread(parentMessageId: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   updateMessage(id: number, message: Partial<InsertMessage>): Promise<Message>;
-  addReactionToMessage(messageId: number, reaction: string, userId: number): Promise<void>;
+  addReactionToMessage(
+    messageId: number,
+    reaction: string,
+    userId: number,
+  ): Promise<void>;
 
   // Agent Session operations
   getAgentSession(id: number): Promise<AgentSession | undefined>;
   getAgentSessionsByProject(projectId: number): Promise<AgentSession[]>;
   getActiveAgentSessions(): Promise<AgentSession[]>;
   createAgentSession(session: InsertAgentSession): Promise<AgentSession>;
-  updateAgentSession(id: number, session: Partial<InsertAgentSession>): Promise<AgentSession>;
+  updateAgentSession(
+    id: number,
+    session: Partial<InsertAgentSession>,
+  ): Promise<AgentSession>;
   endAgentSession(id: number, outcomes: string[]): Promise<AgentSession>;
 
   // Agent Knowledge operations
   getAgentKnowledge(id: number): Promise<AgentKnowledge | undefined>;
   getAgentKnowledgeByAgent(agentId: number): Promise<AgentKnowledge[]>;
   getAgentKnowledgeByProject(projectId: number): Promise<AgentKnowledge[]>;
-  searchAgentKnowledge(query: string, agentId?: number): Promise<AgentKnowledge[]>;
-  createAgentKnowledge(knowledge: InsertAgentKnowledge): Promise<AgentKnowledge>;
-  updateAgentKnowledge(id: number, knowledge: Partial<InsertAgentKnowledge>): Promise<AgentKnowledge>;
+  searchAgentKnowledge(
+    query: string,
+    agentId?: number,
+  ): Promise<AgentKnowledge[]>;
+  createAgentKnowledge(
+    knowledge: InsertAgentKnowledge,
+  ): Promise<AgentKnowledge>;
+  updateAgentKnowledge(
+    id: number,
+    knowledge: Partial<InsertAgentKnowledge>,
+  ): Promise<AgentKnowledge>;
 
   // Agent Memory operations
-  createAgentMemory(memory: { agentId: number; projectId?: number | null; memoryType: string; summary: string; details: any; importance?: number; }): Promise<any>;
+  createAgentMemory(memory: {
+    agentId: number;
+    projectId?: number | null;
+    memoryType: string;
+    summary: string;
+    details: any;
+    importance?: number;
+  }): Promise<any>;
 
   // Collaborative Document operations
-  getCollaborativeDocument(id: number): Promise<CollaborativeDocument | undefined>;
-  getCollaborativeDocumentsByProject(projectId: number): Promise<CollaborativeDocument[]>;
-  createCollaborativeDocument(document: InsertCollaborativeDocument): Promise<CollaborativeDocument>;
-  updateCollaborativeDocument(id: number, document: Partial<InsertCollaborativeDocument>): Promise<CollaborativeDocument>;
+  getCollaborativeDocument(
+    id: number,
+  ): Promise<CollaborativeDocument | undefined>;
+  getCollaborativeDocumentsByProject(
+    projectId: number,
+  ): Promise<CollaborativeDocument[]>;
+  createCollaborativeDocument(
+    document: InsertCollaborativeDocument,
+  ): Promise<CollaborativeDocument>;
+  updateCollaborativeDocument(
+    id: number,
+    document: Partial<InsertCollaborativeDocument>,
+  ): Promise<CollaborativeDocument>;
   lockDocument(id: number, userId: number): Promise<CollaborativeDocument>;
   unlockDocument(id: number): Promise<CollaborativeDocument>;
 
@@ -105,7 +179,10 @@ export interface IStorage {
   getDesignAssetsByProject(projectId: number): Promise<DesignAsset[]>;
   getDesignAssetsByType(assetType: string): Promise<DesignAsset[]>;
   createDesignAsset(asset: InsertDesignAsset): Promise<DesignAsset>;
-  updateDesignAsset(id: number, asset: Partial<InsertDesignAsset>): Promise<DesignAsset>;
+  updateDesignAsset(
+    id: number,
+    asset: Partial<InsertDesignAsset>,
+  ): Promise<DesignAsset>;
   approveDesignAsset(id: number, approvedBy: number): Promise<DesignAsset>;
 
   // Workflow Task operations
@@ -114,7 +191,10 @@ export interface IStorage {
   getWorkflowTasksByAgent(agentId: number): Promise<WorkflowTask[]>;
   getWorkflowTasksByStatus(status: string): Promise<WorkflowTask[]>;
   createWorkflowTask(task: InsertWorkflowTask): Promise<WorkflowTask>;
-  updateWorkflowTask(id: number, task: Partial<InsertWorkflowTask>): Promise<WorkflowTask>;
+  updateWorkflowTask(
+    id: number,
+    task: Partial<InsertWorkflowTask>,
+  ): Promise<WorkflowTask>;
   assignTask(taskId: number, agentId: number): Promise<WorkflowTask>;
   completeTask(taskId: number, actualHours?: number): Promise<WorkflowTask>;
 }
@@ -131,10 +211,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
@@ -148,7 +225,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProject(id: number): Promise<Project | undefined> {
-    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, id));
     return project || undefined;
   }
 
@@ -164,7 +244,10 @@ export class DatabaseStorage implements IStorage {
     return project;
   }
 
-  async updateProject(id: number, updateData: Partial<InsertProject>): Promise<Project> {
+  async updateProject(
+    id: number,
+    updateData: Partial<InsertProject>,
+  ): Promise<Project> {
     const [project] = await db
       .update(projects)
       .set(updateData)
@@ -178,20 +261,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCodeGeneration(id: number): Promise<CodeGeneration | undefined> {
-    const [generation] = await db.select().from(codeGenerations).where(eq(codeGenerations.id, id));
+    const [generation] = await db
+      .select()
+      .from(codeGenerations)
+      .where(eq(codeGenerations.id, id));
     return generation || undefined;
   }
 
   async getCodeGenerationsByUser(userId: number): Promise<CodeGeneration[]> {
-    return await db.select().from(codeGenerations).where(eq(codeGenerations.userId, userId));
+    return await db
+      .select()
+      .from(codeGenerations)
+      .where(eq(codeGenerations.userId, userId));
   }
 
-  async getCodeGenerationsByProject(projectId: number): Promise<CodeGeneration[]> {
-    const generations = await db.select().from(codeGenerations).where(eq(codeGenerations.projectId, projectId));
+  async getCodeGenerationsByProject(
+    projectId: number,
+  ): Promise<CodeGeneration[]> {
+    const generations = await db
+      .select()
+      .from(codeGenerations)
+      .where(eq(codeGenerations.projectId, projectId));
     return generations;
   }
 
-  async createCodeGeneration(insertGeneration: InsertCodeGeneration): Promise<CodeGeneration> {
+  async createCodeGeneration(
+    insertGeneration: InsertCodeGeneration,
+  ): Promise<CodeGeneration> {
     const [generation] = await db
       .insert(codeGenerations)
       .values(insertGeneration)
@@ -209,14 +305,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createApiTest(insertTest: InsertApiTest): Promise<ApiTest> {
-    const [test] = await db
-      .insert(apiTests)
-      .values(insertTest)
-      .returning();
+    const [test] = await db.insert(apiTests).values(insertTest).returning();
     return test;
   }
 
-  async updateApiTest(id: number, updateData: Partial<InsertApiTest>): Promise<ApiTest> {
+  async updateApiTest(
+    id: number,
+    updateData: Partial<InsertApiTest>,
+  ): Promise<ApiTest> {
     const [test] = await db
       .update(apiTests)
       .set(updateData)
@@ -230,15 +326,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getGithubRepository(id: number): Promise<GithubRepository | undefined> {
-    const [repo] = await db.select().from(githubRepositories).where(eq(githubRepositories.id, id));
+    const [repo] = await db
+      .select()
+      .from(githubRepositories)
+      .where(eq(githubRepositories.id, id));
     return repo || undefined;
   }
 
-  async getGithubRepositoriesByUser(userId: number): Promise<GithubRepository[]> {
-    return await db.select().from(githubRepositories).where(eq(githubRepositories.userId, userId));
+  async getGithubRepositoriesByUser(
+    userId: number,
+  ): Promise<GithubRepository[]> {
+    return await db
+      .select()
+      .from(githubRepositories)
+      .where(eq(githubRepositories.userId, userId));
   }
 
-  async createGithubRepository(insertRepo: InsertGithubRepository): Promise<GithubRepository> {
+  async createGithubRepository(
+    insertRepo: InsertGithubRepository,
+  ): Promise<GithubRepository> {
     const [repo] = await db
       .insert(githubRepositories)
       .values(insertRepo)
@@ -246,7 +352,10 @@ export class DatabaseStorage implements IStorage {
     return repo;
   }
 
-  async updateGithubRepository(id: number, updateData: Partial<InsertGithubRepository>): Promise<GithubRepository> {
+  async updateGithubRepository(
+    id: number,
+    updateData: Partial<InsertGithubRepository>,
+  ): Promise<GithubRepository> {
     const [repo] = await db
       .update(githubRepositories)
       .set(updateData)
@@ -279,14 +388,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAgent(insertAgent: InsertAgent): Promise<Agent> {
-    const [agent] = await db
-      .insert(agents)
-      .values(insertAgent)
-      .returning();
+    const [agent] = await db.insert(agents).values(insertAgent).returning();
     return agent;
   }
 
-  async updateAgent(id: number, updateData: Partial<InsertAgent>): Promise<Agent> {
+  async updateAgent(
+    id: number,
+    updateData: Partial<InsertAgent>,
+  ): Promise<Agent> {
     const [agent] = await db
       .update(agents)
       .set(updateData)
@@ -306,24 +415,34 @@ export class DatabaseStorage implements IStorage {
 
   // Conversation operations
   async getConversation(id: number): Promise<Conversation | undefined> {
-    const [conversation] = await db.select().from(conversations).where(eq(conversations.id, id));
+    const [conversation] = await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.id, id));
     return conversation || undefined;
   }
 
   async getConversationsByProject(projectId: number): Promise<Conversation[]> {
-    return await db.select().from(conversations).where(eq(conversations.projectId, projectId));
+    return await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.projectId, projectId));
   }
 
-  async getConversationsByParticipant(participantId: number): Promise<Conversation[]> {
+  async getConversationsByParticipant(
+    participantId: number,
+  ): Promise<Conversation[]> {
     // For array contains queries, we would need to use SQL operations
     // For now, return all conversations and filter in memory (not optimal for production)
     const allConversations = await db.select().from(conversations);
-    return allConversations.filter(conv => 
-      conv.participants && conv.participants.includes(participantId)
+    return allConversations.filter(
+      (conv) => conv.participants && conv.participants.includes(participantId),
     );
   }
 
-  async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
+  async createConversation(
+    insertConversation: InsertConversation,
+  ): Promise<Conversation> {
     const [conversation] = await db
       .insert(conversations)
       .values(insertConversation)
@@ -331,7 +450,10 @@ export class DatabaseStorage implements IStorage {
     return conversation;
   }
 
-  async updateConversation(id: number, updateData: Partial<InsertConversation>): Promise<Conversation> {
+  async updateConversation(
+    id: number,
+    updateData: Partial<InsertConversation>,
+  ): Promise<Conversation> {
     const [conversation] = await db
       .update(conversations)
       .set(updateData)
@@ -340,10 +462,16 @@ export class DatabaseStorage implements IStorage {
     return conversation;
   }
 
-  async addParticipantToConversation(conversationId: number, participantId: number): Promise<void> {
+  async addParticipantToConversation(
+    conversationId: number,
+    participantId: number,
+  ): Promise<void> {
     const conversation = await this.getConversation(conversationId);
     if (conversation) {
-      const updatedParticipants = [...(conversation.participants || []), participantId];
+      const updatedParticipants = [
+        ...(conversation.participants || []),
+        participantId,
+      ];
       await db
         .update(conversations)
         .set({ participants: updatedParticipants })
@@ -353,16 +481,25 @@ export class DatabaseStorage implements IStorage {
 
   // Message operations
   async getMessage(id: number): Promise<Message | undefined> {
-    const [message] = await db.select().from(messages).where(eq(messages.id, id));
+    const [message] = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.id, id));
     return message || undefined;
   }
 
   async getMessagesByConversation(conversationId: number): Promise<Message[]> {
-    return await db.select().from(messages).where(eq(messages.conversationId, conversationId));
+    return await db
+      .select()
+      .from(messages)
+      .where(eq(messages.conversationId, conversationId));
   }
 
   async getMessageThread(parentMessageId: number): Promise<Message[]> {
-    return await db.select().from(messages).where(eq(messages.parentMessageId, parentMessageId));
+    return await db
+      .select()
+      .from(messages)
+      .where(eq(messages.parentMessageId, parentMessageId));
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
@@ -373,7 +510,10 @@ export class DatabaseStorage implements IStorage {
     return message;
   }
 
-  async updateMessage(id: number, updateData: Partial<InsertMessage>): Promise<Message> {
+  async updateMessage(
+    id: number,
+    updateData: Partial<InsertMessage>,
+  ): Promise<Message> {
     const [message] = await db
       .update(messages)
       .set(updateData)
@@ -382,11 +522,19 @@ export class DatabaseStorage implements IStorage {
     return message;
   }
 
-  async addReactionToMessage(messageId: number, reaction: string, userId: number): Promise<void> {
+  async addReactionToMessage(
+    messageId: number,
+    reaction: string,
+    userId: number,
+  ): Promise<void> {
     const message = await this.getMessage(messageId);
     if (message) {
-      const currentReactions = message.reactions || {};
-      currentReactions[reaction] = [...(currentReactions[reaction] || []), userId];
+      const currentReactions: Record<string, number[]> =
+        (message.reactions as Record<string, number[]>) || {};
+      currentReactions[reaction] = [
+        ...(currentReactions[reaction] || []),
+        userId,
+      ];
       await db
         .update(messages)
         .set({ reactions: currentReactions })
@@ -396,19 +544,30 @@ export class DatabaseStorage implements IStorage {
 
   // Agent Session operations
   async getAgentSession(id: number): Promise<AgentSession | undefined> {
-    const [session] = await db.select().from(agentSessions).where(eq(agentSessions.id, id));
+    const [session] = await db
+      .select()
+      .from(agentSessions)
+      .where(eq(agentSessions.id, id));
     return session || undefined;
   }
 
   async getAgentSessionsByProject(projectId: number): Promise<AgentSession[]> {
-    return await db.select().from(agentSessions).where(eq(agentSessions.projectId, projectId));
+    return await db
+      .select()
+      .from(agentSessions)
+      .where(eq(agentSessions.projectId, projectId));
   }
 
   async getActiveAgentSessions(): Promise<AgentSession[]> {
-    return await db.select().from(agentSessions).where(eq(agentSessions.status, 'active'));
+    return await db
+      .select()
+      .from(agentSessions)
+      .where(eq(agentSessions.status, "active"));
   }
 
-  async createAgentSession(insertSession: InsertAgentSession): Promise<AgentSession> {
+  async createAgentSession(
+    insertSession: InsertAgentSession,
+  ): Promise<AgentSession> {
     const [session] = await db
       .insert(agentSessions)
       .values(insertSession)
@@ -416,7 +575,10 @@ export class DatabaseStorage implements IStorage {
     return session;
   }
 
-  async updateAgentSession(id: number, updateData: Partial<InsertAgentSession>): Promise<AgentSession> {
+  async updateAgentSession(
+    id: number,
+    updateData: Partial<InsertAgentSession>,
+  ): Promise<AgentSession> {
     const [session] = await db
       .update(agentSessions)
       .set(updateData)
@@ -428,10 +590,10 @@ export class DatabaseStorage implements IStorage {
   async endAgentSession(id: number, outcomes: string[]): Promise<AgentSession> {
     const [session] = await db
       .update(agentSessions)
-      .set({ 
-        status: 'completed',
+      .set({
+        status: "completed",
         outcomes,
-        endedAt: new Date()
+        endTime: new Date(),
       })
       .where(eq(agentSessions.id, id))
       .returning();
@@ -440,19 +602,33 @@ export class DatabaseStorage implements IStorage {
 
   // Agent Knowledge operations
   async getAgentKnowledge(id: number): Promise<AgentKnowledge | undefined> {
-    const [knowledge] = await db.select().from(agentKnowledge).where(eq(agentKnowledge.id, id));
+    const [knowledge] = await db
+      .select()
+      .from(agentKnowledge)
+      .where(eq(agentKnowledge.id, id));
     return knowledge || undefined;
   }
 
   async getAgentKnowledgeByAgent(agentId: number): Promise<AgentKnowledge[]> {
-    return await db.select().from(agentKnowledge).where(eq(agentKnowledge.agentId, agentId));
+    return await db
+      .select()
+      .from(agentKnowledge)
+      .where(eq(agentKnowledge.agentId, agentId));
   }
 
-  async getAgentKnowledgeByProject(projectId: number): Promise<AgentKnowledge[]> {
-    return await db.select().from(agentKnowledge).where(eq(agentKnowledge.projectId, projectId));
+  async getAgentKnowledgeByProject(
+    projectId: number,
+  ): Promise<AgentKnowledge[]> {
+    return await db
+      .select()
+      .from(agentKnowledge)
+      .where(eq(agentKnowledge.projectId, projectId));
   }
 
-  async searchAgentKnowledge(query: string, agentId?: number): Promise<AgentKnowledge[]> {
+  async searchAgentKnowledge(
+    query: string,
+    agentId?: number,
+  ): Promise<AgentKnowledge[]> {
     // Basic text search - in production, you might want to use full-text search
     const baseQuery = db.select().from(agentKnowledge);
     if (agentId) {
@@ -461,7 +637,9 @@ export class DatabaseStorage implements IStorage {
     return await baseQuery;
   }
 
-  async createAgentKnowledge(insertKnowledge: InsertAgentKnowledge): Promise<AgentKnowledge> {
+  async createAgentKnowledge(
+    insertKnowledge: InsertAgentKnowledge,
+  ): Promise<AgentKnowledge> {
     const [knowledge] = await db
       .insert(agentKnowledge)
       .values(insertKnowledge)
@@ -469,7 +647,10 @@ export class DatabaseStorage implements IStorage {
     return knowledge;
   }
 
-  async updateAgentKnowledge(id: number, updateData: Partial<InsertAgentKnowledge>): Promise<AgentKnowledge> {
+  async updateAgentKnowledge(
+    id: number,
+    updateData: Partial<InsertAgentKnowledge>,
+  ): Promise<AgentKnowledge> {
     const [knowledge] = await db
       .update(agentKnowledge)
       .set(updateData)
@@ -479,13 +660,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Agent Memory operations
-  async createAgentMemory(memory: { 
-    agentId: number; 
-    projectId?: number | null; 
-    memoryType: string; 
-    summary: string; 
-    details: any; 
-    importance?: number; 
+  async createAgentMemory(memory: {
+    agentId: number;
+    projectId?: number | null;
+    memoryType: string;
+    summary: string;
+    details: any;
+    importance?: number;
   }): Promise<any> {
     const [memoryRecord] = await db
       .insert(agentMemory)
@@ -504,16 +685,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Collaborative Document operations
-  async getCollaborativeDocument(id: number): Promise<CollaborativeDocument | undefined> {
-    const [document] = await db.select().from(collaborativeDocuments).where(eq(collaborativeDocuments.id, id));
+  async getCollaborativeDocument(
+    id: number,
+  ): Promise<CollaborativeDocument | undefined> {
+    const [document] = await db
+      .select()
+      .from(collaborativeDocuments)
+      .where(eq(collaborativeDocuments.id, id));
     return document || undefined;
   }
 
-  async getCollaborativeDocumentsByProject(projectId: number): Promise<CollaborativeDocument[]> {
-    return await db.select().from(collaborativeDocuments).where(eq(collaborativeDocuments.projectId, projectId));
+  async getCollaborativeDocumentsByProject(
+    projectId: number,
+  ): Promise<CollaborativeDocument[]> {
+    return await db
+      .select()
+      .from(collaborativeDocuments)
+      .where(eq(collaborativeDocuments.projectId, projectId));
   }
 
-  async createCollaborativeDocument(insertDocument: InsertCollaborativeDocument): Promise<CollaborativeDocument> {
+  async createCollaborativeDocument(
+    insertDocument: InsertCollaborativeDocument,
+  ): Promise<CollaborativeDocument> {
     const [document] = await db
       .insert(collaborativeDocuments)
       .values(insertDocument)
@@ -521,7 +714,10 @@ export class DatabaseStorage implements IStorage {
     return document;
   }
 
-  async updateCollaborativeDocument(id: number, updateData: Partial<InsertCollaborativeDocument>): Promise<CollaborativeDocument> {
+  async updateCollaborativeDocument(
+    id: number,
+    updateData: Partial<InsertCollaborativeDocument>,
+  ): Promise<CollaborativeDocument> {
     const [document] = await db
       .update(collaborativeDocuments)
       .set(updateData)
@@ -530,12 +726,16 @@ export class DatabaseStorage implements IStorage {
     return document;
   }
 
-  async lockDocument(id: number, userId: number): Promise<CollaborativeDocument> {
+  async lockDocument(
+    id: number,
+    userId: number,
+  ): Promise<CollaborativeDocument> {
     const [document] = await db
       .update(collaborativeDocuments)
-      .set({ 
-        lockedBy: userId,
-        lockedAt: new Date()
+      .set({
+        isLocked: true,
+        lastEditedBy: userId,
+        lastModified: new Date(),
       })
       .where(eq(collaborativeDocuments.id, id))
       .returning();
@@ -545,9 +745,10 @@ export class DatabaseStorage implements IStorage {
   async unlockDocument(id: number): Promise<CollaborativeDocument> {
     const [document] = await db
       .update(collaborativeDocuments)
-      .set({ 
-        lockedBy: null,
-        lockedAt: null
+      .set({
+        isLocked: false,
+        lastEditedBy: null,
+        lastModified: new Date(),
       })
       .where(eq(collaborativeDocuments.id, id))
       .returning();
@@ -556,19 +757,30 @@ export class DatabaseStorage implements IStorage {
 
   // Design Asset operations
   async getDesignAsset(id: number): Promise<DesignAsset | undefined> {
-    const [asset] = await db.select().from(designAssets).where(eq(designAssets.id, id));
+    const [asset] = await db
+      .select()
+      .from(designAssets)
+      .where(eq(designAssets.id, id));
     return asset || undefined;
   }
 
   async getDesignAssetsByProject(projectId: number): Promise<DesignAsset[]> {
-    return await db.select().from(designAssets).where(eq(designAssets.projectId, projectId));
+    return await db
+      .select()
+      .from(designAssets)
+      .where(eq(designAssets.projectId, projectId));
   }
 
   async getDesignAssetsByType(assetType: string): Promise<DesignAsset[]> {
-    return await db.select().from(designAssets).where(eq(designAssets.assetType, assetType));
+    return await db
+      .select()
+      .from(designAssets)
+      .where(eq(designAssets.assetType, assetType));
   }
 
-  async createDesignAsset(insertAsset: InsertDesignAsset): Promise<DesignAsset> {
+  async createDesignAsset(
+    insertAsset: InsertDesignAsset,
+  ): Promise<DesignAsset> {
     const [asset] = await db
       .insert(designAssets)
       .values(insertAsset)
@@ -576,7 +788,10 @@ export class DatabaseStorage implements IStorage {
     return asset;
   }
 
-  async updateDesignAsset(id: number, updateData: Partial<InsertDesignAsset>): Promise<DesignAsset> {
+  async updateDesignAsset(
+    id: number,
+    updateData: Partial<InsertDesignAsset>,
+  ): Promise<DesignAsset> {
     const [asset] = await db
       .update(designAssets)
       .set(updateData)
@@ -585,13 +800,16 @@ export class DatabaseStorage implements IStorage {
     return asset;
   }
 
-  async approveDesignAsset(id: number, approvedBy: number): Promise<DesignAsset> {
+  async approveDesignAsset(
+    id: number,
+    approvedBy: number,
+  ): Promise<DesignAsset> {
     const [asset] = await db
       .update(designAssets)
-      .set({ 
-        approvedBy,
-        approvedAt: new Date()
-      })
+        .set({
+          approvedBy,
+          isApproved: true,
+        })
       .where(eq(designAssets.id, id))
       .returning();
     return asset;
@@ -599,23 +817,37 @@ export class DatabaseStorage implements IStorage {
 
   // Workflow Task operations
   async getWorkflowTask(id: number): Promise<WorkflowTask | undefined> {
-    const [task] = await db.select().from(workflowTasks).where(eq(workflowTasks.id, id));
+    const [task] = await db
+      .select()
+      .from(workflowTasks)
+      .where(eq(workflowTasks.id, id));
     return task || undefined;
   }
 
   async getWorkflowTasksByProject(projectId: number): Promise<WorkflowTask[]> {
-    return await db.select().from(workflowTasks).where(eq(workflowTasks.projectId, projectId));
+    return await db
+      .select()
+      .from(workflowTasks)
+      .where(eq(workflowTasks.projectId, projectId));
   }
 
   async getWorkflowTasksByAgent(agentId: number): Promise<WorkflowTask[]> {
-    return await db.select().from(workflowTasks).where(eq(workflowTasks.assignedAgentId, agentId));
+    return await db
+      .select()
+      .from(workflowTasks)
+      .where(eq(workflowTasks.assignedTo, agentId));
   }
 
   async getWorkflowTasksByStatus(status: string): Promise<WorkflowTask[]> {
-    return await db.select().from(workflowTasks).where(eq(workflowTasks.status, status));
+    return await db
+      .select()
+      .from(workflowTasks)
+      .where(eq(workflowTasks.status, status));
   }
 
-  async createWorkflowTask(insertTask: InsertWorkflowTask): Promise<WorkflowTask> {
+  async createWorkflowTask(
+    insertTask: InsertWorkflowTask,
+  ): Promise<WorkflowTask> {
     const [task] = await db
       .insert(workflowTasks)
       .values(insertTask)
@@ -623,7 +855,10 @@ export class DatabaseStorage implements IStorage {
     return task;
   }
 
-  async updateWorkflowTask(id: number, updateData: Partial<InsertWorkflowTask>): Promise<WorkflowTask> {
+  async updateWorkflowTask(
+    id: number,
+    updateData: Partial<InsertWorkflowTask>,
+  ): Promise<WorkflowTask> {
     const [task] = await db
       .update(workflowTasks)
       .set(updateData)
@@ -635,19 +870,22 @@ export class DatabaseStorage implements IStorage {
   async assignTask(taskId: number, agentId: number): Promise<WorkflowTask> {
     const [task] = await db
       .update(workflowTasks)
-      .set({ assignedAgentId: agentId })
+      .set({ assignedTo: agentId })
       .where(eq(workflowTasks.id, taskId))
       .returning();
     return task;
   }
 
-  async completeTask(taskId: number, actualHours?: number): Promise<WorkflowTask> {
+  async completeTask(
+    taskId: number,
+    actualHours?: number,
+  ): Promise<WorkflowTask> {
     const [task] = await db
       .update(workflowTasks)
-      .set({ 
-        status: 'completed',
+      .set({
+        status: "completed",
         actualHours,
-        completedAt: new Date()
+        completedAt: new Date(),
       })
       .where(eq(workflowTasks.id, taskId))
       .returning();
@@ -661,17 +899,18 @@ export class MemStorage implements IStorage {
   private codeGenerations: Map<number, CodeGeneration> = new Map();
   private apiTests: Map<number, ApiTest> = new Map();
   private githubRepositories: Map<number, GithubRepository> = new Map();
-  
+
   // Multi-Agent System Storage
   private agents: Map<number, Agent> = new Map();
   private conversations: Map<number, Conversation> = new Map();
   private messages: Map<number, Message> = new Map();
   private agentSessions: Map<number, AgentSession> = new Map();
   private agentKnowledge: Map<number, AgentKnowledge> = new Map();
-  private collaborativeDocuments: Map<number, CollaborativeDocument> = new Map();
+  private collaborativeDocuments: Map<number, CollaborativeDocument> =
+    new Map();
   private designAssets: Map<number, DesignAsset> = new Map();
   private workflowTasks: Map<number, WorkflowTask> = new Map();
-  
+
   private currentUserId = 1;
   private currentProjectId = 1;
   private currentCodeGenerationId = 1;
@@ -707,9 +946,17 @@ export class MemStorage implements IStorage {
       type: "project_manager",
       name: "Morgan Davis",
       avatar: "📋",
-      description: "Experienced project manager who coordinates teams and ensures delivery",
-      capabilities: ["project_coordination", "timeline_management", "resource_allocation", "stakeholder_communication", "quality_assurance"],
-      personality: "Organized and communicative, ensures projects stay on track",
+      description:
+        "Experienced project manager who coordinates teams and ensures delivery",
+      capabilities: [
+        "project_coordination",
+        "timeline_management",
+        "resource_allocation",
+        "stakeholder_communication",
+        "quality_assurance",
+      ],
+      personality:
+        "Organized and communicative, ensures projects stay on track",
       status: "active",
       aiModel: "gpt-4o",
       specialization: "project_management",
@@ -721,7 +968,7 @@ export class MemStorage implements IStorage {
 - Ensuring quality standards are met
 - Breaking down complex projects into manageable tasks
 
-Your communication style is clear, organized, and proactive. You keep everyone aligned and focused on deliverables.`
+Your communication style is clear, organized, and proactive. You keep everyone aligned and focused on deliverables.`,
     });
 
     // Senior Developer Agent
@@ -729,9 +976,17 @@ Your communication style is clear, organized, and proactive. You keep everyone a
       type: "senior_developer",
       name: "Alex Chen",
       avatar: "👨‍💻",
-      description: "Senior full-stack developer with expertise in system architecture and code optimization",
-      capabilities: ["system_architecture", "code_review", "performance_optimization", "security_audit", "mentoring"],
-      personality: "Analytical and thorough, focuses on best practices and scalable solutions",
+      description:
+        "Senior full-stack developer with expertise in system architecture and code optimization",
+      capabilities: [
+        "system_architecture",
+        "code_review",
+        "performance_optimization",
+        "security_audit",
+        "mentoring",
+      ],
+      personality:
+        "Analytical and thorough, focuses on best practices and scalable solutions",
       status: "active",
       aiModel: "gpt-4o",
       specialization: "system_architecture",
@@ -743,7 +998,7 @@ Your communication style is clear, organized, and proactive. You keep everyone a
 - Mentoring junior developers
 - Making technical decisions with business impact in mind
 
-Your communication style is professional, thorough, and educational. You always explain the 'why' behind your recommendations.`
+Your communication style is professional, thorough, and educational. You always explain the 'why' behind your recommendations.`,
     });
 
     // UI/UX Designer Agent
@@ -751,9 +1006,18 @@ Your communication style is professional, thorough, and educational. You always 
       type: "designer",
       name: "Maya Rodriguez",
       avatar: "🎨",
-      description: "Senior UI/UX designer specializing in user-centered design and design systems",
-      capabilities: ["ui_design", "ux_research", "design_systems", "accessibility", "prototyping", "user_testing"],
-      personality: "Creative and user-focused, emphasizes accessibility and inclusive design",
+      description:
+        "Senior UI/UX designer specializing in user-centered design and design systems",
+      capabilities: [
+        "ui_design",
+        "ux_research",
+        "design_systems",
+        "accessibility",
+        "prototyping",
+        "user_testing",
+      ],
+      personality:
+        "Creative and user-focused, emphasizes accessibility and inclusive design",
       status: "active",
       aiModel: "claude-3-5-sonnet",
       specialization: "ui_ux_design",
@@ -765,7 +1029,7 @@ Your communication style is professional, thorough, and educational. You always 
 - Prototyping and interaction design
 - Collaborating with developers on implementation
 
-Your communication style is visual, empathetic, and user-focused. You always consider the end user's needs and experiences.`
+Your communication style is visual, empathetic, and user-focused. You always consider the end user's needs and experiences.`,
     });
 
     // Junior Developer Agent
@@ -773,8 +1037,15 @@ Your communication style is visual, empathetic, and user-focused. You always con
       type: "junior_developer",
       name: "Sam Park",
       avatar: "👩‍💻",
-      description: "Enthusiastic junior developer focused on learning and implementing features",
-      capabilities: ["feature_implementation", "unit_testing", "documentation", "bug_fixing", "learning"],
+      description:
+        "Enthusiastic junior developer focused on learning and implementing features",
+      capabilities: [
+        "feature_implementation",
+        "unit_testing",
+        "documentation",
+        "bug_fixing",
+        "learning",
+      ],
       personality: "Eager to learn, detail-oriented, asks great questions",
       status: "active",
       aiModel: "gpt-4o",
@@ -787,7 +1058,7 @@ Your communication style is visual, empathetic, and user-focused. You always con
 - Asking thoughtful questions when unclear
 - Following coding standards and best practices
 
-Your communication style is curious, collaborative, and growth-oriented. You're not afraid to ask questions and learn from others.`
+Your communication style is curious, collaborative, and growth-oriented. You're not afraid to ask questions and learn from others.`,
     });
 
     // DevOps Engineer Agent
@@ -795,9 +1066,18 @@ Your communication style is curious, collaborative, and growth-oriented. You're 
       type: "devops",
       name: "Jordan Kim",
       avatar: "⚙️",
-      description: "DevOps engineer focused on deployment, infrastructure, and automation",
-      capabilities: ["deployment", "infrastructure", "ci_cd", "monitoring", "security", "automation"],
-      personality: "Systematic and reliable, focuses on automation and scalability",
+      description:
+        "DevOps engineer focused on deployment, infrastructure, and automation",
+      capabilities: [
+        "deployment",
+        "infrastructure",
+        "ci_cd",
+        "monitoring",
+        "security",
+        "automation",
+      ],
+      personality:
+        "Systematic and reliable, focuses on automation and scalability",
       status: "active",
       aiModel: "gpt-4o",
       specialization: "devops_infrastructure",
@@ -809,7 +1089,7 @@ Your communication style is curious, collaborative, and growth-oriented. You're 
 - Security scanning and compliance
 - Automation and scripting
 
-Your communication style is systematic, security-conscious, and focused on reliability and scalability.`
+Your communication style is systematic, security-conscious, and focused on reliability and scalability.`,
     });
 
     // Product Manager Agent
@@ -817,9 +1097,17 @@ Your communication style is systematic, security-conscious, and focused on relia
       type: "product_manager",
       name: "Emma Thompson",
       avatar: "📊",
-      description: "Product manager focused on requirements, prioritization, and stakeholder alignment",
-      capabilities: ["requirements_gathering", "prioritization", "stakeholder_management", "project_planning", "user_stories"],
-      personality: "Strategic and communicative, balances user needs with business goals",
+      description:
+        "Product manager focused on requirements, prioritization, and stakeholder alignment",
+      capabilities: [
+        "requirements_gathering",
+        "prioritization",
+        "stakeholder_management",
+        "project_planning",
+        "user_stories",
+      ],
+      personality:
+        "Strategic and communicative, balances user needs with business goals",
       status: "active",
       aiModel: "gpt-4o",
       specialization: "product_management",
@@ -831,7 +1119,7 @@ Your communication style is systematic, security-conscious, and focused on relia
 - Project planning and timeline management
 - Analyzing user feedback and metrics
 
-Your communication style is clear, strategic, and focused on aligning technical work with business objectives.`
+Your communication style is clear, strategic, and focused on aligning technical work with business objectives.`,
     });
 
     // Code Reviewer Agent
@@ -839,9 +1127,17 @@ Your communication style is clear, strategic, and focused on aligning technical 
       type: "code_reviewer",
       name: "Dr. Lisa Wang",
       avatar: "🔍",
-      description: "Code quality specialist focused on security, performance, and maintainability",
-      capabilities: ["code_review", "security_analysis", "performance_review", "code_quality", "best_practices"],
-      personality: "Meticulous and constructive, emphasizes code quality and security",
+      description:
+        "Code quality specialist focused on security, performance, and maintainability",
+      capabilities: [
+        "code_review",
+        "security_analysis",
+        "performance_review",
+        "code_quality",
+        "best_practices",
+      ],
+      personality:
+        "Meticulous and constructive, emphasizes code quality and security",
       status: "active",
       aiModel: "gpt-4o",
       specialization: "code_quality",
@@ -853,7 +1149,7 @@ Your communication style is clear, strategic, and focused on aligning technical 
 - Providing constructive feedback with specific recommendations
 - Knowledge of OWASP guidelines and security best practices
 
-Your communication style is detailed, constructive, and educational, always explaining the rationale behind your recommendations.`
+Your communication style is detailed, constructive, and educational, always explaining the rationale behind your recommendations.`,
     });
 
     // Project Manager Agent (Morgan Davis)
@@ -861,9 +1157,17 @@ Your communication style is detailed, constructive, and educational, always expl
       type: "project_manager",
       name: "Morgan Davis",
       avatar: "📋",
-      description: "Project coordination specialist focused on task delegation and team orchestration",
-      capabilities: ["task_coordination", "team_management", "project_planning", "resource_allocation", "workflow_optimization"],
-      personality: "Organized and strategic, excels at coordinating diverse teams and complex projects",
+      description:
+        "Project coordination specialist focused on task delegation and team orchestration",
+      capabilities: [
+        "task_coordination",
+        "team_management",
+        "project_planning",
+        "resource_allocation",
+        "workflow_optimization",
+      ],
+      personality:
+        "Organized and strategic, excels at coordinating diverse teams and complex projects",
       status: "active",
       aiModel: "gpt-4o",
       specialization: "project_coordination",
@@ -875,7 +1179,7 @@ Your communication style is detailed, constructive, and educational, always expl
 - Ensuring quality standards and project objectives are met
 - Managing resource allocation and workflow optimization
 
-Your communication style is clear, organized, and strategic. You focus on practical execution and ensuring all team members understand their roles and responsibilities.`
+Your communication style is clear, organized, and strategic. You focus on practical execution and ensuring all team members understand their roles and responsibilities.`,
     });
   }
 
@@ -885,7 +1189,7 @@ Your communication style is clear, organized, and strategic. You focus on practi
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+    return Array.from(this.users.values()).find((user) => user.email === email);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -905,7 +1209,7 @@ Your communication style is clear, organized, and strategic. You focus on practi
   async updateUser(id: number, updateData: Partial<InsertUser>): Promise<User> {
     const user = this.users.get(id);
     if (!user) throw new Error("User not found");
-    
+
     const updatedUser = { ...user, ...updateData };
     this.users.set(id, updatedUser);
     return updatedUser;
@@ -917,7 +1221,9 @@ Your communication style is clear, organized, and strategic. You focus on practi
   }
 
   async getProjectsByUser(userId: number): Promise<Project[]> {
-    return Array.from(this.projects.values()).filter(project => project.userId === userId);
+    return Array.from(this.projects.values()).filter(
+      (project) => project.userId === userId,
+    );
   }
 
   async createProject(insertProject: InsertProject): Promise<Project> {
@@ -930,7 +1236,10 @@ Your communication style is clear, organized, and strategic. You focus on practi
       language: insertProject.language,
       framework: insertProject.framework ?? null,
       status: insertProject.status ?? "active",
+      isRunning: insertProject.isRunning ?? false,
       githubRepo: insertProject.githubRepo ?? null,
+      assistantId: insertProject.assistantId ?? null,
+      threadId: insertProject.threadId ?? null,
       createdAt: new Date(),
       lastModified: new Date(),
     };
@@ -938,11 +1247,18 @@ Your communication style is clear, organized, and strategic. You focus on practi
     return project;
   }
 
-  async updateProject(id: number, updateData: Partial<InsertProject>): Promise<Project> {
+  async updateProject(
+    id: number,
+    updateData: Partial<InsertProject>,
+  ): Promise<Project> {
     const project = this.projects.get(id);
     if (!project) throw new Error("Project not found");
-    
-    const updatedProject = { ...project, ...updateData, lastModified: new Date() };
+
+    const updatedProject = {
+      ...project,
+      ...updateData,
+      lastModified: new Date(),
+    };
     this.projects.set(id, updatedProject);
     return updatedProject;
   }
@@ -957,10 +1273,14 @@ Your communication style is clear, organized, and strategic. You focus on practi
   }
 
   async getCodeGenerationsByUser(userId: number): Promise<CodeGeneration[]> {
-    return Array.from(this.codeGenerations.values()).filter(gen => gen.userId === userId);
+    return Array.from(this.codeGenerations.values()).filter(
+      (gen) => gen.userId === userId,
+    );
   }
 
-  async createCodeGeneration(insertGeneration: InsertCodeGeneration): Promise<CodeGeneration> {
+  async createCodeGeneration(
+    insertGeneration: InsertCodeGeneration,
+  ): Promise<CodeGeneration> {
     const id = this.currentCodeGenerationId++;
     const generation: CodeGeneration = {
       id,
@@ -970,10 +1290,19 @@ Your communication style is clear, organized, and strategic. You focus on practi
       language: insertGeneration.language,
       framework: insertGeneration.framework ?? null,
       generatedCode: insertGeneration.generatedCode,
+      aiProvider: insertGeneration.aiProvider ?? "openai",
       createdAt: new Date(),
     };
     this.codeGenerations.set(id, generation);
     return generation;
+  }
+
+  async getCodeGenerationsByProject(
+    projectId: number,
+  ): Promise<CodeGeneration[]> {
+    return Array.from(this.codeGenerations.values()).filter(
+      (gen) => gen.projectId === projectId,
+    );
   }
 
   // API test operations
@@ -982,7 +1311,9 @@ Your communication style is clear, organized, and strategic. You focus on practi
   }
 
   async getApiTestsByUser(userId: number): Promise<ApiTest[]> {
-    return Array.from(this.apiTests.values()).filter(test => test.userId === userId);
+    return Array.from(this.apiTests.values()).filter(
+      (test) => test.userId === userId,
+    );
   }
 
   async createApiTest(insertTest: InsertApiTest): Promise<ApiTest> {
@@ -1004,10 +1335,13 @@ Your communication style is clear, organized, and strategic. You focus on practi
     return test;
   }
 
-  async updateApiTest(id: number, updateData: Partial<InsertApiTest>): Promise<ApiTest> {
+  async updateApiTest(
+    id: number,
+    updateData: Partial<InsertApiTest>,
+  ): Promise<ApiTest> {
     const test = this.apiTests.get(id);
     if (!test) throw new Error("API test not found");
-    
+
     const updatedTest = { ...test, ...updateData };
     this.apiTests.set(id, updatedTest);
     return updatedTest;
@@ -1022,11 +1356,17 @@ Your communication style is clear, organized, and strategic. You focus on practi
     return this.githubRepositories.get(id);
   }
 
-  async getGithubRepositoriesByUser(userId: number): Promise<GithubRepository[]> {
-    return Array.from(this.githubRepositories.values()).filter(repo => repo.userId === userId);
+  async getGithubRepositoriesByUser(
+    userId: number,
+  ): Promise<GithubRepository[]> {
+    return Array.from(this.githubRepositories.values()).filter(
+      (repo) => repo.userId === userId,
+    );
   }
 
-  async createGithubRepository(insertRepo: InsertGithubRepository): Promise<GithubRepository> {
+  async createGithubRepository(
+    insertRepo: InsertGithubRepository,
+  ): Promise<GithubRepository> {
     const id = this.currentGithubRepositoryId++;
     const repo: GithubRepository = {
       id,
@@ -1045,10 +1385,13 @@ Your communication style is clear, organized, and strategic. You focus on practi
     return repo;
   }
 
-  async updateGithubRepository(id: number, updateData: Partial<InsertGithubRepository>): Promise<GithubRepository> {
+  async updateGithubRepository(
+    id: number,
+    updateData: Partial<InsertGithubRepository>,
+  ): Promise<GithubRepository> {
     const repo = this.githubRepositories.get(id);
     if (!repo) throw new Error("GitHub repository not found");
-    
+
     const updatedRepo = { ...repo, ...updateData, lastSync: new Date() };
     this.githubRepositories.set(id, updatedRepo);
     return updatedRepo;
@@ -1069,36 +1412,51 @@ Your communication style is clear, organized, and strategic. You focus on practi
   }
 
   async getAgentByName(name: string): Promise<Agent | undefined> {
-    return Array.from(this.agents.values()).find(agent => agent.name === name);
+    return Array.from(this.agents.values()).find(
+      (agent) => agent.name === name,
+    );
   }
 
   async getAgentsByType(type: string): Promise<Agent[]> {
-    return Array.from(this.agents.values()).filter(agent => agent.type === type);
+    return Array.from(this.agents.values()).filter(
+      (agent) => agent.type === type,
+    );
   }
 
-  async createAgent(insertAgent: InsertAgent): Promise<Agent> {
-    const id = this.currentAgentId++;
-    const agent: Agent = {
-      id,
-      type: insertAgent.type,
-      name: insertAgent.name,
-      avatar: insertAgent.avatar ?? null,
-      description: insertAgent.description ?? null,
-      capabilities: insertAgent.capabilities ?? null,
-      personality: insertAgent.personality ?? null,
-      status: insertAgent.status ?? "active",
-      aiModel: insertAgent.aiModel ?? "gpt-4o",
-      systemPrompt: insertAgent.systemPrompt,
-      createdAt: new Date(),
-    };
-    this.agents.set(id, agent);
-    return agent;
-  }
+    async createAgent(insertAgent: InsertAgent): Promise<Agent> {
+      const id = this.currentAgentId++;
+      const agent: Agent = {
+        id,
+        type: insertAgent.type,
+        name: insertAgent.name,
+        avatar: insertAgent.avatar ?? null,
+        description: insertAgent.description ?? null,
+        specialization: insertAgent.specialization,
+        capabilities: insertAgent.capabilities ?? [],
+        personality: insertAgent.personality ?? null,
+        status: insertAgent.status ?? "active",
+        aiModel: insertAgent.aiModel ?? "gpt-4o",
+        aiProvider: insertAgent.aiProvider ?? "openai",
+        systemPrompt: insertAgent.systemPrompt,
+        experienceLevel: insertAgent.experienceLevel ?? "senior",
+        languages: insertAgent.languages ?? [],
+        frameworks: insertAgent.frameworks ?? [],
+        assistantId: insertAgent.assistantId ?? null,
+        threadId: insertAgent.threadId ?? null,
+        projectMemory: insertAgent.projectMemory ?? null,
+        createdAt: new Date(),
+      };
+      this.agents.set(id, agent);
+      return agent;
+    }
 
-  async updateAgent(id: number, updateData: Partial<InsertAgent>): Promise<Agent> {
+  async updateAgent(
+    id: number,
+    updateData: Partial<InsertAgent>,
+  ): Promise<Agent> {
     const agent = this.agents.get(id);
     if (!agent) throw new Error("Agent not found");
-    
+
     const updatedAgent = { ...agent, ...updateData };
     this.agents.set(id, updatedAgent);
     return updatedAgent;
@@ -1114,16 +1472,22 @@ Your communication style is clear, organized, and strategic. You focus on practi
   }
 
   async getConversationsByProject(projectId: number): Promise<Conversation[]> {
-    return Array.from(this.conversations.values()).filter(conv => conv.projectId === projectId);
-  }
-
-  async getConversationsByParticipant(participantId: number): Promise<Conversation[]> {
-    return Array.from(this.conversations.values()).filter(conv => 
-      conv.participants && conv.participants.includes(participantId)
+    return Array.from(this.conversations.values()).filter(
+      (conv) => conv.projectId === projectId,
     );
   }
 
-  async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
+  async getConversationsByParticipant(
+    participantId: number,
+  ): Promise<Conversation[]> {
+    return Array.from(this.conversations.values()).filter(
+      (conv) => conv.participants && conv.participants.includes(participantId),
+    );
+  }
+
+  async createConversation(
+    insertConversation: InsertConversation,
+  ): Promise<Conversation> {
     const id = this.currentConversationId++;
     const conversation: Conversation = {
       id,
@@ -1140,20 +1504,26 @@ Your communication style is clear, organized, and strategic. You focus on practi
     return conversation;
   }
 
-  async updateConversation(id: number, updateData: Partial<InsertConversation>): Promise<Conversation> {
+  async updateConversation(
+    id: number,
+    updateData: Partial<InsertConversation>,
+  ): Promise<Conversation> {
     const conversation = this.conversations.get(id);
     if (!conversation) throw new Error("Conversation not found");
-    
+
     const updatedConversation = { ...conversation, ...updateData };
     updatedConversation.lastActivity = new Date();
     this.conversations.set(id, updatedConversation);
     return updatedConversation;
   }
 
-  async addParticipantToConversation(conversationId: number, participantId: number): Promise<void> {
+  async addParticipantToConversation(
+    conversationId: number,
+    participantId: number,
+  ): Promise<void> {
     const conversation = this.conversations.get(conversationId);
     if (!conversation) throw new Error("Conversation not found");
-    
+
     const participants = conversation.participants || [];
     if (!participants.includes(participantId)) {
       participants.push(participantId);
@@ -1168,14 +1538,20 @@ Your communication style is clear, organized, and strategic. You focus on practi
 
   async getMessagesByConversation(conversationId: number): Promise<Message[]> {
     return Array.from(this.messages.values())
-      .filter(msg => msg.conversationId === conversationId)
-      .sort((a, b) => new Date(a.timestamp!).getTime() - new Date(b.timestamp!).getTime());
+      .filter((msg) => msg.conversationId === conversationId)
+      .sort(
+        (a, b) =>
+          new Date(a.timestamp!).getTime() - new Date(b.timestamp!).getTime(),
+      );
   }
 
   async getMessageThread(parentMessageId: number): Promise<Message[]> {
     return Array.from(this.messages.values())
-      .filter(msg => msg.parentMessageId === parentMessageId)
-      .sort((a, b) => new Date(a.timestamp!).getTime() - new Date(b.timestamp!).getTime());
+      .filter((msg) => msg.parentMessageId === parentMessageId)
+      .sort(
+        (a, b) =>
+          new Date(a.timestamp!).getTime() - new Date(b.timestamp!).getTime(),
+      );
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
@@ -1188,40 +1564,50 @@ Your communication style is clear, organized, and strategic. You focus on practi
       content: insertMessage.content,
       messageType: insertMessage.messageType ?? "text",
       metadata: insertMessage.metadata ?? null,
+      attachments: insertMessage.attachments ?? null,
       parentMessageId: insertMessage.parentMessageId ?? null,
       reactions: insertMessage.reactions ?? null,
       timestamp: new Date(),
     };
     this.messages.set(id, message);
-    
+
     // Update conversation last activity
     const conversation = this.conversations.get(insertMessage.conversationId);
     if (conversation) {
-      await this.updateConversation(insertMessage.conversationId, { lastActivity: new Date() });
+      await this.updateConversation(insertMessage.conversationId, {
+        lastActivity: new Date(),
+      });
     }
-    
+
     return message;
   }
 
-  async updateMessage(id: number, updateData: Partial<InsertMessage>): Promise<Message> {
+  async updateMessage(
+    id: number,
+    updateData: Partial<InsertMessage>,
+  ): Promise<Message> {
     const message = this.messages.get(id);
     if (!message) throw new Error("Message not found");
-    
+
     const updatedMessage = { ...message, ...updateData };
     this.messages.set(id, updatedMessage);
     return updatedMessage;
   }
 
-  async addReactionToMessage(messageId: number, reaction: string, userId: number): Promise<void> {
+  async addReactionToMessage(
+    messageId: number,
+    reaction: string,
+    userId: number,
+  ): Promise<void> {
     const message = this.messages.get(messageId);
     if (!message) throw new Error("Message not found");
-    
-    const reactions = message.reactions as any || {};
+
+    const reactions = (message.reactions as any) || {};
     reactions[reaction] = reactions[reaction] || [];
     if (!reactions[reaction].includes(userId)) {
       reactions[reaction].push(userId);
     }
-    
+
     await this.updateMessage(messageId, { reactions });
   }
 
@@ -1231,14 +1617,20 @@ Your communication style is clear, organized, and strategic. You focus on practi
   }
 
   async getAgentSessionsByProject(projectId: number): Promise<AgentSession[]> {
-    return Array.from(this.agentSessions.values()).filter(session => session.projectId === projectId);
+    return Array.from(this.agentSessions.values()).filter(
+      (session) => session.projectId === projectId,
+    );
   }
 
   async getActiveAgentSessions(): Promise<AgentSession[]> {
-    return Array.from(this.agentSessions.values()).filter(session => session.status === "active");
+    return Array.from(this.agentSessions.values()).filter(
+      (session) => session.status === "active",
+    );
   }
 
-  async createAgentSession(insertSession: InsertAgentSession): Promise<AgentSession> {
+  async createAgentSession(
+    insertSession: InsertAgentSession,
+  ): Promise<AgentSession> {
     const id = this.currentAgentSessionId++;
     const session: AgentSession = {
       id,
@@ -1256,20 +1648,23 @@ Your communication style is clear, organized, and strategic. You focus on practi
     return session;
   }
 
-  async updateAgentSession(id: number, updateData: Partial<InsertAgentSession>): Promise<AgentSession> {
+  async updateAgentSession(
+    id: number,
+    updateData: Partial<InsertAgentSession>,
+  ): Promise<AgentSession> {
     const session = this.agentSessions.get(id);
     if (!session) throw new Error("Agent session not found");
-    
+
     const updatedSession = { ...session, ...updateData };
     this.agentSessions.set(id, updatedSession);
     return updatedSession;
   }
 
   async endAgentSession(id: number, outcomes: string[]): Promise<AgentSession> {
-    return this.updateAgentSession(id, { 
-      status: "completed", 
-      endTime: new Date(), 
-      outcomes 
+    return this.updateAgentSession(id, {
+      status: "completed",
+      endTime: new Date(),
+      outcomes,
     });
   }
 
@@ -1279,24 +1674,41 @@ Your communication style is clear, organized, and strategic. You focus on practi
   }
 
   async getAgentKnowledgeByAgent(agentId: number): Promise<AgentKnowledge[]> {
-    return Array.from(this.agentKnowledge.values()).filter(knowledge => knowledge.agentId === agentId);
-  }
-
-  async getAgentKnowledgeByProject(projectId: number): Promise<AgentKnowledge[]> {
-    return Array.from(this.agentKnowledge.values()).filter(knowledge => knowledge.projectId === projectId);
-  }
-
-  async searchAgentKnowledge(query: string, agentId?: number): Promise<AgentKnowledge[]> {
-    const knowledge = Array.from(this.agentKnowledge.values());
-    const filtered = agentId ? knowledge.filter(k => k.agentId === agentId) : knowledge;
-    
-    return filtered.filter(k => 
-      k.content.toLowerCase().includes(query.toLowerCase()) ||
-      (k.tags && k.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase())))
+    return Array.from(this.agentKnowledge.values()).filter(
+      (knowledge) => knowledge.agentId === agentId,
     );
   }
 
-  async createAgentKnowledge(insertKnowledge: InsertAgentKnowledge): Promise<AgentKnowledge> {
+  async getAgentKnowledgeByProject(
+    projectId: number,
+  ): Promise<AgentKnowledge[]> {
+    return Array.from(this.agentKnowledge.values()).filter(
+      (knowledge) => knowledge.projectId === projectId,
+    );
+  }
+
+  async searchAgentKnowledge(
+    query: string,
+    agentId?: number,
+  ): Promise<AgentKnowledge[]> {
+    const knowledge = Array.from(this.agentKnowledge.values());
+    const filtered = agentId
+      ? knowledge.filter((k) => k.agentId === agentId)
+      : knowledge;
+
+    return filtered.filter(
+      (k) =>
+        k.content.toLowerCase().includes(query.toLowerCase()) ||
+        (k.tags &&
+          k.tags.some((tag) =>
+            tag.toLowerCase().includes(query.toLowerCase()),
+          )),
+    );
+  }
+
+  async createAgentKnowledge(
+    insertKnowledge: InsertAgentKnowledge,
+  ): Promise<AgentKnowledge> {
     const id = this.currentAgentKnowledgeId++;
     const knowledge: AgentKnowledge = {
       id,
@@ -1313,23 +1725,26 @@ Your communication style is clear, organized, and strategic. You focus on practi
     return knowledge;
   }
 
-  async updateAgentKnowledge(id: number, updateData: Partial<InsertAgentKnowledge>): Promise<AgentKnowledge> {
+  async updateAgentKnowledge(
+    id: number,
+    updateData: Partial<InsertAgentKnowledge>,
+  ): Promise<AgentKnowledge> {
     const knowledge = this.agentKnowledge.get(id);
     if (!knowledge) throw new Error("Agent knowledge not found");
-    
+
     const updatedKnowledge = { ...knowledge, ...updateData };
     this.agentKnowledge.set(id, updatedKnowledge);
     return updatedKnowledge;
   }
 
   // Agent Memory operations
-  async createAgentMemory(memory: { 
-    agentId: number; 
-    projectId?: number | null; 
-    memoryType: string; 
-    summary: string; 
-    details: any; 
-    importance?: number; 
+  async createAgentMemory(memory: {
+    agentId: number;
+    projectId?: number | null;
+    memoryType: string;
+    summary: string;
+    details: any;
+    importance?: number;
   }): Promise<any> {
     // For in-memory storage, we'll just return a mock memory object
     // In a real implementation, this would be stored in a persistent store
@@ -1347,15 +1762,23 @@ Your communication style is clear, organized, and strategic. You focus on practi
   }
 
   // Collaborative Document operations
-  async getCollaborativeDocument(id: number): Promise<CollaborativeDocument | undefined> {
+  async getCollaborativeDocument(
+    id: number,
+  ): Promise<CollaborativeDocument | undefined> {
     return this.collaborativeDocuments.get(id);
   }
 
-  async getCollaborativeDocumentsByProject(projectId: number): Promise<CollaborativeDocument[]> {
-    return Array.from(this.collaborativeDocuments.values()).filter(doc => doc.projectId === projectId);
+  async getCollaborativeDocumentsByProject(
+    projectId: number,
+  ): Promise<CollaborativeDocument[]> {
+    return Array.from(this.collaborativeDocuments.values()).filter(
+      (doc) => doc.projectId === projectId,
+    );
   }
 
-  async createCollaborativeDocument(insertDocument: InsertCollaborativeDocument): Promise<CollaborativeDocument> {
+  async createCollaborativeDocument(
+    insertDocument: InsertCollaborativeDocument,
+  ): Promise<CollaborativeDocument> {
     const id = this.currentCollaborativeDocumentId++;
     const document: CollaborativeDocument = {
       id,
@@ -1374,24 +1797,30 @@ Your communication style is clear, organized, and strategic. You focus on practi
     return document;
   }
 
-  async updateCollaborativeDocument(id: number, updateData: Partial<InsertCollaborativeDocument>): Promise<CollaborativeDocument> {
+  async updateCollaborativeDocument(
+    id: number,
+    updateData: Partial<InsertCollaborativeDocument>,
+  ): Promise<CollaborativeDocument> {
     const document = this.collaborativeDocuments.get(id);
     if (!document) throw new Error("Collaborative document not found");
-    
-    const updatedDocument = { 
-      ...document, 
-      ...updateData, 
+
+    const updatedDocument = {
+      ...document,
+      ...updateData,
       lastModified: new Date(),
-      version: document.version! + 1
+      version: document.version! + 1,
     };
     this.collaborativeDocuments.set(id, updatedDocument);
     return updatedDocument;
   }
 
-  async lockDocument(id: number, userId: number): Promise<CollaborativeDocument> {
-    return this.updateCollaborativeDocument(id, { 
-      isLocked: true, 
-      lastEditedBy: userId 
+  async lockDocument(
+    id: number,
+    userId: number,
+  ): Promise<CollaborativeDocument> {
+    return this.updateCollaborativeDocument(id, {
+      isLocked: true,
+      lastEditedBy: userId,
     });
   }
 
@@ -1405,14 +1834,20 @@ Your communication style is clear, organized, and strategic. You focus on practi
   }
 
   async getDesignAssetsByProject(projectId: number): Promise<DesignAsset[]> {
-    return Array.from(this.designAssets.values()).filter(asset => asset.projectId === projectId);
+    return Array.from(this.designAssets.values()).filter(
+      (asset) => asset.projectId === projectId,
+    );
   }
 
   async getDesignAssetsByType(assetType: string): Promise<DesignAsset[]> {
-    return Array.from(this.designAssets.values()).filter(asset => asset.assetType === assetType);
+    return Array.from(this.designAssets.values()).filter(
+      (asset) => asset.assetType === assetType,
+    );
   }
 
-  async createDesignAsset(insertAsset: InsertDesignAsset): Promise<DesignAsset> {
+  async createDesignAsset(
+    insertAsset: InsertDesignAsset,
+  ): Promise<DesignAsset> {
     const id = this.currentDesignAssetId++;
     const asset: DesignAsset = {
       id,
@@ -1432,19 +1867,25 @@ Your communication style is clear, organized, and strategic. You focus on practi
     return asset;
   }
 
-  async updateDesignAsset(id: number, updateData: Partial<InsertDesignAsset>): Promise<DesignAsset> {
+  async updateDesignAsset(
+    id: number,
+    updateData: Partial<InsertDesignAsset>,
+  ): Promise<DesignAsset> {
     const asset = this.designAssets.get(id);
     if (!asset) throw new Error("Design asset not found");
-    
+
     const updatedAsset = { ...asset, ...updateData };
     this.designAssets.set(id, updatedAsset);
     return updatedAsset;
   }
 
-  async approveDesignAsset(id: number, approvedBy: number): Promise<DesignAsset> {
-    return this.updateDesignAsset(id, { 
-      isApproved: true, 
-      approvedBy 
+  async approveDesignAsset(
+    id: number,
+    approvedBy: number,
+  ): Promise<DesignAsset> {
+    return this.updateDesignAsset(id, {
+      isApproved: true,
+      approvedBy,
     });
   }
 
@@ -1454,18 +1895,26 @@ Your communication style is clear, organized, and strategic. You focus on practi
   }
 
   async getWorkflowTasksByProject(projectId: number): Promise<WorkflowTask[]> {
-    return Array.from(this.workflowTasks.values()).filter(task => task.projectId === projectId);
+    return Array.from(this.workflowTasks.values()).filter(
+      (task) => task.projectId === projectId,
+    );
   }
 
   async getWorkflowTasksByAgent(agentId: number): Promise<WorkflowTask[]> {
-    return Array.from(this.workflowTasks.values()).filter(task => task.assignedTo === agentId);
+    return Array.from(this.workflowTasks.values()).filter(
+      (task) => task.assignedTo === agentId,
+    );
   }
 
   async getWorkflowTasksByStatus(status: string): Promise<WorkflowTask[]> {
-    return Array.from(this.workflowTasks.values()).filter(task => task.status === status);
+    return Array.from(this.workflowTasks.values()).filter(
+      (task) => task.status === status,
+    );
   }
 
-  async createWorkflowTask(insertTask: InsertWorkflowTask): Promise<WorkflowTask> {
+  async createWorkflowTask(
+    insertTask: InsertWorkflowTask,
+  ): Promise<WorkflowTask> {
     const id = this.currentWorkflowTaskId++;
     const task: WorkflowTask = {
       id,
@@ -1488,27 +1937,33 @@ Your communication style is clear, organized, and strategic. You focus on practi
     return task;
   }
 
-  async updateWorkflowTask(id: number, updateData: Partial<InsertWorkflowTask>): Promise<WorkflowTask> {
+  async updateWorkflowTask(
+    id: number,
+    updateData: Partial<InsertWorkflowTask>,
+  ): Promise<WorkflowTask> {
     const task = this.workflowTasks.get(id);
     if (!task) throw new Error("Workflow task not found");
-    
+
     const updatedTask = { ...task, ...updateData };
     this.workflowTasks.set(id, updatedTask);
     return updatedTask;
   }
 
   async assignTask(taskId: number, agentId: number): Promise<WorkflowTask> {
-    return this.updateWorkflowTask(taskId, { 
-      assignedTo: agentId, 
-      status: "in_progress" 
+    return this.updateWorkflowTask(taskId, {
+      assignedTo: agentId,
+      status: "in_progress",
     });
   }
 
-  async completeTask(taskId: number, actualHours?: number): Promise<WorkflowTask> {
-    return this.updateWorkflowTask(taskId, { 
-      status: "completed", 
+  async completeTask(
+    taskId: number,
+    actualHours?: number,
+  ): Promise<WorkflowTask> {
+    return this.updateWorkflowTask(taskId, {
+      status: "completed",
       completedAt: new Date(),
-      actualHours 
+      actualHours,
     });
   }
 }

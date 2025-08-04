@@ -5,7 +5,7 @@ import { agentOrchestrationService } from "./agent-orchestration";
 export interface TaskAssignment {
   agentId: number;
   taskDescription: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   estimatedTime: string;
   dependencies: number[];
 }
@@ -26,7 +26,7 @@ export class ProjectManagerCoordination {
   async createTaskDelegationConversation(
     projectId: number,
     taskDescription: string,
-    requiredAgentTypes: string[]
+    requiredAgentTypes: string[],
   ): Promise<{ conversationId: number; plan: ProjectPlan }> {
     try {
       // Find Morgan Davis (Project Manager)
@@ -37,18 +37,20 @@ export class ProjectManagerCoordination {
 
       // Find relevant agents based on task requirements
       const allAgents = await storage.getAllAgents();
-      const relevantAgents = allAgents.filter(agent => 
-        requiredAgentTypes.includes(agent.type) || 
-        requiredAgentTypes.some(type => agent.specialization?.includes(type))
+      const relevantAgents = allAgents.filter(
+        (agent) =>
+          requiredAgentTypes.includes(agent.type) ||
+          requiredAgentTypes.some((type) =>
+            agent.specialization?.includes(type),
+          ),
       );
 
       // Create private coordination conversation
       const conversation = await storage.createConversation({
         title: `Task Coordination: ${taskDescription}`,
-        type: 'task_delegation',
+        type: "task_delegation",
         projectId: projectId,
-        participants: [projectManager.id, ...relevantAgents.map(a => a.id)],
-        isPrivate: true // Not visible to user initially
+        participants: [projectManager.id, ...relevantAgents.map((a) => a.id)],
       });
 
       // Generate project plan through Project Manager
@@ -56,21 +58,21 @@ export class ProjectManagerCoordination {
         projectManager,
         taskDescription,
         relevantAgents,
-        projectId
+        projectId,
       );
 
       // Store initial coordination message
       await storage.createMessage({
         conversationId: conversation.id,
         senderId: projectManager.id,
-        senderType: 'agent',
+        senderType: "agent",
         content: this.formatProjectPlan(plan),
-        messageType: 'task_delegation'
+        messageType: "task_delegation",
       });
 
       return { conversationId: conversation.id, plan };
     } catch (error) {
-      console.error('Task delegation error:', error);
+      console.error("Task delegation error:", error);
       throw error;
     }
   }
@@ -80,14 +82,14 @@ export class ProjectManagerCoordination {
     projectManager: Agent,
     taskDescription: string,
     availableAgents: Agent[],
-    projectId: number
+    projectId: number,
   ): Promise<ProjectPlan> {
-    const agentCapabilities = availableAgents.map(agent => ({
+    const agentCapabilities = availableAgents.map((agent) => ({
       id: agent.id,
       name: agent.name,
       type: agent.type,
       specialization: agent.specialization,
-      capabilities: agent.capabilities
+      capabilities: agent.capabilities,
     }));
 
     // Use Project Manager to analyze and plan
@@ -96,9 +98,12 @@ export class ProjectManagerCoordination {
 TASK: ${taskDescription}
 
 AVAILABLE TEAM:
-${agentCapabilities.map(agent => 
-  `- ${agent.name} (${agent.type}): ${Array.isArray(agent.capabilities) ? agent.capabilities.join(', ') : agent.capabilities}`
-).join('\n')}
+${agentCapabilities
+  .map(
+    (agent) =>
+      `- ${agent.name} (${agent.type}): ${Array.isArray(agent.capabilities) ? agent.capabilities.join(", ") : agent.capabilities}`,
+  )
+  .join("\n")}
 
 Create a detailed project plan with:
 1. Break down the task into specific phases
@@ -130,42 +135,44 @@ Respond in this JSON format:
 
     try {
       const response = await agentOrchestrationService.generateAgentResponse(
-        projectManager,
+        projectManager.id,
         planningPrompt,
         {
           conversation: { id: 0 } as Conversation,
           recentMessages: [],
-          projectContext: { id: projectId, taskDescription }
-        }
+          projectContext: { id: projectId, taskDescription },
+        },
       );
 
       // Parse JSON response
       const planData = JSON.parse(response.content);
-      
+
       return {
         projectId,
         objective: planData.objective,
         phases: planData.phases,
-        teamComposition: planData.teamComposition
+        teamComposition: planData.teamComposition,
       };
     } catch (error) {
-      console.error('Project planning error:', error);
+      console.error("Project planning error:", error);
       // Fallback plan
       return {
         projectId,
         objective: taskDescription,
-        phases: [{
-          name: "Implementation",
-          tasks: availableAgents.map(agent => ({
-            agentId: agent.id,
-            taskDescription: `${agent.type} contributions to: ${taskDescription}`,
-            priority: 'medium' as const,
-            estimatedTime: "2-3 days",
-            dependencies: []
-          })),
-          timeline: "1 week"
-        }],
-        teamComposition: availableAgents.map(a => a.id)
+        phases: [
+          {
+            name: "Implementation",
+            tasks: availableAgents.map((agent) => ({
+              agentId: agent.id,
+              taskDescription: `${agent.type} contributions to: ${taskDescription}`,
+              priority: "medium" as const,
+              estimatedTime: "2-3 days",
+              dependencies: [],
+            })),
+            timeline: "1 week",
+          },
+        ],
+        teamComposition: availableAgents.map((a) => a.id),
       };
     }
   }
@@ -179,12 +186,18 @@ Respond in this JSON format:
 **Team Composition:** ${plan.teamComposition.length} specialists assigned
 
 **Execution Phases:**
-${plan.phases.map((phase, i) => 
-  `${i + 1}. **${phase.name}** (${phase.timeline})
-${phase.tasks.map(task => 
-  `   • Agent ${task.agentId}: ${task.taskDescription} [${task.priority} priority, ${task.estimatedTime}]`
-).join('\n')}`
-).join('\n\n')}
+${plan.phases
+  .map(
+    (phase, i) =>
+      `${i + 1}. **${phase.name}** (${phase.timeline})
+${phase.tasks
+  .map(
+    (task) =>
+      `   • Agent ${task.agentId}: ${task.taskDescription} [${task.priority} priority, ${task.estimatedTime}]`,
+  )
+  .join("\n")}`,
+  )
+  .join("\n\n")}
 
 **Next Steps:**
 1. Team agents will receive their specific task assignments
@@ -195,14 +208,17 @@ Team is ready to execute. Proceeding with task delegation...`;
   }
 
   // Execute the plan by delegating tasks to individual agents
-  async executePlan(plan: ProjectPlan, coordinationConversationId: number): Promise<void> {
+  async executePlan(
+    plan: ProjectPlan,
+    coordinationConversationId: number,
+  ): Promise<void> {
     for (const phase of plan.phases) {
       for (const task of phase.tasks) {
         await this.delegateTaskToAgent(
           task.agentId,
           task.taskDescription,
           coordinationConversationId,
-          plan.projectId
+          plan.projectId,
         );
       }
     }
@@ -213,7 +229,7 @@ Team is ready to execute. Proceeding with task delegation...`;
     agentId: number,
     taskDescription: string,
     coordinationConversationId: number,
-    projectId: number
+    projectId: number,
   ): Promise<void> {
     const agent = await storage.getAgent(agentId);
     if (!agent) return;
@@ -222,7 +238,7 @@ Team is ready to execute. Proceeding with task delegation...`;
     await storage.createMessage({
       conversationId: coordinationConversationId,
       senderId: 1, // Project Manager system ID
-      senderType: 'system',
+      senderType: "system",
       content: `🎯 **TASK ASSIGNMENT**
       
 **Agent:** ${agent.name} (${agent.type})
@@ -231,33 +247,36 @@ Team is ready to execute. Proceeding with task delegation...`;
 **Status:** Assigned
 
 Agent ${agent.name} has been notified and will begin work on this task.`,
-      messageType: 'task_assignment'
+      messageType: "task_assignment",
     });
 
     // Store task in agent's memory
     try {
-      const { agentMemoryService } = await import('./agent-memory-service.js');
+      const { agentMemoryService } = await import("./agent-memory-service.js");
       await agentMemoryService.storeMemory(
         agentId,
-        projectId,
+        "project_context",
         `Task Assignment: ${taskDescription}`,
-        'task_assignment',
-        'high'
+        { priority: "high", task: taskDescription },
+        projectId,
+        5,
       );
     } catch (error) {
-      console.error('Memory storage error:', error);
+      console.error("Memory storage error:", error);
     }
   }
 
   // Get coordination conversation for user to see project plan
   async getCoordinationSummary(conversationId: number): Promise<string> {
     const messages = await storage.getMessagesByConversation(conversationId);
-    const planMessage = messages.find(m => m.messageType === 'task_delegation');
-    
+    const planMessage = messages.find(
+      (m) => m.messageType === "task_delegation",
+    );
+
     if (planMessage) {
       return planMessage.content;
     }
-    
+
     return "Project coordination in progress...";
   }
 }

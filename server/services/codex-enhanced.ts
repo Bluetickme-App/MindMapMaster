@@ -9,7 +9,7 @@ export interface CodexRequest {
   context?: string;
   maxTokens?: number;
   temperature?: number;
-  mode?: 'completion' | 'explanation' | 'debugging' | 'refactor' | 'optimize';
+  mode?: "completion" | "explanation" | "debugging" | "refactor" | "optimize";
 }
 
 export interface CodexResponse {
@@ -22,49 +22,55 @@ export interface CodexResponse {
 }
 
 export class CodexEnhanced {
-  
   async generateCode(request: CodexRequest): Promise<CodexResponse> {
     const startTime = Date.now();
-    
+
     try {
-      const systemPrompt = this.getSystemPrompt(request.mode || 'completion', request.language);
+      const systemPrompt = this.getSystemPrompt(
+        request.mode || "completion",
+        request.language,
+      );
       const userPrompt = this.formatUserPrompt(request);
-      
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // Latest OpenAI model with superior code capabilities
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
+          { role: "user", content: userPrompt },
         ],
         max_tokens: request.maxTokens || 2000,
         temperature: request.temperature || 0.1,
-        response_format: { type: "json_object" }
+        response_format: { type: "json_object" },
       });
 
-      const result = JSON.parse(response.choices[0].message.content || '{}');
+      const result = JSON.parse(response.choices[0].message.content || "{}");
       const executionTime = Date.now() - startTime;
 
       return {
-        code: result.code || '',
+        code: result.code || "",
         explanation: result.explanation,
         suggestions: result.suggestions || [],
         language: request.language || this.detectLanguage(request.prompt),
         confidence: result.confidence || 0.9,
-        executionTime
+        executionTime,
       };
-    } catch (error) {
-      console.error('Codex Enhanced error:', error);
-      throw new Error(`Code generation failed: ${error.message}`);
+    } catch (error: any) {
+      console.error("Codex Enhanced error:", error);
+      throw new Error(`Code generation failed: ${(error as Error).message}`);
     }
   }
 
-  async completeCode(partialCode: string, language: string, context?: string): Promise<CodexResponse> {
+  async completeCode(
+    partialCode: string,
+    language: string,
+    context?: string,
+  ): Promise<CodexResponse> {
     return this.generateCode({
       prompt: partialCode,
       language,
       context,
-      mode: 'completion',
-      temperature: 0.2
+      mode: "completion",
+      temperature: 0.2,
     });
   }
 
@@ -72,49 +78,61 @@ export class CodexEnhanced {
     return this.generateCode({
       prompt: code,
       language,
-      mode: 'explanation',
-      temperature: 0.1
+      mode: "explanation",
+      temperature: 0.1,
     });
   }
 
-  async debugCode(code: string, error: string, language: string): Promise<CodexResponse> {
+  async debugCode(
+    code: string,
+    error: string,
+    language: string,
+  ): Promise<CodexResponse> {
     return this.generateCode({
       prompt: `Code:\n${code}\n\nError:\n${error}`,
       language,
-      mode: 'debugging',
-      temperature: 0.1
+      mode: "debugging",
+      temperature: 0.1,
     });
   }
 
-  async refactorCode(code: string, language: string, requirements?: string): Promise<CodexResponse> {
+  async refactorCode(
+    code: string,
+    language: string,
+    requirements?: string,
+  ): Promise<CodexResponse> {
     return this.generateCode({
-      prompt: `${code}\n\nRefactor requirements: ${requirements || 'Improve code quality, readability, and performance'}`,
+      prompt: `${code}\n\nRefactor requirements: ${requirements || "Improve code quality, readability, and performance"}`,
       language,
-      mode: 'refactor',
-      temperature: 0.2
+      mode: "refactor",
+      temperature: 0.2,
     });
   }
 
-  async optimizeCode(code: string, language: string, target?: string): Promise<CodexResponse> {
+  async optimizeCode(
+    code: string,
+    language: string,
+    target?: string,
+  ): Promise<CodexResponse> {
     return this.generateCode({
-      prompt: `${code}\n\nOptimization target: ${target || 'performance and memory usage'}`,
+      prompt: `${code}\n\nOptimization target: ${target || "performance and memory usage"}`,
       language,
-      mode: 'optimize',
-      temperature: 0.1
+      mode: "optimize",
+      temperature: 0.1,
     });
   }
 
   private getSystemPrompt(mode: string, language?: string): string {
-    const basePrompt = `You are an expert software engineer with deep knowledge of ${language || 'multiple programming languages'}. 
-You provide accurate, production-ready code with clear explanations.`;
+    const basePrompt = `You are an expert software engineer with deep knowledge of ${language || "multiple programming languages"}.
+  You provide accurate, production-ready code with clear explanations.`;
 
-    const modePrompts = {
+    const modePrompts: Record<string, string> = {
       completion: `${basePrompt}
-Complete the given code following best practices. Respond with JSON containing:
-- "code": the completed code
-- "explanation": brief explanation of what was added
-- "suggestions": array of improvement suggestions
-- "confidence": confidence score (0-1)`,
+  Complete the given code following best practices. Respond with JSON containing:
+  - "code": the completed code
+  - "explanation": brief explanation of what was added
+  - "suggestions": array of improvement suggestions
+  - "confidence": confidence score (0-1)`,
 
       explanation: `${basePrompt}
 Explain the given code in detail. Respond with JSON containing:
@@ -142,7 +160,7 @@ Optimize the given code for better performance and efficiency. Respond with JSON
 - "code": the optimized code
 - "explanation": explanation of optimizations made
 - "suggestions": array of additional performance tips
-- "confidence": confidence score (0-1)`
+- "confidence": confidence score (0-1)`,
     };
 
     return modePrompts[mode] || modePrompts.completion;
@@ -150,24 +168,24 @@ Optimize the given code for better performance and efficiency. Respond with JSON
 
   private formatUserPrompt(request: CodexRequest): string {
     let prompt = request.prompt;
-    
+
     if (request.context) {
       prompt = `Context: ${request.context}\n\n${prompt}`;
     }
-    
+
     if (request.language) {
       prompt = `Language: ${request.language}\n${prompt}`;
     }
-    
+
     if (request.framework) {
       prompt = `Framework: ${request.framework}\n${prompt}`;
     }
-    
+
     return prompt;
   }
 
   private detectLanguage(prompt: string): string {
-    const patterns = {
+    const patterns: Record<string, RegExp> = {
       javascript: /(?:function|const|let|var|=>|\.js|javascript)/i,
       typescript: /(?:interface|type|\.ts|typescript|as\s+\w+)/i,
       python: /(?:def|import|from|\.py|python|__init__|if __name__)/i,
@@ -180,7 +198,7 @@ Optimize the given code for better performance and efficiency. Respond with JSON
       ruby: /(?:def|end|\.rb|require|class)/i,
       sql: /(?:SELECT|INSERT|UPDATE|DELETE|CREATE|DROP)/i,
       html: /(?:<html|<div|<span|\.html)/i,
-      css: /(?:\.css|{|}|@media|selector)/i
+      css: /(?:\.css|{|}|@media|selector)/i,
     };
 
     for (const [language, pattern] of Object.entries(patterns)) {
@@ -188,48 +206,61 @@ Optimize the given code for better performance and efficiency. Respond with JSON
         return language;
       }
     }
-    
-    return 'javascript'; // Default fallback
+
+    return "javascript"; // Default fallback
   }
 
   // Advanced features
-  async generateTestCases(code: string, language: string): Promise<CodexResponse> {
+  async generateTestCases(
+    code: string,
+    language: string,
+  ): Promise<CodexResponse> {
     return this.generateCode({
       prompt: `Generate comprehensive test cases for this code:\n${code}`,
       language,
-      mode: 'completion',
-      context: 'Generate unit tests with edge cases and assertions',
-      temperature: 0.3
+      mode: "completion",
+      context: "Generate unit tests with edge cases and assertions",
+      temperature: 0.3,
     });
   }
 
-  async generateDocumentation(code: string, language: string): Promise<CodexResponse> {
+  async generateDocumentation(
+    code: string,
+    language: string,
+  ): Promise<CodexResponse> {
     return this.generateCode({
       prompt: `Generate detailed documentation for this code:\n${code}`,
       language,
-      mode: 'explanation',
-      context: 'Create comprehensive documentation with examples',
-      temperature: 0.2
+      mode: "explanation",
+      context: "Create comprehensive documentation with examples",
+      temperature: 0.2,
     });
   }
 
-  async convertLanguage(code: string, fromLanguage: string, toLanguage: string): Promise<CodexResponse> {
+  async convertLanguage(
+    code: string,
+    fromLanguage: string,
+    toLanguage: string,
+  ): Promise<CodexResponse> {
     return this.generateCode({
       prompt: `Convert this ${fromLanguage} code to ${toLanguage}:\n${code}`,
       language: toLanguage,
-      mode: 'completion',
+      mode: "completion",
       context: `Language conversion from ${fromLanguage} to ${toLanguage}`,
-      temperature: 0.2
+      temperature: 0.2,
     });
   }
 
-  async suggestImprovements(code: string, language: string): Promise<CodexResponse> {
+  async suggestImprovements(
+    code: string,
+    language: string,
+  ): Promise<CodexResponse> {
     return this.generateCode({
       prompt: `Analyze this code and suggest improvements:\n${code}`,
       language,
-      mode: 'refactor',
-      context: 'Code review and improvement suggestions',
-      temperature: 0.3
+      mode: "refactor",
+      context: "Code review and improvement suggestions",
+      temperature: 0.3,
     });
   }
 }

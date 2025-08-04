@@ -46,6 +46,24 @@ export class AgentOrchestrationService {
     devops_specialist: "gemini", // DevOps excellence
   };
 
+  async startCollaborationSession(
+    projectId: number,
+    objective: string,
+    requiredCapabilities: string[],
+  ): Promise<CollaborationSession> {
+    const session: CollaborationSession = {
+      id: Date.now(),
+      projectId,
+      participants: [],
+      objective,
+      currentPhase: "planning",
+      decisions: [],
+      outcomes: [],
+    };
+    this.activeCollaborations.set(session.id, session);
+    return session;
+  }
+
   // Core agent response generation with memory integration
   async generateAgentResponse(
     agentId: number,
@@ -69,7 +87,7 @@ export class AgentOrchestrationService {
     const projectId = context.conversation.projectId;
     const agentMemories = await agentMemoryService.retrieveMemories(
       agentId,
-      projectId,
+      projectId ?? undefined,
     );
     const projectMemory = projectId
       ? await agentMemoryService.getProjectContext(agentId, projectId)
@@ -130,7 +148,7 @@ export class AgentOrchestrationService {
             `Hi! I'm ${agent.name} and I'm ready to help with your ${agent.specialization} needs. How can I assist you?`,
           messageType: "text",
           metadata: { provider: aiProvider },
-          confidence: aiResponse.confidence || 0.7,
+          confidence: 0.7,
           reasoning: `Response from ${agent.name} using ${aiProvider} provider`,
         };
       }
@@ -154,10 +172,10 @@ export class AgentOrchestrationService {
             agentResponse: result.content,
             context: context.projectContext,
             timestamp: new Date(),
-            confidence: result.confidence,
+            confidence: 0.7,
           },
-          projectId,
-          Math.min(Math.floor(result.confidence * 10), 10),
+          projectId ?? undefined,
+          7,
         );
       } catch (error) {
         console.error(`[Agent ${agentId}] Failed to update knowledge:`, error);
@@ -261,9 +279,9 @@ Remember previous interactions and build on past conversations.
     try {
       await storage.createAgentKnowledge({
         agentId,
+        knowledgeType: "project_context",
         content: `User asked: "${userMessage}" - I responded: "${response}"`,
-        context: JSON.stringify(context),
-        confidence: 0.8,
+        projectId: context.conversation.projectId ?? null,
       });
     } catch (error) {
       console.error(`Failed to update knowledge for agent ${agentId}:`, error);
